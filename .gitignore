@@ -2,6 +2,7 @@
 node_modules/
 dist/
 .playwright-mcp/
+*.db
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

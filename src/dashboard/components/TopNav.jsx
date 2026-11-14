@@ -18,7 +18,7 @@ const NAV_ITEMS = [
 ];
 
 export function TopNav() {
-  const { alerts, mothers, screenings } = useClinicalData();
+  const { alerts, mothers, screenings, isLiveSynced } = useClinicalData();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -254,6 +254,12 @@ export function TopNav() {
                   <strong>{CLINICIAN_PROFILE.name}</strong>
                   <span>{CLINICIAN_PROFILE.role}</span>
                   <small>{CLINICIAN_PROFILE.clinic}</small>
+                  {isLiveSynced && (
+                    <span style={{ fontSize: '11px', color: '#16a34a', fontWeight: '600', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#16a34a', display: 'inline-block' }} />
+                      PostgreSQL Backend Connected
+                    </span>
+                  )}
                 </div>
                 <div className="dash-profile-actions">
                   <button

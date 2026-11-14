@@ -18,7 +18,8 @@ export async function submitClinicalReview({
   }
 
   const apiBase =
-    (typeof import.meta !== 'undefined' && import.meta.env?.VITE_MIORA_API_URL) || '';
+    (typeof import.meta !== 'undefined' && import.meta.env?.VITE_MIORA_API_URL) ||
+    (typeof window !== 'undefined' && window.location?.origin ? window.location.origin : '');
 
   if (!apiBase) {
     return {

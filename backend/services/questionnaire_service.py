@@ -23,24 +23,33 @@ logger = logging.getLogger("ppd.questionnaire")
 # Path to the single source of truth
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 QUESTIONS_JSON_PATH = PROJECT_ROOT / "data" / "questions.json"
+FALLBACK_QUESTIONS_PATH = PROJECT_ROOT / "backend" / "resources" / "questions.json"
 
 
 class EPDSQuestionnaireService:
     """Encapsulates verified EPDS instrument retrieval and clinical scoring logic."""
 
     def __init__(self, data_path: Optional[Path] = None) -> None:
-        self.data_path = data_path or QUESTIONS_JSON_PATH
+        if data_path:
+            self.data_path = data_path
+        elif QUESTIONS_JSON_PATH.exists():
+            self.data_path = QUESTIONS_JSON_PATH
+        else:
+            self.data_path = FALLBACK_QUESTIONS_PATH
         self._raw_data: Optional[dict] = None
         self._questions_by_id: Optional[Dict[str, dict]] = None
 
     def _ensure_loaded(self) -> None:
-        """Load and cache the question bank from data/questions.json."""
+        """Load and cache the question bank from questions.json."""
         if self._raw_data is None:
-            if not self.data_path.exists():
+            active_path = self.data_path
+            if not active_path.exists() and FALLBACK_QUESTIONS_PATH.exists():
+                active_path = FALLBACK_QUESTIONS_PATH
+            if not active_path.exists():
                 raise FileNotFoundError(
-                    f"EPDS question bank file missing at: {self.data_path}"
+                    f"EPDS question bank file missing at: {self.data_path} (fallback: {FALLBACK_QUESTIONS_PATH})"
                 )
-            with open(self.data_path, "r", encoding="utf-8") as f:
+            with open(active_path, "r", encoding="utf-8") as f:
                 self._raw_data = json.load(f)
 
             self._questions_by_id = {

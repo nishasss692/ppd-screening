@@ -27,6 +27,23 @@ router = APIRouter(tags=["Screenings"])
 
 
 @router.get(
+    "/api/screenings",
+    response_model=List[ScreeningResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Retrieve all screening records across all mothers",
+)
+def list_screenings(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    service: ScreeningService = Depends(lambda: screening_service),
+) -> List[ScreeningResponse]:
+    """Retrieve all recent screening records across the clinic, newest first."""
+    screenings = service.get_all_screenings(db, limit=limit, skip=skip)
+    return [ScreeningResponse.model_validate(s) for s in screenings]
+
+
+@router.get(
     "/api/mothers/{mother_id}/screenings",
     response_model=List[ScreeningResponse],
     status_code=status.HTTP_200_OK,

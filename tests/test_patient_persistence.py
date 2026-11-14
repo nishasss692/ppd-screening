@@ -6,7 +6,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from backend.main import app
-from backend.database.connection import get_db_context
+from backend.database.base import Base
+from backend.database.connection import engine, get_db_context
 from backend.services.auth_service import hash_password, verify_password, create_access_token, seed_default_users
 
 client = TestClient(app)
@@ -14,7 +15,8 @@ client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def setup_seed_users():
-    """Ensure default doctor and patient users exist in PostgreSQL."""
+    """Ensure database schema and default doctor and patient users exist."""
+    Base.metadata.create_all(bind=engine)
     with get_db_context() as db:
         seed_default_users(db)
 
