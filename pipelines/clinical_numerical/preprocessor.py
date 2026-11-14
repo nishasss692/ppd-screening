@@ -1,0 +1,188 @@
+"""Preprocessing pipeline for the clinical numerical modality.
+
+Separates numerical and categorical streams, preserves missingness information,
+and prevents leakage by fitting exclusively on training participants.
+"""
+
+from pathlib import Path
+from typing import Any, List, Optional
+import joblib
+import numpy as np
+import pandas as pd
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+
+from .config import NUMERICAL_FEATURES, CATEGORICAL_FEATURES
+
+
+class ClinicalPreprocessor(BaseEstimator, TransformerMixin):
+    """Scikit-learn compliant preprocessor for 46 clinical survey features.
+
+    Numerical features:
+        - Median imputation with MissingIndicator added to capture non-random missingness.
+        - Standard scaling (zero mean, unit variance).
+
+    Categorical features:
+        - Constant imputation with fill_value='Missing' to preserve non-response without bias.
+        - One-hot encoding with handle_unknown='ignore' and dense output.
+    """
+
+    def __init__(
+        self,
+        numerical_features: Optional[List[str]] = None,
+        categorical_features: Optional[List[str]] = None,
+    ):
+        self.numerical_features = numerical_features or list(NUMERICAL_FEATURES)
+        self.categorical_features = categorical_features or list(CATEGORICAL_FEATURES)
+        self.is_fitted = False
+        self.feature_names_: List[str] = []
+
+        # Numerical sub-pipeline
+        self.numerical_pipeline = Pipeline(
+            steps=[
+                ("imputer", SimpleImputer(strategy="median", add_indicator=True)),
+                ("scaler", StandardScaler()),
+            ]
+        )
+
+        # Categorical sub-pipeline
+        self.categorical_pipeline = Pipeline(
+            steps=[
+                ("imputer", SimpleImputer(strategy="constant", fill_value="Missing")),
+                (
+                    "onehot",
+                    OneHotEncoder(
+                        handle_unknown="ignore",
+                        sparse_output=False,
+                    ),
+                ),
+            ]
+        )
+
+        # Combined ColumnTransformer
+        self.transformer = ColumnTransformer(
+            transformers=[
+                ("num", self.numerical_pipeline, self.numerical_features),
+                ("cat", self.categorical_pipeline, self.categorical_features),
+            ],
+            remainder="drop",
+        )
+
+    def fit(self, X: pd.DataFrame, y: Optional[pd.Series] = None) -> "ClinicalPreprocessor":
+        """Fit preprocessor exclusively on training data.
+
+        Args:
+            X: Training DataFrame containing the 46 features.
+            y: Optional target (unused, for sklearn compatibility).
+
+        Returns:
+            self: Fitted preprocessor.
+        """
+        self._validate_input_columns(X)
+        self.transformer.fit(X)
+        self.is_fitted = True
+        self._extract_feature_names()
+        return self
+
+    def transform(self, X: pd.DataFrame) -> np.ndarray:
+        """Apply fitted transformations to inputs without data leakage.
+
+        Args:
+            X: DataFrame to transform.
+
+        Returns:
+            np.ndarray: Transformed float32 array.
+        """
+        if not self.is_fitted:
+            raise RuntimeError("ClinicalPreprocessor must be fitted before calling transform().")
+        self._validate_input_columns(X)
+        transformed = self.transformer.transform(X)
+        return np.asarray(transformed, dtype=np.float32)
+
+    def fit_transform(self, X: pd.DataFrame, y: Optional[pd.Series] = None) -> np.ndarray:
+        """Fit on training data and transform in a single call."""
+        return self.fit(X, y).transform(X)
+
+    def get_feature_names(self) -> List[str]:
+        """Return names of transformed features."""
+        if not self.is_fitted:
+            raise RuntimeError("ClinicalPreprocessor must be fitted to retrieve feature names.")
+        return list(self.feature_names_)
+
+    def _validate_input_columns(self, X: pd.DataFrame) -> None:
+        """Ensure all required columns are present in input DataFrame."""
+        required = set(self.numerical_features + self.categorical_features)
+        missing = required - set(X.columns)
+        if missing:
+            raise ValueError(f"Missing required columns in input DataFrame: {sorted(missing)}")
+
+    def _extract_feature_names(self) -> None:
+        """Extract output feature names from the fitted ColumnTransformer."""
+        feature_names = []
+        try:
+            feature_names = list(self.transformer.get_feature_names_out())
+        except Exception:
+            # Fallback manual reconstruction if get_feature_names_out encounters version quirks
+            # Numerical features + indicator columns
+            num_imputer = self.transformer.named_transformers_["num"].named_steps["imputer"]
+            for col in self.numerical_features:
+                feature_names.append(f"num__{col}")
+            if hasattr(num_imputer, "indicator_") and num_imputer.indicator_ is not None:
+                for idx in num_imputer.indicator_.features_:
+                    feature_names.append(f"num__missing_{self.numerical_features[idx]}")
+
+            # Categorical one-hot categories
+            cat_encoder = self.transformer.named_transformers_["cat"].named_steps["onehot"]
+            for col, cats in zip(self.categorical_features, cat_encoder.categories_):
+                for cat in cats:
+                    feature_names.append(f"cat__{col}_{cat}")
+
+        self.feature_names_ = feature_names
+
+    def save(self, filepath: Path) -> None:
+        """Serialize fitted preprocessor to disk."""
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+        joblib.dump(self, filepath)
+
+    @classmethod
+    def _fix_imputer_compatibility(cls, obj: Any) -> None:
+        """Fix scikit-learn 1.6 -> 1.9 SimpleImputer _fill_dtype unpickling compatibility."""
+        if hasattr(obj, "transformers_"):
+            for item in obj.transformers_:
+                cls._fix_imputer_compatibility(item[1] if isinstance(item, (tuple, list)) and len(item) > 1 else item)
+        if hasattr(obj, "named_transformers_"):
+            for t in obj.named_transformers_.values():
+                cls._fix_imputer_compatibility(t)
+        if hasattr(obj, "steps"):
+            for s in obj.steps:
+                cls._fix_imputer_compatibility(s[1] if isinstance(s, (tuple, list)) and len(s) > 1 else s)
+        if hasattr(obj, "named_steps"):
+            for s in obj.named_steps.values():
+                cls._fix_imputer_compatibility(s)
+        if not hasattr(obj, "_fill_dtype") and hasattr(obj, "_fit_dtype"):
+            obj._fill_dtype = obj._fit_dtype
+
+    @classmethod
+    def load(cls, filepath: Path) -> "ClinicalPreprocessor":
+        """Load serialized preprocessor from disk."""
+        # Ensure backward compatibility for ColumnTransformer pickled in scikit-learn <1.7
+        try:
+            import sklearn.compose._column_transformer as _ct
+            from collections import UserList
+            if not hasattr(_ct, "_RemainderColsList"):
+                class _RemainderColsList(UserList):
+                    def __init__(self, columns=None, *args, **kwargs):
+                        super().__init__(columns if columns is not None else [])
+                _ct._RemainderColsList = _RemainderColsList
+        except Exception:
+            pass
+
+        preprocessor = joblib.load(filepath)
+        if not isinstance(preprocessor, cls):
+            raise TypeError(f"Loaded object is not an instance of {cls.__name__}")
+        cls._fix_imputer_compatibility(getattr(preprocessor, "transformer", None))
+        return preprocessor
+

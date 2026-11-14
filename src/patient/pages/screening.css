@@ -1,0 +1,1372 @@
+/* ==========================================================================
+   Miora — AI Screening Workspace Styles
+   Unified with Clinician Dashboard Visual Hierarchy & Design System
+   ========================================================================== */
+
+.screening-workspace-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+/* 1. Header & Stage Tracker Area */
+.screening-top-bar-area {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.screening-header-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.screening-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--patient-subtle);
+  margin-bottom: 2px;
+}
+
+.screening-breadcrumb-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--patient-muted);
+  text-decoration: none;
+  transition: var(--patient-transition);
+}
+
+.screening-breadcrumb-link:hover {
+  color: var(--patient-brand-rose-deep);
+}
+
+.screening-breadcrumb-sep {
+  color: var(--patient-subtle);
+  font-size: 14px;
+}
+
+.screening-breadcrumb-current {
+  color: var(--patient-ink);
+  font-weight: 500;
+}
+
+.screening-page-title {
+  margin: 0;
+}
+
+.screening-page-sub {
+  margin: 0;
+}
+
+/* 4-Stage Progress Tracker */
+.screening-stages-tracker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--patient-surface);
+  border: 1px solid var(--patient-blush-border);
+  padding: 8px 16px;
+  border-radius: var(--patient-radius-pill);
+  box-shadow: var(--patient-shadow-card);
+}
+
+.tracker-stage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--patient-subtle);
+  font-size: 12.5px;
+  font-weight: 500;
+  transition: var(--patient-transition);
+}
+
+.tracker-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--patient-blush-border);
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tracker-stage.is-completed .tracker-circle {
+  background: #27ae60;
+  border-color: #27ae60;
+}
+
+.tracker-stage.is-active .tracker-circle {
+  border-color: var(--patient-brand-rose);
+  background: var(--patient-blush-soft);
+}
+
+.tracker-inner-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--patient-brand-rose);
+}
+
+.tracker-stage.is-active {
+  color: var(--patient-ink);
+  font-weight: 600;
+}
+
+.tracker-line {
+  width: 20px;
+  height: 2px;
+  background: var(--patient-blush-border);
+}
+
+.tracker-line.is-active-line {
+  background: #27ae60;
+}
+
+/* 2. Main Two-Column Layout */
+.screening-two-col-layout {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 20px;
+  min-height: 480px;
+}
+
+/* Left Column: Video Card */
+.screening-video-card {
+  background: #14080d;
+  border-radius: var(--patient-radius-card);
+  overflow: hidden;
+  position: relative;
+  box-shadow: var(--patient-shadow-card);
+  border: 1px solid var(--patient-blush-border);
+  display: flex;
+  flex-direction: column;
+}
+
+.screening-video-container {
+  width: 100%;
+  height: 100%;
+  min-height: 440px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1a0b12;
+}
+
+.screening-live-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.screening-video-feed-wrap {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.screening-media-warning-banner {
+  position: absolute;
+  bottom: 60px;
+  left: 20px;
+  right: 20px;
+  background: rgba(39, 18, 24, 0.85);
+  color: #ffffff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  text-align: center;
+  backdrop-filter: blur(4px);
+}
+
+/* Camera off placeholder */
+.screening-camera-off-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #e5cbd4;
+  padding: 40px 20px;
+}
+
+.camera-off-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #2e1620;
+  color: var(--patient-brand-rose);
+  font-size: 24px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(217, 60, 117, 0.4);
+}
+
+.camera-off-text {
+  font-size: 14px;
+  color: #d1b8c2;
+}
+
+.camera-off-sub {
+  font-size: 12px;
+  color: #9f8691;
+  margin-top: -6px;
+}
+
+/* Permission / Device Access State */
+.screening-permission-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px 24px;
+  color: #ffffff;
+  max-width: 380px;
+  z-index: 2;
+}
+
+.screening-permission-icon-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(217, 60, 117, 0.15);
+  border: 1.5px solid rgba(217, 60, 117, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ea3a7a;
+  margin-bottom: 16px;
+}
+
+.screening-permission-icon-wrap.is-error {
+  background: rgba(182, 45, 91, 0.2);
+  border-color: rgba(182, 45, 91, 0.5);
+  color: #ff6b8b;
+}
+
+.screening-permission-title {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.screening-permission-sub {
+  margin: 0 0 18px 0;
+  font-size: 12.5px;
+  color: #d1b8c2;
+  line-height: 1.45;
+}
+
+.screening-permission-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2.5px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #ea3a7a;
+  border-radius: 50%;
+  animation: screeningSpin 0.9s linear infinite;
+}
+
+@keyframes screeningSpin {
+  to { transform: rotate(360deg); }
+}
+
+.screening-bot-char {
+  font-family: var(--patient-font-serif);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--patient-brand-rose);
+}
+
+.screening-bot-char-sm {
+  font-family: var(--patient-font-serif);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--patient-brand-rose);
+}
+
+.screening-turn-on-cam-btn {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.25);
+  font-size: 13px;
+  padding: 6px 16px;
+}
+
+.screening-turn-on-cam-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+/* Video Overlays */
+.screening-video-top-overlay {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 10;
+}
+
+.screening-live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(20, 8, 13, 0.75);
+  backdrop-filter: blur(6px);
+  padding: 5px 12px;
+  border-radius: var(--patient-radius-pill);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.screening-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ea3a7a;
+  box-shadow: 0 0 8px #ea3a7a;
+  animation: screeningPulse 1.4s infinite ease-in-out;
+}
+
+.screening-pulse-dot.is-paused {
+  background: #888;
+  box-shadow: none;
+  animation: none;
+}
+
+@keyframes screeningPulse {
+  0%, 100% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+}
+
+.screening-pill-time {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.screening-overlay-btn {
+  background: rgba(20, 8, 13, 0.75);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--patient-transition);
+}
+
+.screening-overlay-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.screening-video-bottom-overlay {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  z-index: 10;
+}
+
+.screening-identity-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(20, 8, 13, 0.75);
+  backdrop-filter: blur(6px);
+  padding: 4px 10px;
+  border-radius: var(--patient-radius-pill);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.screening-sensor-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.screening-sensor-badge {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: var(--patient-radius-pill);
+  background: rgba(20, 8, 13, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #d1b8c2;
+}
+
+.screening-sensor-badge.is-active {
+  color: #27ae60;
+  border-color: rgba(39, 174, 96, 0.4);
+}
+
+.screening-sensor-badge.is-muted {
+  color: #e74c3c;
+  border-color: rgba(231, 76, 60, 0.4);
+}
+
+/* Right Column: Chat Card */
+.screening-chat-card {
+  background: var(--patient-surface);
+  border: 1px solid var(--patient-blush-border);
+  border-radius: var(--patient-radius-card);
+  box-shadow: var(--patient-shadow-card);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.screening-chat-card-header {
+  padding: 14px 20px;
+  background: var(--patient-surface-subtle);
+  border-bottom: 1px solid var(--patient-blush-border);
+}
+
+.screening-chat-bot-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.screening-bot-avatar-ring {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--patient-blush-soft);
+  border: 1.5px solid var(--patient-blush-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.screening-bot-img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.screening-chat-bot-name {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--patient-ink);
+}
+
+.screening-chat-bot-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--patient-subtle);
+}
+
+.screening-status-online-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #27ae60;
+}
+
+/* Messages Area */
+.screening-chat-messages-container {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 360px;
+}
+
+.screening-msg-row {
+  display: flex;
+  gap: 10px;
+  max-width: 88%;
+}
+
+.screening-msg-row.is-bot-msg {
+  align-self: flex-start;
+}
+
+.screening-msg-row.is-user-msg {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.screening-msg-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--patient-blush-soft);
+  border: 1px solid var(--patient-blush-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.screening-msg-avatar img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.screening-bubble-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.screening-speech-bubble {
+  padding: 12px 16px;
+  border-radius: 14px;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+.screening-speech-bubble.bot-speech {
+  background: var(--patient-blush-soft);
+  color: var(--patient-ink);
+  border: 1px solid var(--patient-blush-border);
+  border-top-left-radius: 4px;
+}
+
+.screening-speech-bubble.user-speech {
+  background: var(--patient-blush-pill);
+  color: var(--patient-brand-rose-deep);
+  border: 1px solid rgba(217, 60, 117, 0.2);
+  font-weight: 500;
+  border-top-right-radius: 4px;
+}
+
+.screening-msg-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--patient-subtle);
+  padding: 0 4px;
+}
+
+.is-user-msg .screening-msg-meta {
+  justify-content: flex-end;
+  color: var(--patient-brand-rose-deep);
+}
+
+/* Active Listening Card */
+.screening-listening-bubble-card {
+  background: #ffffff;
+  border: 1px solid var(--patient-blush-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 2px 10px rgba(182, 45, 91, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.screening-listening-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.screening-listening-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--patient-brand-rose-deep);
+}
+
+.screening-eq-animation {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 12px;
+}
+
+.screening-eq-bar {
+  width: 2.5px;
+  background: var(--patient-brand-rose);
+  border-radius: 1px;
+  animation: eqJump 0.8s infinite ease-in-out alternate;
+}
+
+.screening-eq-bar.bar-1 { height: 6px; animation-delay: 0.1s; }
+.screening-eq-bar.bar-2 { height: 11px; animation-delay: 0.3s; }
+.screening-eq-bar.bar-3 { height: 8px; animation-delay: 0.2s; }
+.screening-eq-bar.is-off { animation: none; height: 3px; background: #ccc; }
+
+@keyframes eqJump {
+  from { height: 3px; }
+  to { height: 12px; }
+}
+
+.screening-audio-waveform-bars {
+  display: flex;
+  align-items: center;
+  gap: 2.5px;
+  height: 16px;
+}
+
+.screening-wave-col {
+  width: 2.5px;
+  height: 6px;
+  background: #f1a5bd;
+  border-radius: 1px;
+  animation: wavePulse 1s infinite ease-in-out alternate;
+}
+
+.screening-wave-col.is-flat {
+  animation: none;
+  height: 3px;
+  background: #e0d0d5;
+}
+
+@keyframes wavePulse {
+  0% { height: 4px; background: #f6c0d0; }
+  50% { height: 14px; background: #d93c75; }
+  100% { height: 6px; background: #ea3a7a; }
+}
+
+.screening-transcription-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--patient-surface-subtle);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--patient-blush-border);
+}
+
+.screening-transcribed-quote {
+  margin: 0;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--patient-ink);
+}
+
+.screening-transcribed-check {
+  color: #27ae60;
+  display: flex;
+  align-items: center;
+}
+
+/* Chat Input Bar */
+.screening-chat-input-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--patient-surface-subtle);
+  border-top: 1px solid var(--patient-blush-border);
+}
+
+.screening-text-input {
+  flex: 1;
+  background: #ffffff;
+  border: 1.5px solid var(--patient-blush-border);
+  border-radius: var(--patient-radius-pill);
+  padding: 9px 16px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--patient-ink);
+  outline: none;
+  transition: var(--patient-transition);
+}
+
+.screening-text-input:focus {
+  border-color: var(--patient-brand-rose);
+  box-shadow: 0 0 0 3px rgba(217, 60, 117, 0.12);
+}
+
+.screening-send-msg-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--patient-brand-rose);
+  color: #ffffff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--patient-transition);
+  flex-shrink: 0;
+}
+
+.screening-send-msg-btn:hover:not(:disabled) {
+  background: var(--patient-brand-rose-deep);
+  transform: scale(1.05);
+}
+
+.screening-send-msg-btn:disabled {
+  background: #e2c8d2;
+  cursor: not-allowed;
+}
+
+/* 3. Bottom Controls Card */
+.screening-controls-card {
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.screening-controls-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.screening-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: var(--patient-radius-pill);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--patient-blush-border);
+  transition: var(--patient-transition);
+}
+
+.screening-toggle-btn.is-active-btn {
+  background: #ffffff;
+  color: var(--patient-ink);
+}
+
+.screening-toggle-btn.is-active-btn:hover {
+  background: #fdf0f2;
+  border-color: rgba(217, 60, 117, 0.3);
+}
+
+.screening-toggle-btn.is-muted-btn {
+  background: #fdedf0;
+  color: #b62d5b;
+  border-color: #f7cbd1;
+}
+
+.screening-recording-live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--patient-muted);
+  font-weight: 500;
+  padding-left: 6px;
+}
+
+.screening-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ea3a7a;
+  animation: screeningPulse 1.4s infinite ease-in-out;
+}
+
+.screening-status-dot.is-paused {
+  background: #999;
+  animation: none;
+}
+
+/* Center: Progress Widget */
+.screening-progress-box {
+  flex: 1;
+  max-width: 280px;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.screening-progress-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.screening-progress-name {
+  color: var(--patient-muted);
+  font-weight: 500;
+}
+
+.screening-progress-pct {
+  color: var(--patient-brand-rose-deep);
+  font-weight: 700;
+}
+
+.screening-progress-track-bg {
+  width: 100%;
+  height: 6px;
+  background: #f2e2e7;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.screening-progress-fill-bar {
+  height: 100%;
+  background: var(--patient-primary-gradient);
+  border-radius: 3px;
+  transition: width 300ms ease;
+}
+
+/* Right: End Screening CTA */
+.screening-controls-right {
+  display: flex;
+  align-items: center;
+}
+
+.screening-end-session-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 20px;
+  border-radius: var(--patient-radius-pill);
+  background: #ffffff;
+  border: 1.5px solid #d93c75;
+  color: #ca2261;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--patient-transition);
+}
+
+.screening-end-session-btn:hover {
+  background: #ca2261;
+  color: #ffffff;
+}
+
+.screening-stop-square {
+  width: 10px;
+  height: 10px;
+  background: currentColor;
+  border-radius: 2px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .screening-two-col-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .screening-top-bar-area {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .screening-stages-tracker {
+    width: 100%;
+    justify-content: space-between;
+    overflow-x: auto;
+  }
+  .screening-controls-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .screening-progress-box {
+    max-width: 100%;
+  }
+  .screening-end-session-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Question Option Choices Grid */
+.screening-options-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.screening-option-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 14px;
+  background: #ffffff;
+  border: 1.5px solid #f0d5dd;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--patient-ink);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.screening-option-button:hover:not(:disabled) {
+  background: #fdf2f5;
+  border-color: var(--patient-brand-rose);
+  color: var(--patient-brand-rose-deep);
+  transform: translateX(2px);
+}
+
+.screening-option-button:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.screening-option-button.is-selected {
+  background: var(--patient-blush-soft);
+  border-color: var(--patient-brand-rose);
+  color: var(--patient-brand-rose-deep);
+  font-weight: 600;
+}
+
+.screening-option-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--patient-blush-soft);
+  color: var(--patient-brand-rose);
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.screening-option-button:hover .screening-option-num,
+.screening-option-button.is-selected .screening-option-num {
+  background: var(--patient-brand-rose);
+  color: #ffffff;
+}
+
+.screening-option-text {
+  flex: 1;
+}
+
+.screening-retry-voice-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 6px 12px;
+  background: #fdf0f3;
+  border: 1px solid #f2cad5;
+  border-radius: var(--patient-radius-pill);
+  color: var(--patient-brand-rose-deep);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--patient-transition);
+}
+
+.screening-retry-voice-btn:hover {
+  background: var(--patient-brand-rose);
+  color: #ffffff;
+}
+
+/* Question 10 Emergency Safety Escalation Card */
+.screening-q10-crisis-card {
+  background: #fff5f7;
+  border: 1.5px solid #ca2261;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-top: 10px;
+  box-shadow: 0 4px 14px rgba(202, 34, 97, 0.12);
+}
+
+.screening-q10-crisis-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ca2261;
+  font-weight: 700;
+  font-size: 13.5px;
+  margin-bottom: 6px;
+}
+
+.screening-q10-crisis-text {
+  font-size: 12.5px;
+  color: #4a353f;
+  line-height: 1.5;
+  margin: 0 0 10px 0;
+}
+
+.screening-q10-crisis-helpline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ca2261;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 12.5px;
+  padding: 6px 14px;
+  border-radius: var(--patient-radius-pill);
+  text-decoration: none;
+}
+
+.screening-q10-crisis-helpline:hover {
+  background: #a91a4f;
+  color: #ffffff;
+}
+
+/* Mother-Controlled Listen Button */
+.screening-listen-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #fff0f5;
+  border: 1.5px solid var(--patient-brand-rose);
+  color: var(--patient-brand-rose-deep);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: var(--patient-radius-pill);
+  cursor: pointer;
+  transition: var(--patient-transition);
+}
+
+.screening-listen-btn:hover:not(:disabled) {
+  background: var(--patient-brand-rose);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(224, 76, 122, 0.25);
+}
+
+.screening-listen-btn.is-listening {
+  background: #e74c3c;
+  border-color: #c0392b;
+  color: #ffffff;
+  animation: pulse-border 1.5s infinite;
+}
+
+.screening-listen-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Input Bar Mic Button */
+.screening-input-mic-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid #f2cad5;
+  background: #ffffff;
+  color: var(--patient-brand-rose);
+  cursor: pointer;
+  transition: var(--patient-transition);
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.screening-input-mic-btn:hover:not(:disabled) {
+  background: #fff0f5;
+  color: var(--patient-brand-rose-deep);
+}
+
+.screening-input-mic-btn.is-listening {
+  background: #e74c3c;
+  color: #ffffff;
+  border-color: #c0392b;
+}
+
+.screening-input-mic-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Voice Retry Guidance Box */
+.screening-voice-retry-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.screening-retry-hint {
+  font-size: 11.5px;
+  color: #7a5868;
+}
+
+/* Optional Video Upload Controls */
+.screening-video-upload-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.2);
+}
+
+.screening-video-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 5px 11px;
+  border-radius: var(--patient-radius-pill);
+  cursor: pointer;
+  transition: var(--patient-transition);
+}
+
+.screening-video-upload-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.screening-video-upload-success {
+  font-size: 11px;
+  color: #2ecc71;
+  font-weight: 600;
+}
+
+/* In-Chat Complete Clinical Assessment Report Card */
+.screening-assessment-report-card {
+  background: #ffffff;
+  border: 1.5px solid #e8c5d1;
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-top: 10px;
+  box-shadow: 0 6px 20px rgba(125, 43, 76, 0.08);
+}
+
+.screening-report-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #f6e6ec;
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+}
+
+.screening-report-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--patient-brand-rose-deep);
+}
+
+.screening-report-score-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff0f5;
+  border: 1px solid #f2cad5;
+  color: var(--patient-brand-rose-deep);
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--patient-radius-pill);
+}
+
+.screening-report-tier-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.screening-report-tier-badge.is-low {
+  background: #eafaf1;
+  color: #27ae60;
+  border: 1px solid #abebc6;
+}
+
+.screening-report-tier-badge.is-moderate {
+  background: #fef9e7;
+  color: #d68910;
+  border: 1px solid #f9e79f;
+}
+
+.screening-report-tier-badge.is-high {
+  background: #fdedec;
+  color: #c0392b;
+  border: 1px solid #f5b7b1;
+}
+
+.screening-report-interpretation {
+  font-size: 13px;
+  color: #3b2c35;
+  line-height: 1.55;
+  margin: 0 0 12px 0;
+}
+
+.screening-report-disclaimer {
+  background: #fdf5f7;
+  border-left: 3px solid var(--patient-brand-rose);
+  padding: 8px 12px;
+  font-size: 11.5px;
+  color: #644955;
+  line-height: 1.5;
+  border-radius: 0 6px 6px 0;
+  margin-bottom: 12px;
+}
+
+.screening-report-persisted-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+/* In-Chat Video PPD Multimodal Analysis Card */
+.screening-video-analysis-card {
+  background: #ffffff;
+  border: 1.5px solid #d9c2cb;
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-top: 10px;
+  box-shadow: 0 6px 20px rgba(125, 43, 76, 0.08);
+}
+
+.screening-video-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin: 12px 0 14px 0;
+}
+
+.screening-video-metric-item {
+  background: #fcf8f9;
+  border: 1px solid #f2cad5;
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.screening-video-metric-item .metric-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--patient-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.screening-video-metric-item .metric-value {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--patient-brand-rose-deep);
+}
+
+.screening-video-metric-item .metric-sub {
+  font-size: 11px;
+  color: #644955;
+  line-height: 1.35;
+}
+
+.screening-video-analysis-actions {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed #f2cad5;
+}
+
+.screening-view-full-results-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, var(--patient-brand-rose) 0%, var(--patient-brand-rose-deep) 100%);
+  color: #ffffff !important;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: var(--patient-radius-pill);
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.screening-view-full-results-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(181, 70, 90, 0.28);
+}
+
+/* Left-column Video Panel PPD Analysis Badge */
+.screening-video-analysis-badge-panel {
+  margin-top: 8px;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: #ffffff;
+}
+
+.screening-video-badge-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #2ecc71;
+}
+
+.screening-video-badge-metrics {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 3px;
+}
+

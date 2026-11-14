@@ -1,0 +1,90 @@
+# Node / Frontend artifacts
+node_modules/
+dist/
+.playwright-mcp/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.env
+.env.*
+!.env.example
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Testing & quality caches
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# IDEs and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Trained models and large weights
+models/*
+!models/.gitkeep
+!models/clinical_numerical/
+!models/clinical_numerical/**
+!models/text_ner/
+!models/text_ner/**
+models/text_ner/**/*.joblib
+*.joblib
+!models/clinical_numerical/*.joblib
+*.pt
+*.pth
+*.bin
+*.onnx
+
+# Exclude entire data folder as requested
+data/
+data/**
+
+# Local logs and temporary files
+*.log
+logs/
+temp/
+tmp/
+# Generated video model artifacts
+artifacts/video_model/**/*.pt
+artifacts/video_model/**/*.joblib
+artifacts/video_model/**/*.csv
+artifacts/video_model/**/*.npz
+
+# Exclude participant-level predictions and experiment outputs across artifacts
+artifacts/**/*.csv
