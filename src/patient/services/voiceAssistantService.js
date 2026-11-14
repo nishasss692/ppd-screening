@@ -579,6 +579,109 @@ export function matchOptionIndex(input, options = []) {
     }
   }
 
+  // 4b. Explicit ambiguous / uncertain expressions should trigger clarification
+  if (
+    /\b(maybe|perhaps|not\s+sure|no\s+idea|don'?t\s+know|do\s+not\s+know|cannot\s+say|can'?t\s+say|hard\s+to\s+say|confused|unclear)\b/i.test(
+      cleanedInput
+    )
+  ) {
+    return -1;
+  }
+
+  // 4c. Natural conversational answering for positive (Q1/Q2) vs distress (Q3-Q10) EPDS questions
+  const isPositiveQuestion = options.some((o) => {
+    const l = clean(o.label);
+    return l.includes('as much as') || l.includes('always could') || l.includes('ever did');
+  });
+
+  if (isPositiveQuestion) {
+    // Option 0: Positive ("As much as I always could" / "As much as I ever did")
+    if (
+      /\b(enough|plenty|laughing|laugh|funny|fine|good|well|normal|okay|great|happy|enjoy|enjoying|enjoyment|doing\s+fine|always|usual|as\s+usual|as\s+always|like\s+always|ever|much|a\s+lot|very\s+much|quite\s+a\s+bit|yes|yeah|yep|sure|definitely|of\s+course|yes\s+i\s+have|able\s+to|हंस\s*पाती|भरपूर|हमेशा\s*की\s*तरह)\b/i.test(
+        cleanedInput
+      ) &&
+      !/\b(not|never|no|less|hardly|rarely|barely|can'?t|cannot)\b/i.test(cleanedInput)
+    ) {
+      return 0;
+    }
+
+    // Option 3: "Not at all" / "Hardly at all"
+    if (
+      /^(no|nope|nah|never|not\s+at\s+all|zero|none|not\s+really)$/i.test(cleanedInput) ||
+      /\b(not\s+at\s+all|never\s+at\s+all|hardly\s+at\s+all|can'?t\s+laugh|cannot\s+laugh|कभी\s*नहीं|बिल्कुल\s*नहीं|ಇಲ್ಲವೇ\s*ಇಲ್ಲ|இல்லவே\s*இல்லை|అస్సలు\s*లేదు|ഒരിക്കലുമില്ല|একদম\s*না|मुळीच\s*नाही)\b/i.test(
+        cleanedInput
+      )
+    ) {
+      return 3;
+    }
+
+    // Option 2: "Definitely not so much now" / "Definitely less than I used to"
+    if (
+      /\b(definitely\s+less|definitely\s+not|much\s+less|far\s+less|a\s+lot\s+less|very\s+little|hardly|rarely|seldom|काफी\s*कम|ತುಂಬಾ\s*ಕಡಿಮೆ|மிகக்\s*குறைவாக|చాలా\s*తక్కువ|വളരെ\s*കുറവ്|খুব\s*কম|फार\s*कमी)\b/i.test(
+        cleanedInput
+      )
+    ) {
+      return 2;
+    }
+
+    // Option 1: "Not quite so much now" / "Rather less than I used to"
+    if (
+      /\b(less|a\s+bit|a\s+little|slightly|rather|somewhat|not\s+quite|not\s+so\s+much|not\s+much|कम|थोड़ा\s*कम|ಸ್ವಲ್ಪ\s*ಕಡಿಮೆ|கொஞ்சம்\s*குறைவாக|కొంచెం\s*తక్కువ|കുറച്ച്\s*കുറവ്|একটু\s*কম|थोडे\s*कमी)\b/i.test(
+        cleanedInput
+      )
+    ) {
+      return 1;
+    }
+  } else {
+    // Distress questions (Q3 - Q10)
+    const healthyIdx = options.findIndex((o) => o.score === 0);
+    const mildIdx = options.findIndex((o) => o.score === 1);
+    const moderateIdx = options.findIndex((o) => o.score === 2);
+    const severeIdx = options.findIndex((o) => o.score === 3);
+
+    // Healthy (Score 0): "No, never", "No, not at all", "Never", "No, I have been coping as well as ever"
+    if (
+      /\b(no|never|nope|nah|not\s+at\s+all|not\s+really|not\s+sad|not\s+crying|none|haven'?t|no\s+difficulty|slept\s+well|fine|good|doing\s+fine|normal|coping\s+well|as\s+well\s+as\s+ever|handling\s+fine|managing\s+fine|no\s+problem|कभी\s*नहीं|बिल्कुल\s*नहीं|ಇಲ್ಲವೇ\s*ಇಲ್ಲ|இல்லவே\s*இல்லை|అస్సలు\s*లేదు|ഒരിക്കലുമില്ല|একদম\s*না|मुळीच\s*नाही)\b/i.test(
+        cleanedInput
+      ) &&
+      !/\b(yes|often|always|most\s+of\s+the\s+time|crying|sad)\b/i.test(cleanedInput)
+    ) {
+      return healthyIdx >= 0 ? healthyIdx : 0;
+    }
+
+    // Severe (Score 3): "Yes, most of the time", "Yes, quite often", "Yes, quite a lot"
+    if (
+      /\b(most\s+of\s+the\s+time|quite\s+often|very\s+often|all\s+the\s+time|always|constantly|a\s+lot|can'?t\s+cope|cannot\s+cope|quite\s+a\s+lot|अक्सर|ज्यादातर|हमेशा|ಹೆಚ್ಚಾಗಿ|ಯಾವಾಗಲೂ|அடிக்கடி|எப்பொழுதும்|తరచుగా|ఎల్లప్పుడూ|മിക്കപ്പോഴും|সবসময়|नेहमी)\b/i.test(
+        cleanedInput
+      )
+    ) {
+      return severeIdx >= 0 ? severeIdx : 3;
+    }
+
+    // Moderate (Score 2): "Yes, some of the time", "Yes, sometimes", "Sometimes"
+    if (
+      /\b(sometimes|some\s+of\s+the\s+time|occasionally|now\s+and\s+then|somewhat|moderate|कभी\s*कभी|ಕೆಲವೊಮ್ಮೆ|சில\s*நேரங்களில்|కొన్నిసార్లు|ചിലപ്പോൾ|মাঝে\s*মাঝে|कधीकधी)\b/i.test(
+        cleanedInput
+      )
+    ) {
+      return moderateIdx >= 0 ? moderateIdx : 2;
+    }
+
+    // Mild (Score 1): "Not very often", "Hardly ever", "No, not much", "Only occasionally"
+    if (
+      /\b(hardly\s+ever|hardly|rarely|not\s+very\s+often|only\s+occasionally|a\s+little|a\s+bit|not\s+much|quite\s+well|बहुत\s*कम|ಅಪರೂಪವಾಗಿ|அரிதாக|అరుదుగా|വളരെ\s*വിരളമായി|কদাচিৎ|फार\s*क्वचित)\b/i.test(
+        cleanedInput
+      )
+    ) {
+      return mildIdx >= 0 ? mildIdx : 1;
+    }
+
+    // Standalone affirmative on distress questions: maps to moderate/affirmative
+    if (/^(yes|yeah|yep|i\s+do|i\s+have|हाँ|ಹೌದು|ஆம்|అవును|അതെ|হ্যাঁ|हो)$/i.test(cleanedInput)) {
+      return moderateIdx >= 0 ? moderateIdx : 2;
+    }
+  }
+
   // 5. Semantic phrases mapped to standard EPDS options (English + 7 regional languages)
   const semanticArchetypes = [
     // "Not at all" / "Never"

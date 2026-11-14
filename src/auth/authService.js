@@ -124,6 +124,7 @@ export async function authenticate({ email, password, selectedRole }) {
 
   // Attempt backend PostgreSQL authentication if server is reachable
   let backendUser = null;
+  let backendRedirectUrl = null;
   try {
     const apiBase = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : '';
     const response = await fetch(`${apiBase}/api/auth/login`, {
@@ -132,22 +133,29 @@ export async function authenticate({ email, password, selectedRole }) {
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: JSON.stringify({ email: trimmedEmail, password: trimmedPassword }),
+      body: JSON.stringify({
+        email: trimmedEmail,
+        password: trimmedPassword,
+        selected_role: selectedRole,
+      }),
     });
 
     if (response.ok) {
       const data = await response.json();
       if (data.access_token) {
         setAuthToken(data.access_token);
+        const resolvedRole = data.user?.role || data.role || (selectedRole === 'doctor' ? 'doctor' : 'patient');
         backendUser = {
-          id: data.user_id,
-          motherId: data.mother_id,
-          email: data.email || trimmedEmail,
-          role: data.role,
-          name: data.name,
+          id: data.user?.id || data.user_id,
+          motherId: data.user?.mother_id || data.mother_id,
+          email: data.user?.email || data.email || trimmedEmail,
+          role: resolvedRole,
+          name: data.user?.name || data.name || (resolvedRole === 'doctor' ? DEMO_ACCOUNTS.doctor.name : DEMO_ACCOUNTS.patient.name),
+          fullName: data.user?.fullName || data.fullName,
           token: data.access_token,
           authenticatedAt: new Date().toISOString(),
         };
+        backendRedirectUrl = data.redirect_url || (resolvedRole === 'doctor' || selectedRole === 'doctor' ? '/dashboard' : '/patient/dashboard');
       }
     } else if (response.status === 401 || response.status === 403) {
       const err = await response.json().catch(() => ({}));
@@ -177,9 +185,12 @@ export async function authenticate({ email, password, selectedRole }) {
       );
     }
     setCurrentUser(backendUser);
+    const targetRedirect = (backendUser.role === 'doctor' || selectedRole === 'doctor' || backendRedirectUrl === '/dashboard')
+      ? '/dashboard'
+      : '/patient/dashboard';
     return {
       user: backendUser,
-      redirectUrl: backendUser.role === 'doctor' ? '/dashboard' : '/patient/dashboard',
+      redirectUrl: targetRedirect,
     };
   }
 
@@ -241,7 +252,7 @@ export async function authenticate({ email, password, selectedRole }) {
 
   return {
     user: authenticatedUser,
-    redirectUrl: accountRole === 'doctor' ? '/dashboard' : '/patient/dashboard',
+    redirectUrl: accountRole === 'doctor' || selectedRole === 'doctor' ? '/dashboard' : '/patient/dashboard',
   };
 }
 
@@ -347,7 +358,7 @@ export async function registerAccount({ name, email, password, role }) {
 
   return {
     user: newUser,
-    redirectUrl: newUser.role === 'doctor' ? '/dashboard' : '/patient/dashboard',
+    redirectUrl: (newUser.role === 'doctor' || role === 'doctor') ? '/dashboard' : '/patient/dashboard',
   };
 }
 

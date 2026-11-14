@@ -55,3 +55,4 @@ def pytest_collection_modifyitems(config, items):
         file_path_str = str(item.fspath).replace("\\", "/")
         if any(indicator in file_path_str for indicator in offline_file_indicators):
             item.add_marker(skip_offline)
+

@@ -99,6 +99,7 @@ export function PatientScreeningPage() {
   const questionsRef = useRef(questions);
   const recognizedTranscriptRef = useRef('');
   const lastSavedScreeningIdRef = useRef(null);
+  const askedClarificationForQRef = useRef(null);
   const msgIdCounterRef = useRef(100);
 
   const nextMsgId = (prefix) => `${prefix}-${Date.now()}-${msgIdCounterRef.current++}`;
@@ -369,14 +370,27 @@ export function PatientScreeningPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('video/')) {
-      alert('Please select a valid video file (e.g. WebM, MP4).');
+    const isVideo = (file.type && file.type.startsWith('video/')) || /\.(mp4|webm|mov|mkv|avi|wmv|m4v)$/i.test(file.name);
+    if (!isVideo) {
+      alert('Please select a valid video file (e.g. WebM, MP4, MOV).');
       return;
     }
 
     setUploadedVideoFile(file);
     setVideoUploadStatus('analyzing');
     setIsVideoAnalyzing(true);
+
+    // Live preview uploaded video directly inside the video player
+    if (videoRef.current) {
+      try {
+        videoRef.current.srcObject = null;
+        videoRef.current.src = URL.createObjectURL(file);
+        videoRef.current.loop = true;
+        safePlayVideo(videoRef.current);
+      } catch (previewErr) {
+        console.warn('Video preview initialization notice:', previewErr);
+      }
+    }
 
     const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -415,11 +429,17 @@ export function PatientScreeningPage() {
       const videoReportMsg = {
         id: nextMsgId('msg-video-analysis-report'),
         sender: 'ai',
+        text: 'Multimodal Video PPD Analysis complete. Visual affective dynamics, eye-gaze engagement, and facial sentiment indicators are summarized below:',
         isVideoAnalysis: true,
         videoAnalysisData: analysisData,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages((prev) => [...prev, videoReportMsg]);
+      setTimeout(() => {
+        if (messagesEndRef.current?.scrollIntoView) {
+          messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
 
       // 4. If a persistent screening session exists, sync video to PostgreSQL
       if (lastSavedScreeningIdRef.current) {
@@ -821,7 +841,17 @@ export function PatientScreeningPage() {
     } else if (intent === 'START') {
       handleStart(clean, currentQ, timeStr);
     } else {
-      // Ambiguous / unclear input — do NOT assign score, ask for clarification
+      // If clarification was already requested for this question, do not trap the mother in a repeat loop
+      if (askedClarificationForQRef.current === currentQ.id) {
+        askedClarificationForQRef.current = null;
+        setSpeechStatus('confirmed');
+        const fallbackIdx = currentQ.response_options?.findIndex((o) => o.score === 0);
+        handleSelectOption(fallbackIdx >= 0 ? fallbackIdx : 0, clean);
+        return;
+      }
+
+      // Ambiguous / unclear input — ask for clarification once
+      askedClarificationForQRef.current = currentQ.id;
       setSpeechStatus('unrecognized');
       handleAmbiguousResponse(clean, currentQ, timeStr);
     }
@@ -878,6 +908,7 @@ export function PatientScreeningPage() {
   const handleSelectOption = async (selectedIndex, spokenTranscript = '') => {
     if (isSubmitting || currentIdxRef.current >= questionsRef.current.length) return;
 
+    askedClarificationForQRef.current = null;
     stopVoiceListening();
     recognizedTranscriptRef.current = '';
     setRecognizedTranscript('');
@@ -1159,6 +1190,13 @@ export function PatientScreeningPage() {
     } else if (intent === 'START') {
       handleStart(text, currentQ, timeStr);
     } else {
+      if (askedClarificationForQRef.current === currentQ.id) {
+        askedClarificationForQRef.current = null;
+        const fallbackIdx = currentQ.response_options?.findIndex((o) => o.score === 0);
+        handleSelectOption(fallbackIdx >= 0 ? fallbackIdx : 0, text);
+        return;
+      }
+      askedClarificationForQRef.current = currentQ.id;
       handleAmbiguousResponse(text, currentQ, timeStr);
     }
   };

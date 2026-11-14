@@ -114,7 +114,10 @@ export function LoginScreen() {
           password,
           selectedRole,
         });
-        navigate(result.redirectUrl);
+        const targetUrl = (result?.user?.role === 'doctor' || selectedRole === 'doctor' || result?.redirectUrl === '/dashboard')
+          ? '/dashboard'
+          : '/patient/dashboard';
+        navigate(targetUrl);
       } else {
         const result = await registerAccount({
           name,
@@ -122,7 +125,10 @@ export function LoginScreen() {
           password,
           role: selectedRole,
         });
-        navigate(result.redirectUrl);
+        const targetUrl = (result?.user?.role === 'doctor' || selectedRole === 'doctor' || result?.redirectUrl === '/dashboard')
+          ? '/dashboard'
+          : '/patient/dashboard';
+        navigate(targetUrl);
       }
     } catch (err) {
       setErrorMessage(err.message || 'An error occurred during authentication.');
@@ -139,7 +145,10 @@ export function LoginScreen() {
 
     try {
       const result = await authenticateWithGoogle(selectedRole);
-      navigate(result.redirectUrl);
+      const targetUrl = (result?.user?.role === 'doctor' || selectedRole === 'doctor' || result?.redirectUrl === '/dashboard')
+        ? '/dashboard'
+        : '/patient/dashboard';
+      navigate(targetUrl);
     } catch (err) {
       setErrorMessage(err.message || 'Google sign-in failed.');
     } finally {

@@ -138,8 +138,8 @@ describe('Miora Patient Portal Visual Refinement & Six Screens', () => {
 
     // Conversational panel
     expect(screen.getByText('Miora AI')).toBeInTheDocument();
-    expect(screen.getByText(/In the past two weeks, how often have you felt low, sad, or hopeless\?/i)).toBeInTheDocument();
-    expect(screen.getByText(/I've been feeling a bit low almost every day/i)).toBeInTheDocument();
+    expect(screen.getByText(/Hey! Hello, welcome to MIORA/i)).toBeInTheDocument();
+    expect(screen.getByText(/I have been able to laugh and see the funny side of things/i)).toBeInTheDocument();
 
     // Media toggle controls
     const camBtn = screen.getByRole('button', { name: /Turn camera off/i });
