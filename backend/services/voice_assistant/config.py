@@ -152,7 +152,8 @@ class VoiceAssistantConfig:
         )
         self.system_prompt_path: Path = system_prompt_path or DEFAULT_SYSTEM_PROMPT_PATH
         self.temperature: float = temperature
-        self.max_output_tokens: int = 1000
+        env_tokens = os.getenv("GEMINI_MAX_TOKENS", "").strip()
+        self.max_output_tokens: int = int(env_tokens) if env_tokens.isdigit() else max_output_tokens
         self._cached_prompt: Optional[str] = None
 
     @property
