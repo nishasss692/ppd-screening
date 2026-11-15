@@ -1,16 +1,16 @@
 import React, { useMemo } from 'react';
 import { NavLink, useNavigate, useSearchParams } from 'react-router-dom';
-import { useClinicalData } from '../../dashboard/context/ClinicalContext.jsx';
+import { usePatient } from '../context/PatientContext.jsx';
 import { getCurrentUser } from '../../auth/authService.js';
 import './screening-results.css';
 
 export function ScreeningResultsPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const clinical = useClinicalData();
+  const { screening, patient } = usePatient();
 
   const currentUser = getCurrentUser();
-  const patientName = currentUser?.name || 'Amara';
+  const patientName = patient?.name || currentUser?.name || 'Amara';
 
   const riskPercentage = useMemo(() => {
     const paramScore = searchParams.get('score');
@@ -19,25 +19,16 @@ export function ScreeningResultsPage() {
       return val <= 1 ? Math.round(val * 100) : Math.round(val);
     }
 
-    const motherParam = searchParams.get('mother') || 'M-108';
-    const match = clinical?.screenings?.find(
-      (s) => s.motherId?.toLowerCase() === motherParam.toLowerCase()
-    );
+    if (screening?.riskScore != null) {
+      return Number(screening.riskScore);
+    }
 
-    if (match) {
-      if (Array.isArray(match.riskHistory) && match.riskHistory.length > 0) {
-        const lastEntry = match.riskHistory[match.riskHistory.length - 1];
-        if (typeof lastEntry.score === 'number') {
-          return Math.round(lastEntry.score * 100);
-        }
-      }
-      if (typeof match.combinedScore === 'number') {
-        return Math.round(match.combinedScore * 100);
-      }
+    if (screening?.totalScore != null) {
+      return Math.round((Number(screening.totalScore) / 30) * 100);
     }
 
     return 64;
-  }, [searchParams, clinical]);
+  }, [searchParams, screening]);
 
   const gaugeRadius = 50;
   const gaugeCircumference = 2 * Math.PI * gaugeRadius;
@@ -159,7 +150,9 @@ export function ScreeningResultsPage() {
               <span className="results-gauge-value">{riskPercentage}%</span>
             </div>
 
-            <span className="results-risk-label-pill">Moderate Risk Category</span>
+            <span className="results-risk-label-pill">
+              {riskPercentage >= 43 ? 'High Risk Category' : riskPercentage >= 33 ? 'Moderate Risk Category' : 'Low Risk Category'}
+            </span>
           </div>
         </section>
 

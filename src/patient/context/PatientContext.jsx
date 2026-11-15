@@ -1,6 +1,22 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { getCurrentUser, getAuthToken } from '../../auth/authService.js';
-import { fetchPatientProfile, fetchPatientReportsOverview } from '../services/patientApiService.js';
+import {
+  fetchPatientProfile,
+  updatePatientProfile as apiUpdatePatientProfile,
+  fetchPatientReportsOverview,
+  fetchPatientScreenings,
+  downloadReportPdfBlob,
+  downloadTranscriptTxtBlob,
+  fetchPatientNotifications,
+  markNotificationAsReadApi,
+  markAllNotificationsAsReadApi,
+  fetchPatientAppointments,
+  bookPatientAppointment as apiBookPatientAppointment,
+  fetchPatientCarePlan,
+  toggleCarePlanTaskApi,
+  fetchPatientSettings,
+  updatePatientSettings as apiUpdatePatientSettings,
+} from '../services/patientApiService.js';
 
 const PatientContext = createContext(null);
 
@@ -98,7 +114,7 @@ export const DEFAULT_SCREENING = {
       id: 'step-retake',
       title: 'Retake screening (in 2 weeks)',
       type: 'screening',
-      link: '/patient/ai-screening',
+      link: '/patient/screening',
     },
   ],
 };
@@ -107,7 +123,7 @@ export const INITIAL_NOTIFICATIONS = [
   {
     id: 'n-1',
     title: 'Screening Report Available',
-    message: 'Your AI screening report for 17 Nov 2026 is ready to review and download.',
+    message: 'Your AI screening report is ready to review and download.',
     date: '17 Nov 2026',
     read: false,
   },
@@ -150,9 +166,9 @@ export const DEFAULT_CARE_PLAN = {
   currentDay: 1,
   focusAreas: ['Mood', 'Sleep', 'Stress', 'Support'],
   tasks: [
-    { id: 'task-1', title: 'Breathing exercise', completed: true },
-    { id: 'task-2', title: 'Mood check-in', completed: true },
-    { id: 'task-3', title: 'Sleep routine', completed: true },
+    { id: 'task-1', title: 'Breathing exercise', completed: false },
+    { id: 'task-2', title: 'Mood check-in', completed: false },
+    { id: 'task-3', title: 'Sleep routine', completed: false },
     { id: 'task-4', title: 'Journaling', completed: false },
     { id: 'task-5', title: 'Light activity', completed: false },
     { id: 'task-6', title: 'Self-care time', completed: false },
@@ -165,12 +181,12 @@ export function PatientProvider({ children }) {
     try {
       const authUser = getCurrentUser();
       if (authUser && authUser.role === 'patient') {
-        const parts = (authUser.name || 'Amara Wilson').trim().split(/\s+/);
+        const parts = (authUser.name || authUser.fullName || 'Amara').trim().split(/\s+/);
         const firstName = parts[0] || 'Amara';
         return {
           id: authUser.id || 'P-101',
           name: firstName,
-          fullName: authUser.name || 'Amara Wilson',
+          fullName: authUser.fullName || authUser.name || 'Amara Wilson',
           email: authUser.email || 'amara@miora.health',
           avatarInitials: firstName[0]?.toUpperCase() || 'A',
           postpartumWeek: authUser.postpartumWeek || 4,
@@ -181,12 +197,23 @@ export function PatientProvider({ children }) {
     }
     return DEFAULT_PATIENT;
   });
+
   const [screening, setScreening] = useState(DEFAULT_SCREENING);
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
-  const [consultations] = useState(INITIAL_CONSULTATIONS);
+  const [consultations, setConsultations] = useState(INITIAL_CONSULTATIONS);
   const [downloadToast, setDownloadToast] = useState(null);
   const [persistentScreenings, setPersistentScreenings] = useState([]);
   const [isLoadingBackendData, setIsLoadingBackendData] = useState(false);
+  const [carePlan, setCarePlan] = useState(DEFAULT_CARE_PLAN);
+  const [settings, setSettings] = useState({
+    camera_permission: 'prompt',
+    mic_permission: 'prompt',
+    email_notifs: true,
+    consultation_alerts: true,
+    confidential_mode: true,
+    language: 'en',
+    voice_locale: 'en-IN',
+  });
 
   const reloadPatientData = useCallback(async () => {
     const authUser = getCurrentUser();
@@ -195,54 +222,115 @@ export function PatientProvider({ children }) {
 
     try {
       setIsLoadingBackendData(true);
-      const [profileRes, reportsRes] = await Promise.allSettled([
+      const [
+        profileRes,
+        reportsRes,
+        screeningsRes,
+        notifsRes,
+        apptsRes,
+        carePlanRes,
+        settingsRes,
+      ] = await Promise.allSettled([
         fetchPatientProfile(),
         fetchPatientReportsOverview(),
+        fetchPatientScreenings(),
+        fetchPatientNotifications(),
+        fetchPatientAppointments(),
+        fetchPatientCarePlan(),
+        fetchPatientSettings(),
       ]);
 
+      // 1. Profile
       if (profileRes.status === 'fulfilled' && profileRes.value) {
         const prof = profileRes.value;
         const firstName = (prof.full_name || authUser.name || 'Amara').trim().split(/\s+/)[0];
         setPatient((prev) => ({
           ...prev,
-          id: prof.mother_id || prev.id,
+          id: prof.id ? `P-${prof.id.slice(0, 8).toUpperCase()}` : prev.id,
+          motherId: prof.id,
           userId: prof.user_id,
           name: firstName,
           fullName: prof.full_name || prev.fullName,
           email: prof.email || prev.email,
+          phone: prof.phone || prev.phone,
           avatarInitials: firstName[0]?.toUpperCase() || 'A',
-          postpartumWeek: prof.postpartum_week || prev.postpartumWeek,
+          postpartumWeek: prof.postpartum_week ?? prev.postpartumWeek,
+          emergencyContact: prof.emergency_contact,
         }));
       }
 
-      if (reportsRes.status === 'fulfilled' && reportsRes.value) {
-        const reportsData = reportsRes.value;
-        if (Array.isArray(reportsData.screenings) && reportsData.screenings.length > 0) {
-          setPersistentScreenings(reportsData.screenings);
-          const latest = reportsData.screenings[0];
-          const riskPct = Math.round(((latest.total_score || 0) / 30) * 100);
-          const formattedDate = new Date(latest.created_at).toLocaleDateString('en-GB', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-          });
-          const timePart = new Date(latest.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          setScreening((prev) => ({
-            ...prev,
-            id: latest.id,
-            date: formattedDate,
-            completedDateTime: `${formattedDate} · ${timePart}`,
-            latestDate: `${formattedDate} · ${timePart}`,
-            riskScore: riskPct,
-            riskLabel: `${latest.classification} (EPDS ${latest.total_score}/30)`,
-            summary: latest.clinical_significance || prev.summary,
-            q10Alert: latest.q10_safety_alert,
-            submittedAnswers: latest.submitted_answers,
-          }));
-        }
+      // 2. Screenings & History
+      if (screeningsRes.status === 'fulfilled' && Array.isArray(screeningsRes.value) && screeningsRes.value.length > 0) {
+        const scrList = screeningsRes.value;
+        setPersistentScreenings(scrList);
+
+        const latest = scrList[0];
+        const riskPct = Math.round(((latest.total_score || 0) / 30) * 100);
+        const formattedDate = new Date(latest.screening_date || latest.created_at).toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        });
+        const timePart = new Date(latest.screening_date || latest.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        // Build trend points from real historical screenings
+        const reversed = [...scrList].reverse();
+        const trendPoints = reversed.map((s, idx) => ({
+          week: `Check-in ${idx + 1}`,
+          score: Math.round(((s.total_score || 0) / 30) * 100),
+          date: new Date(s.screening_date || s.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
+        }));
+
+        setScreening((prev) => ({
+          ...prev,
+          id: latest.id,
+          date: formattedDate,
+          completedDateTime: `${formattedDate} · ${timePart}`,
+          latestDate: `${formattedDate} · ${timePart}`,
+          riskScore: riskPct,
+          riskLabel: `${(latest.risk_classification || 'moderate').toUpperCase()} Risk (EPDS ${latest.total_score}/30)`,
+          summary: latest.notes || `EPDS Assessment score: ${latest.total_score}/30`,
+          q10Alert: latest.q10_safety_alert,
+          submittedAnswers: latest.submitted_answers,
+          itemScores: latest.item_scores,
+          trend: trendPoints.length > 1 ? trendPoints : prev.trend,
+        }));
+      } else if (reportsRes.status === 'fulfilled' && reportsRes.value?.latest_screening) {
+        const latest = reportsRes.value.latest_screening;
+        setScreening((prev) => ({
+          ...prev,
+          id: latest.id,
+          date: latest.date,
+          completedDateTime: latest.completedDateTime,
+          latestDate: latest.completedDateTime,
+          riskScore: latest.riskScore,
+          riskLabel: latest.riskLabel,
+          summary: latest.summary,
+          q10Alert: latest.q10SafetyAlert,
+        }));
       }
-    } catch {
-      // Keep sensible local mock state
+
+      // 3. Notifications
+      if (notifsRes.status === 'fulfilled' && Array.isArray(notifsRes.value)) {
+        setNotifications(notifsRes.value);
+      }
+
+      // 4. Appointments
+      if (apptsRes.status === 'fulfilled' && Array.isArray(apptsRes.value) && apptsRes.value.length > 0) {
+        setConsultations(apptsRes.value);
+      }
+
+      // 5. Care Plan
+      if (carePlanRes.status === 'fulfilled' && carePlanRes.value?.tasks) {
+        setCarePlan(carePlanRes.value);
+      }
+
+      // 6. Settings
+      if (settingsRes.status === 'fulfilled' && settingsRes.value) {
+        setSettings(settingsRes.value);
+      }
+    } catch (err) {
+      console.warn('Backend patient data sync notice:', err);
     } finally {
       setIsLoadingBackendData(false);
     }
@@ -251,48 +339,96 @@ export function PatientProvider({ children }) {
   useEffect(() => {
     reloadPatientData();
   }, [reloadPatientData]);
-  const [carePlan, setCarePlan] = useState(() => {
-    try {
-      const saved = localStorage.getItem('miora_care_plan_v1');
-      if (saved) return JSON.parse(saved);
-    } catch {
-      // ignore
-    }
-    return DEFAULT_CARE_PLAN;
-  });
 
-  const toggleCareTask = (taskId) => {
-    setCarePlan((prev) => {
-      const updated = {
+  // Update profile handler connected to PostgreSQL
+  const updatePatientProfile = async (profileData) => {
+    try {
+      const updated = await apiUpdatePatientProfile({
+        name: profileData.fullName || profileData.name,
+        full_name: profileData.fullName || profileData.name,
+        phone: profileData.phone,
+        email: profileData.email,
+        postpartum_week: profileData.postpartumWeek,
+        emergency_contact: profileData.emergencyContact,
+      });
+
+      const firstName = (updated.full_name || updated.name || 'Amara').trim().split(/\s+/)[0];
+      setPatient((prev) => ({
         ...prev,
-        tasks: (prev.tasks || DEFAULT_CARE_PLAN.tasks).map((t) =>
-          t.id === taskId ? { ...t, completed: !t.completed } : t
-        ),
-      };
-      try {
-        localStorage.setItem('miora_care_plan_v1', JSON.stringify(updated));
-      } catch {
-        // ignore
-      }
+        name: firstName,
+        fullName: updated.full_name || updated.name,
+        email: updated.email || prev.email,
+        phone: updated.phone || prev.phone,
+        postpartumWeek: updated.postpartum_week ?? prev.postpartumWeek,
+        emergencyContact: updated.emergency_contact,
+      }));
       return updated;
-    });
+    } catch (err) {
+      console.error('Failed to update patient profile:', err);
+      throw err;
+    }
   };
 
-  const markNotificationRead = (id) => {
+  // Toggle Care Task connected to PostgreSQL
+  const toggleCareTask = async (taskId) => {
+    // Optimistic UI update
+    setCarePlan((prev) => ({
+      ...prev,
+      tasks: (prev.tasks || DEFAULT_CARE_PLAN.tasks).map((t) =>
+        t.id === taskId ? { ...t, completed: !t.completed } : t
+      ),
+    }));
+
+    try {
+      const res = await toggleCarePlanTaskApi(taskId);
+      if (res?.tasks) {
+        setCarePlan((prev) => ({ ...prev, tasks: res.tasks }));
+      }
+    } catch (err) {
+      console.warn('Could not persist task toggle to backend:', err);
+    }
+  };
+
+  // Notification handlers connected to PostgreSQL
+  const markNotificationRead = async (id) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
+    try {
+      await markNotificationAsReadApi(id);
+    } catch (err) {
+      console.warn('Could not mark notification read on backend:', err);
+    }
   };
 
-  const markAllNotificationsRead = () => {
+  const markAllNotificationsRead = async () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    try {
+      await markAllNotificationsAsReadApi();
+    } catch (err) {
+      console.warn('Could not mark all notifications read on backend:', err);
+    }
   };
 
-  // Secure report download action respecting authorization
-  const downloadReport = (report) => {
+  // Book appointment connected to PostgreSQL
+  const bookAppointment = async (appointmentData) => {
+    const booked = await apiBookPatientAppointment(appointmentData);
+    setConsultations((prev) => [booked, ...prev]);
+    await reloadPatientData();
+    return booked;
+  };
+
+  // Update Settings connected to PostgreSQL
+  const updateSettings = async (newSettings) => {
+    const updated = await apiUpdatePatientSettings(newSettings);
+    setSettings(updated);
+    return updated;
+  };
+
+  // Genuine Report Download streaming from FastAPI backend
+  const downloadReport = async (report) => {
     if (!report) return { success: false, error: 'No report selected' };
 
-    // Authorization check
     if (!report.authorized) {
       const errorMsg = 'Access Denied: You are not authorized to download this file.';
       setDownloadToast({ type: 'error', message: errorMsg });
@@ -301,33 +437,38 @@ export function PatientProvider({ children }) {
     }
 
     try {
-      let content = '';
+      let blob = null;
+      let targetFilename = report.filename || `${report.title.replace(/\s+/g, '_')}${report.format}`;
+
+      const targetScreeningId = screening?.id && screening.id.startsWith('SCR-') ? null : screening?.id;
+
       if (report.type === 'pdf') {
-        content = `%PDF-1.4\n% Miora Maternal Emotional Intelligence Report\n% Patient: ${patient.fullName} (${patient.id})\n% Screening Date: ${screening.date}\n% Risk Score: ${screening.riskScore}% (${screening.riskLabel})\n% Summary: ${screening.summary}\n%%EOF`;
+        blob = await downloadReportPdfBlob(targetScreeningId);
+        if (!targetFilename.endsWith('.pdf')) targetFilename += '.pdf';
       } else if (report.type === 'txt') {
-        content = `MIORA SCREENING CONVERSATION TRANSCRIPT\nDate: ${screening.date}\nPatient: ${patient.fullName}\n\n[10:24 AM] Miora AI: Hi Amara! I'm Miora, your AI screening companion.\n[10:24 AM] Amara: Yes, we can start.\n[10:25 AM] Miora AI: In the past two weeks, how often have you felt low, sad, or hopeless?\n[10:25 AM] Amara: I've been feeling a bit low almost every day.\n`;
-      } else if (report.type === 'wav') {
-        content = 'RIFF....WAVEfmt ....data....Miora Audio Session Mock Data';
+        blob = await downloadTranscriptTxtBlob(targetScreeningId);
+        if (!targetFilename.endsWith('.txt')) targetFilename += '.txt';
       } else {
-        content = 'ftypisom....moov....Miora Video Recording Mock Data';
+        // Fallback for audio/video media if requested
+        blob = new Blob(['MIORA multimodal screening media recording'], { type: report.mimeType || 'application/octet-stream' });
       }
 
-      const blob = new Blob([content], { type: report.mimeType || 'application/octet-stream' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = report.filename || `${report.title.replace(/\s+/g, '_')}${report.format}`;
+      a.download = targetFilename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      const msg = `Downloaded ${report.title} (${report.format.toUpperCase()})`;
+      const msg = `Downloaded ${report.title} (${report.format?.toUpperCase() || 'FILE'})`;
       setDownloadToast({ type: 'success', message: msg });
       setTimeout(() => setDownloadToast(null), 3500);
       return { success: true };
     } catch (err) {
-      const errorMsg = 'An error occurred while downloading the file.';
+      console.error('Report download error:', err);
+      const errorMsg = 'An error occurred while downloading the file from server.';
       setDownloadToast({ type: 'error', message: errorMsg });
       setTimeout(() => setDownloadToast(null), 4000);
       return { success: false, error: errorMsg };
@@ -337,23 +478,39 @@ export function PatientProvider({ children }) {
   const value = useMemo(
     () => ({
       patient,
+      updatePatientProfile,
       screening,
       setScreening,
       notifications,
       markNotificationRead,
       markAllNotificationsRead,
       consultations,
+      setConsultations,
+      bookAppointment,
       downloadReport,
       downloadToast,
       setDownloadToast,
       carePlan,
       setCarePlan,
       toggleCareTask,
+      settings,
+      updateSettings,
       persistentScreenings,
       reloadPatientData,
       isLoadingBackendData,
     }),
-    [patient, screening, notifications, consultations, downloadToast, carePlan, persistentScreenings, reloadPatientData, isLoadingBackendData]
+    [
+      patient,
+      screening,
+      notifications,
+      consultations,
+      downloadToast,
+      carePlan,
+      settings,
+      persistentScreenings,
+      reloadPatientData,
+      isLoadingBackendData,
+    ]
   );
 
   return <PatientContext.Provider value={value}>{children}</PatientContext.Provider>;
@@ -362,9 +519,9 @@ export function PatientProvider({ children }) {
 export function usePatient() {
   const context = useContext(PatientContext);
   if (!context) {
-    // Provide sensible default fallback if used outside provider
     return {
       patient: DEFAULT_PATIENT,
+      updatePatientProfile: async () => {},
       screening: DEFAULT_SCREENING,
       notifications: INITIAL_NOTIFICATIONS,
       consultations: INITIAL_CONSULTATIONS,
@@ -373,9 +530,12 @@ export function usePatient() {
       setCarePlan: () => {},
       markNotificationRead: () => {},
       markAllNotificationsRead: () => {},
+      bookAppointment: async () => {},
       downloadReport: () => ({ success: true }),
       downloadToast: null,
       setDownloadToast: () => {},
+      settings: {},
+      updateSettings: async () => {},
     };
   }
   return context;

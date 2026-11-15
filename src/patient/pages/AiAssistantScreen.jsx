@@ -15,6 +15,7 @@ import {
   LOCALIZED_EPDS_VALIDATION_PROMPTS,
   TRANSLATION_PROVENANCE_INFO,
 } from '../services/voiceAssistantService.js';
+import { fetchPatientAiConversations, savePatientAiConversations } from '../services/patientApiService.js';
 import '../styles/ai-assistant.css';
 
 // SVG Icons matching Miora's clean refined stroke style
@@ -244,6 +245,24 @@ export function AiAssistantScreen() {
   const [q10CrisisAlert, setQ10CrisisAlert] = useState(false);
   const [screeningError, setScreeningError] = useState(null);
 
+  // Load saved AI assistant conversations from PostgreSQL
+  useEffect(() => {
+    let mounted = true;
+    fetchPatientAiConversations()
+      .then((data) => {
+        if (mounted && Array.isArray(data?.messages) && data.messages.length > 0) {
+          setMessages(data.messages);
+        }
+        if (mounted && data?.current_mood) {
+          setActiveMood(data.current_mood);
+        }
+      })
+      .catch(() => { });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   // Load supported languages metadata from backend
   useEffect(() => {
     let mounted = true;
@@ -292,7 +311,7 @@ export function AiAssistantScreen() {
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
-        } catch {}
+        } catch { }
       }
     };
   }, []);
@@ -384,7 +403,7 @@ export function AiAssistantScreen() {
     if (isListening) {
       try {
         recognitionRef.current?.stop();
-      } catch {}
+      } catch { }
       setIsListening(false);
       return;
     }
@@ -459,6 +478,7 @@ export function AiAssistantScreen() {
   const handleSelectMood = (mood) => {
     setActiveMood(mood.id);
     setPatientMood?.(mood.label);
+    savePatientAiConversations(messages, mood.id).catch(() => { });
   };
 
   // ============================================================================
@@ -657,7 +677,7 @@ export function AiAssistantScreen() {
 
         // Trigger persistent sync to reload database-backed patient reports
         if (typeof reloadPatientData === 'function') {
-          reloadPatientData().catch(() => {});
+          reloadPatientData().catch(() => { });
         }
 
         // Cross-record screening in doctor dashboard for clinician visibility
@@ -744,7 +764,7 @@ export function AiAssistantScreen() {
     if (isListening) {
       try {
         recognitionRef.current?.stop();
-      } catch {}
+      } catch { }
       setIsListening(false);
     }
 
@@ -890,7 +910,11 @@ export function AiAssistantScreen() {
         language: response.language,
       };
 
-      setMessages((prev) => [...prev, botReply]);
+      setMessages((prev) => {
+        const updated = [...prev, botReply];
+        savePatientAiConversations(updated, activeMood).catch(() => { });
+        return updated;
+      });
     } catch (err) {
       console.warn('Voice assistant backend communication failed, providing fallback:', err);
       const fallbackReply = {
@@ -908,7 +932,11 @@ export function AiAssistantScreen() {
         voiceLocale: 'en-IN',
         language: 'en',
       };
-      setMessages((prev) => [...prev, fallbackReply]);
+      setMessages((prev) => {
+        const updated = [...prev, fallbackReply];
+        savePatientAiConversations(updated, activeMood).catch(() => { });
+        return updated;
+      });
     } finally {
       setIsTyping(false);
     }
@@ -1079,13 +1107,12 @@ export function AiAssistantScreen() {
                               Score: {msg.screeningResult.total_score} / {msg.screeningResult.maximum_score || 30}
                             </span>
                             <span
-                              className={`companion-result-tier ${
-                                msg.screeningResult.total_score >= 13
-                                  ? 'is-probable'
-                                  : msg.screeningResult.total_score >= 10
+                              className={`companion-result-tier ${msg.screeningResult.total_score >= 13
+                                ? 'is-probable'
+                                : msg.screeningResult.total_score >= 10
                                   ? 'is-possible'
                                   : 'is-low'
-                              }`}
+                                }`}
                             >
                               {msg.screeningResult.classification}
                             </span>

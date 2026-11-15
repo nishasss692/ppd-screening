@@ -452,7 +452,9 @@ export function PatientReportsPage() {
               <div className="detail-stat-box">
                 <span className="detail-stat-label">Edinburgh PPD Score</span>
                 <span className="detail-stat-val">
-                  {screening?.epdsResult?.total_score !== undefined
+                  {screening?.totalScore !== undefined
+                    ? `${screening.totalScore} / 30`
+                    : screening?.epdsResult?.total_score !== undefined
                     ? `${screening.epdsResult.total_score} / ${screening.epdsResult.maximum_score || 30}`
                     : '14 / 30'}
                 </span>
@@ -476,7 +478,7 @@ export function PatientReportsPage() {
               <button
                 type="button"
                 className="patient-btn-primary"
-                onClick={() => downloadReport({ title: 'Full Screening Report', filename: 'Miora_Screening_17Nov2026.pdf', type: 'pdf' })}
+                onClick={() => downloadReport({ title: 'Full Screening Report', filename: `Miora_Screening_${screening?.date ? screening.date.replace(/\s+/g, '_') : 'Report'}.pdf`, type: 'pdf', authorized: true })}
               >
                 <PatientIcon name="download" size={14} />
                 <span>Download Official PDF</span>

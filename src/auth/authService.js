@@ -313,6 +313,7 @@ export async function registerAccount({ name, email, password, role }) {
         body: JSON.stringify({
           email: trimmedEmail,
           password: trimmedPassword,
+          name: trimmedName,
           full_name: trimmedName,
         }),
       });

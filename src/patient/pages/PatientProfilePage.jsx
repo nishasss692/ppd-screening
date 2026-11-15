@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePatient } from '../context/PatientContext.jsx';
 
 export function PatientProfilePage() {
@@ -13,21 +13,48 @@ export function PatientProfilePage() {
     emergencyPhone: patient?.emergencyContact?.phone || '',
   });
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    if (patient) {
+      setFormData({
+        fullName: patient.fullName || patient.name || '',
+        email: patient.email || '',
+        phone: patient.phone || '',
+        postpartumWeek: patient.postpartumWeek || 4,
+        emergencyName: patient.emergencyContact?.name || '',
+        emergencyPhone: patient.emergencyContact?.phone || '',
+      });
+    }
+  }, [patient]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    updatePatientProfile({
-      fullName: formData.fullName,
-      email: formData.email,
-      phone: formData.phone,
-      postpartumWeek: Number(formData.postpartumWeek),
-      emergencyContact: formData.emergencyName
-        ? { name: formData.emergencyName, phone: formData.emergencyPhone }
-        : null,
-    });
-    setIsEditing(false);
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3000);
+    setIsSaving(true);
+    setSaveError('');
+    setSaveSuccess(false);
+
+    try {
+      if (updatePatientProfile) {
+        await updatePatientProfile({
+          fullName: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          postpartumWeek: Number(formData.postpartumWeek),
+          emergencyContact: formData.emergencyName
+            ? { name: formData.emergencyName, phone: formData.emergencyPhone }
+            : null,
+        });
+      }
+      setIsEditing(false);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3500);
+    } catch (err) {
+      setSaveError(err.message || 'Failed to update profile. Please check your connection.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -42,15 +69,15 @@ export function PatientProfilePage() {
         </p>
       </div>
 
-      {patient?.isDemoFixture && (
-        <div style={{ background: '#f5f5f5', border: '1px solid #e0e0e0', borderRadius: 8, padding: '9px 14px', marginBottom: 20, fontSize: 12, color: '#666' }}>
-          <strong>Demo Profile Preview:</strong> You are currently viewing the default demo identity (Sadiya Rahman). Register or sign in with your account to manage a personalized profile.
+      {saveSuccess && (
+        <div style={{ background: 'var(--patient-success-bg, #ecfdf5)', color: 'var(--patient-success, #059669)', border: '1px solid #a7f3d0', padding: '10px 16px', borderRadius: 8, marginBottom: 16, fontSize: 13 }}>
+          ✓ Profile details updated and saved to database successfully.
         </div>
       )}
 
-      {saveSuccess && (
-        <div style={{ background: 'var(--patient-success-bg)', color: 'var(--patient-success)', padding: '10px 16px', borderRadius: 8, marginBottom: 16, fontSize: 13 }}>
-          ✓ Profile details updated successfully.
+      {saveError && (
+        <div style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca', padding: '10px 16px', borderRadius: 8, marginBottom: 16, fontSize: 13 }}>
+          ✕ {saveError}
         </div>
       )}
 
@@ -70,7 +97,10 @@ export function PatientProfilePage() {
           </div>
           <button
             type="button"
-            onClick={() => setIsEditing((prev) => !prev)}
+            onClick={() => {
+              setIsEditing((prev) => !prev);
+              setSaveError('');
+            }}
             style={{
               background: isEditing ? 'none' : 'var(--patient-primary-subtle)',
               border: '1px solid var(--patient-primary)',
@@ -134,7 +164,7 @@ export function PatientProfilePage() {
               <input
                 type="text"
                 value={formData.emergencyName}
-                placeholder="Optional partner, relative or friend"
+                placeholder="Partner, relative, or friend"
                 onChange={(e) => setFormData({ ...formData, emergencyName: e.target.value })}
                 style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--patient-border)', borderRadius: 6, fontSize: 13 }}
               />
@@ -144,7 +174,7 @@ export function PatientProfilePage() {
               <input
                 type="tel"
                 value={formData.emergencyPhone}
-                placeholder="Optional"
+                placeholder="Contact number"
                 onChange={(e) => setFormData({ ...formData, emergencyPhone: e.target.value })}
                 style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--patient-border)', borderRadius: 6, fontSize: 13 }}
               />
@@ -152,6 +182,7 @@ export function PatientProfilePage() {
             <div style={{ gridColumn: 'span 2', marginTop: 8 }}>
               <button
                 type="submit"
+                disabled={isSaving}
                 style={{
                   background: 'var(--patient-primary)',
                   border: 'none',
@@ -160,10 +191,11 @@ export function PatientProfilePage() {
                   borderRadius: 8,
                   fontWeight: 600,
                   fontSize: 13,
-                  cursor: 'pointer',
+                  cursor: isSaving ? 'not-allowed' : 'pointer',
+                  opacity: isSaving ? 0.7 : 1,
                 }}
               >
-                Save Changes
+                {isSaving ? 'Saving to Database...' : 'Save Changes'}
               </button>
             </div>
           </form>
@@ -187,8 +219,8 @@ export function PatientProfilePage() {
             </div>
             <div>
               <span style={{ display: 'block', fontSize: 11, color: 'var(--patient-text-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Account Status</span>
-              <strong style={{ fontSize: 13.5, color: patient?.isDemoFixture ? '#888' : 'var(--patient-success)' }}>
-                {patient?.isDemoFixture ? 'Demo Mode' : 'Active Account'}
+              <strong style={{ fontSize: 13.5, color: 'var(--patient-success, #059669)' }}>
+                Active (Connected to PostgreSQL)
               </strong>
             </div>
           </div>

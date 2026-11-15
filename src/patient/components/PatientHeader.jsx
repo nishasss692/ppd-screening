@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { usePatient } from '../context/PatientContext.jsx';
+import { signOutUser } from '../../auth/authService.js';
 import { PatientIcon } from './PatientIcons.jsx';
 
 export function PatientHeader({ onToggleMobile }) {
@@ -206,6 +207,7 @@ export function PatientHeader({ onToggleMobile }) {
                 className="patient-popover-item is-logout"
                 onClick={() => {
                   setProfileDropdownOpen(false);
+                  signOutUser();
                   navigate('/login');
                 }}
               >

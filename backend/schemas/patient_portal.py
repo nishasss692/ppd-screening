@@ -1,16 +1,17 @@
 """Pydantic schemas for Patient Portal, Authentication, and Persistence."""
 
 from datetime import date, datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 import uuid
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
 
 class PatientRegisterRequest(BaseModel):
     """Registration request payload for a new postpartum mother / patient."""
 
-    name: str = Field(..., min_length=2, max_length=200, description="Full name of the mother")
+    name: Optional[str] = Field(None, min_length=2, max_length=200, description="Full name of the mother")
+    full_name: Optional[str] = Field(None, min_length=2, max_length=200, description="Alias for name")
     email: str = Field(..., min_length=5, max_length=128, description="Email address for authentication")
     password: str = Field(..., min_length=6, max_length=128, description="Account password")
     age: Optional[int] = Field(None, ge=14, le=65, description="Mother's age in years")
@@ -18,6 +19,14 @@ class PatientRegisterRequest(BaseModel):
     delivery_date: Optional[date] = Field(None, description="Recent delivery date")
     pregnancy_type: Optional[str] = Field(None, max_length=64, description="Singleton, twins, etc.")
     postpartum_week: Optional[int] = Field(4, ge=0, le=104, description="Postpartum weeks elapsed")
+
+    @model_validator(mode="after")
+    def resolve_name(self) -> "PatientRegisterRequest":
+        if not self.name and self.full_name:
+            self.name = self.full_name
+        if not self.name:
+            raise ValueError("Full name is required.")
+        return self
 
 
 class AuthLoginRequest(BaseModel):
@@ -41,11 +50,20 @@ class PatientProfileUpdateRequest(BaseModel):
     """Payload to update patient profile."""
 
     name: Optional[str] = Field(None, min_length=2, max_length=200)
+    full_name: Optional[str] = Field(None, min_length=2, max_length=200)
     age: Optional[int] = Field(None, ge=14, le=65)
     phone: Optional[str] = Field(None, max_length=32)
     delivery_date: Optional[date] = None
     pregnancy_type: Optional[str] = Field(None, max_length=64)
     notes: Optional[str] = None
+    postpartum_week: Optional[int] = Field(None, ge=0, le=104)
+    emergency_contact: Optional[Dict[str, Any]] = None
+
+    @model_validator(mode="after")
+    def resolve_name(self) -> "PatientProfileUpdateRequest":
+        if not self.name and self.full_name:
+            self.name = self.full_name
+        return self
 
 
 class PatientProfileResponse(BaseModel):
@@ -65,6 +83,7 @@ class PatientProfileResponse(BaseModel):
     medical_history: Optional[str] = None
     notes: Optional[str] = None
     postpartum_week: Optional[int] = 4
+    emergency_contact: Optional[Dict[str, Any]] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -73,7 +92,7 @@ class MedicalHistoryUpdateRequest(BaseModel):
     """Medical history update payload."""
 
     prior_ppd_diagnosis: Optional[str] = Field(None, description="'yes' | 'no' | 'not-sure'")
-    medical_history: Optional[str] = Field(None, description="Detailed medical / psychiatric history text")
+    medical_history: Optional[Union[str, Dict[str, Any]]] = Field(None, description="Detailed medical / psychiatric history text or data")
     uploaded_files: Optional[List[Dict[str, Any]]] = Field(default_factory=list, description="Metadata of uploaded reports")
 
 
@@ -132,3 +151,81 @@ class PatientReportsOverviewResponse(BaseModel):
     screenings: List[Dict[str, Any]] = Field(default_factory=list)
     care_plan: Optional[Dict[str, Any]] = None
 
+
+class AppointmentBookRequest(BaseModel):
+    """Appointment booking payload from Connect to a Doctor."""
+
+    doctor_name: str = Field("Dr. Elena Rostova", description="Doctor name")
+    role: str = Field("Perinatal Psychiatry Lead", description="Clinician designation")
+    date: str = Field(..., description="Target appointment date (e.g. '2026-11-25' or '25 Nov 2026')")
+    time: str = Field("11:00 AM", description="Target appointment time")
+    type: str = Field("Telehealth Video", description="Consultation format")
+    clinic: str = Field("Miora Maternal Care Unit", description="Clinic location / department")
+    reason: Optional[str] = Field(None, description="Reason for consult")
+
+
+class AppointmentResponse(BaseModel):
+    """Appointment item for patient consultations."""
+
+    id: str
+    doctorName: str
+    role: str
+    date: str
+    time: str
+    status: str = "Scheduled"
+    type: str
+    clinic: str
+    summary: Optional[str] = None
+
+
+class NotificationItemResponse(BaseModel):
+    """Notification item for patient header & alerts."""
+
+    id: str
+    title: str
+    message: str
+    date: str
+    read: bool = False
+
+
+class PatientSettingsRequest(BaseModel):
+    """Patient settings update payload."""
+
+    camera_permission: Optional[str] = None
+    mic_permission: Optional[str] = None
+    email_notifs: Optional[bool] = None
+    consultation_alerts: Optional[bool] = None
+    confidential_mode: Optional[bool] = None
+    language: Optional[str] = None
+    voice_locale: Optional[str] = None
+
+
+class PatientSettingsResponse(BaseModel):
+    """Patient settings retrieval response."""
+
+    camera_permission: str = "prompt"
+    mic_permission: str = "prompt"
+    email_notifs: bool = True
+    consultation_alerts: bool = True
+    confidential_mode: bool = True
+    language: str = "en"
+    voice_locale: str = "en-IN"
+
+
+class AiConversationMessageItem(BaseModel):
+    """Single message in AI assistant conversation history."""
+
+    id: str
+    sender: str  # 'user' | 'bot'
+    text: str
+    timestamp: Optional[str] = None
+    isEmergency: Optional[bool] = False
+    isFallback: Optional[bool] = False
+    mood: Optional[str] = None
+
+
+class AiConversationSaveRequest(BaseModel):
+    """Payload to save an AI conversation turn or update."""
+
+    messages: List[AiConversationMessageItem]
+    current_mood: Optional[str] = None

@@ -10,7 +10,7 @@ export function PatientHomePage() {
 
   const patientName = patient?.name || 'Amara';
   const riskScore = screening?.riskScore ?? 64;
-  const riskLabel = screening?.riskLevel ?? 'Moderate Attention';
+  const riskLabel = screening?.riskLabel || screening?.riskLevel || 'Moderate Attention';
 
   // Gauge calculations for 54px circle (radius 22, circumference ~138.23)
   const radius = 22;

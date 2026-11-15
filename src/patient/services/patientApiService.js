@@ -198,3 +198,246 @@ export async function fetchPatientReportsOverview() {
   return response.json();
 }
 
+/**
+ * Download genuine screening report PDF as a Blob from FastAPI backend.
+ */
+export async function downloadReportPdfBlob(screeningId) {
+  const url = screeningId
+    ? `${getApiBase()}/api/patients/me/screenings/${screeningId}/report.pdf`
+    : `${getApiBase()}/api/patients/me/reports/latest/pdf`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: getHeaders({ Accept: 'application/pdf' }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${response.status}: Failed to download PDF report`);
+  }
+
+  return response.blob();
+}
+
+/**
+ * Download genuine screening transcript TXT as a Blob from FastAPI backend.
+ */
+export async function downloadTranscriptTxtBlob(screeningId) {
+  const url = screeningId
+    ? `${getApiBase()}/api/patients/me/screenings/${screeningId}/transcript.txt`
+    : `${getApiBase()}/api/patients/me/reports/latest/transcript`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: getHeaders({ Accept: 'text/plain' }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${response.status}: Failed to download transcript`);
+  }
+
+  return response.blob();
+}
+
+/**
+ * Fetch patient appointments from GET /api/patients/me/appointments.
+ */
+export async function fetchPatientAppointments() {
+  const url = `${getApiBase()}/api/patients/me/appointments`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: getHeaders(),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${response.status}: Failed to fetch appointments`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Book an appointment via POST /api/patients/me/appointments.
+ */
+export async function bookPatientAppointment(appointmentData) {
+  const url = `${getApiBase()}/api/patients/me/appointments`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(appointmentData),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${response.status}: Failed to book appointment`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Fetch patient notifications from GET /api/patients/me/notifications.
+ */
+export async function fetchPatientNotifications() {
+  const url = `${getApiBase()}/api/patients/me/notifications`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: getHeaders(),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${response.status}: Failed to fetch notifications`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Mark a single notification as read.
+ */
+export async function markNotificationAsReadApi(notificationId) {
+  const url = `${getApiBase()}/api/patients/me/notifications/${notificationId}/read`;
+  const response = await fetch(url, {
+    method: 'PUT',
+    headers: getHeaders(),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${response.status}: Failed to mark notification read`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Mark all notifications as read.
+ */
+export async function markAllNotificationsAsReadApi() {
+  const url = `${getApiBase()}/api/patients/me/notifications/read-all`;
+  const response = await fetch(url, {
+    method: 'PUT',
+    headers: getHeaders(),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${response.status}: Failed to mark all notifications read`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Fetch care plan and task completion from GET /api/patients/me/care-plan.
+ */
+export async function fetchPatientCarePlan() {
+  const url = `${getApiBase()}/api/patients/me/care-plan`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: getHeaders(),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${response.status}: Failed to fetch care plan`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Toggle care plan task completion status via PUT /api/patients/me/care-plan/tasks/{task_id}.
+ */
+export async function toggleCarePlanTaskApi(taskId) {
+  const url = `${getApiBase()}/api/patients/me/care-plan/tasks/${taskId}`;
+  const response = await fetch(url, {
+    method: 'PUT',
+    headers: getHeaders(),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${response.status}: Failed to toggle care plan task`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Fetch patient device and privacy settings from GET /api/patients/me/settings.
+ */
+export async function fetchPatientSettings() {
+  const url = `${getApiBase()}/api/patients/me/settings`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: getHeaders(),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${response.status}: Failed to fetch settings`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Update patient settings via PUT /api/patients/me/settings.
+ */
+export async function updatePatientSettings(settingsData) {
+  const url = `${getApiBase()}/api/patients/me/settings`;
+  const response = await fetch(url, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify(settingsData),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${response.status}: Failed to update settings`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Fetch saved AI assistant conversations from GET /api/patients/me/ai-conversations.
+ */
+export async function fetchPatientAiConversations() {
+  const url = `${getApiBase()}/api/patients/me/ai-conversations`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: getHeaders(),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${response.status}: Failed to fetch AI conversations`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Save AI assistant conversations to POST /api/patients/me/ai-conversations.
+ */
+export async function savePatientAiConversations(messages, currentMood = null) {
+  const url = `${getApiBase()}/api/patients/me/ai-conversations`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({
+      messages,
+      current_mood: currentMood,
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${response.status}: Failed to save AI conversations`);
+  }
+
+  return response.json();
+}

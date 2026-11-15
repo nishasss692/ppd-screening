@@ -71,7 +71,9 @@ export function MedicalHistoryScreen() {
         if (data.prior_ppd_diagnosis) {
           setSelectedOption(data.prior_ppd_diagnosis);
         }
-        if (data.medical_history && Array.isArray(data.medical_history.uploadedFiles) && data.medical_history.uploadedFiles.length > 0) {
+        if (Array.isArray(data.uploaded_files) && data.uploaded_files.length > 0) {
+          setUploadedFiles(data.uploaded_files);
+        } else if (data.medical_history && Array.isArray(data.medical_history.uploadedFiles) && data.medical_history.uploadedFiles.length > 0) {
           setUploadedFiles(data.medical_history.uploadedFiles);
         }
       } catch {
@@ -177,7 +179,8 @@ export function MedicalHistoryScreen() {
       if (token) {
         await updateMedicalHistory({
           prior_ppd_diagnosis: selectedOption,
-          medical_history: { uploadedFiles },
+          uploaded_files: uploadedFiles,
+          medical_history: 'Clinical PPD history and documents updated by patient.',
         });
       }
     } catch (err) {

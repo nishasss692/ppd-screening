@@ -1,18 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePatient } from '../context/PatientContext.jsx';
 import { PatientIcon } from '../components/PatientIcons.jsx';
 
 export function PatientSettingsPage() {
+  const { settings, updateSettings } = usePatient();
+
   const [cameraPermission, setCameraPermission] = useState('prompt');
   const [micPermission, setMicPermission] = useState('prompt');
   const [emailNotifs, setEmailNotifs] = useState(true);
   const [consultationAlerts, setConsultationAlerts] = useState(true);
   const [confidentialMode, setConfidentialMode] = useState(true);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = () => {
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3000);
+  useEffect(() => {
+    if (settings) {
+      if (settings.camera_permission !== undefined) setCameraPermission(settings.camera_permission);
+      if (settings.mic_permission !== undefined) setMicPermission(settings.mic_permission);
+      if (settings.email_notifs !== undefined) setEmailNotifs(settings.email_notifs);
+      if (settings.consultation_alerts !== undefined) setConsultationAlerts(settings.consultation_alerts);
+      if (settings.confidential_mode !== undefined) setConfidentialMode(settings.confidential_mode);
+    }
+  }, [settings]);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      if (updateSettings) {
+        await updateSettings({
+          camera_permission: cameraPermission,
+          mic_permission: micPermission,
+          email_notifs: emailNotifs,
+          consultation_alerts: consultationAlerts,
+          confidential_mode: confidentialMode,
+        });
+      }
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3500);
+    } catch (err) {
+      console.warn('Could not save settings to backend:', err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -27,8 +56,8 @@ export function PatientSettingsPage() {
       </div>
 
       {saveSuccess && (
-        <div style={{ background: 'var(--patient-success-bg)', color: 'var(--patient-success)', padding: '10px 16px', borderRadius: 8, marginBottom: 16, fontSize: 13 }}>
-          ✓ Settings saved successfully.
+        <div style={{ background: 'var(--patient-success-bg, #ecfdf5)', color: 'var(--patient-success, #059669)', border: '1px solid #a7f3d0', padding: '10px 16px', borderRadius: 8, marginBottom: 16, fontSize: 13 }}>
+          ✓ Preferences saved successfully to database.
         </div>
       )}
 
@@ -92,6 +121,7 @@ export function PatientSettingsPage() {
           <button
             type="button"
             onClick={handleSave}
+            disabled={isSaving}
             style={{
               background: 'var(--patient-primary)',
               color: '#ffffff',
@@ -100,10 +130,11 @@ export function PatientSettingsPage() {
               borderRadius: 8,
               fontSize: 13,
               fontWeight: 600,
-              cursor: 'pointer',
+              cursor: isSaving ? 'not-allowed' : 'pointer',
+              opacity: isSaving ? 0.7 : 1,
             }}
           >
-            Save Preferences
+            {isSaving ? 'Saving...' : 'Save Preferences'}
           </button>
         </div>
       </div>

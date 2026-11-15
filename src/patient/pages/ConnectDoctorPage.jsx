@@ -5,7 +5,7 @@ import { PatientIcon } from '../components/PatientIcons.jsx';
 import './reports.css'; // shares report and consultation styles
 
 export function ConnectDoctorPage() {
-  const { consultations: contextConsultations, patient } = usePatient();
+  const { consultations: contextConsultations, patient, bookAppointment } = usePatient();
 
   const [consultationsList, setConsultationsList] = useState(
     contextConsultations || [
@@ -41,23 +41,49 @@ export function ConnectDoctorPage() {
   const [activeSummaryModal, setActiveSummaryModal] = useState(null);
   const [joiningRoomNotice, setJoiningRoomNotice] = useState(false);
 
-  const handleBookConsultation = (e) => {
-    e.preventDefault();
-    const newConsultation = {
-      id: `c-${Date.now()}`,
-      doctorName: 'Dr. Elena Rostova',
-      role: 'Perinatal Psychiatry Lead',
-      date: new Date(bookingDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-      time: bookingTime,
-      status: 'Scheduled',
-      type: selectedType,
-      clinic: 'Miora Maternal Care Unit',
-    };
+  React.useEffect(() => {
+    if (contextConsultations && contextConsultations.length > 0) {
+      setConsultationsList(contextConsultations);
+    }
+  }, [contextConsultations]);
 
-    setConsultationsList((prev) => [newConsultation, ...prev]);
-    setBookingModalOpen(false);
-    setBookingNotice('Consultation successfully scheduled with Dr. Elena Rostova!');
-    setTimeout(() => setBookingNotice(''), 5000);
+  const handleBookConsultation = async (e) => {
+    e.preventDefault();
+    try {
+      if (bookAppointment) {
+        const booked = await bookAppointment({
+          doctor_name: 'Dr. Elena Rostova',
+          role: 'Perinatal Psychiatry Lead',
+          date: bookingDate,
+          time: bookingTime,
+          type: selectedType,
+          clinic: 'Miora Maternal Care Unit',
+          reason: bookingReason,
+        });
+        if (booked) {
+          setConsultationsList((prev) => [booked, ...prev.filter((c) => c.id !== booked.id)]);
+        }
+      } else {
+        const newConsultation = {
+          id: `c-${Date.now()}`,
+          doctorName: 'Dr. Elena Rostova',
+          role: 'Perinatal Psychiatry Lead',
+          date: new Date(bookingDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+          time: bookingTime,
+          status: 'Scheduled',
+          type: selectedType,
+          clinic: 'Miora Maternal Care Unit',
+        };
+        setConsultationsList((prev) => [newConsultation, ...prev]);
+      }
+      setBookingModalOpen(false);
+      setBookingReason('');
+      setBookingNotice('Consultation successfully scheduled with Dr. Elena Rostova and saved to database!');
+      setTimeout(() => setBookingNotice(''), 5000);
+    } catch (err) {
+      setBookingNotice('Failed to schedule consultation: ' + (err.message || 'Please try again.'));
+      setTimeout(() => setBookingNotice(''), 5000);
+    }
   };
 
   const handleJoinRoom = () => {
