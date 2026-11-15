@@ -54,8 +54,14 @@ export function ScreeningResultsPage() {
             <span className="screening-breadcrumb-sep" aria-hidden="true">&rsaquo;</span>
             <span className="screening-breadcrumb-current">Results</span>
           </div>
-          <h1 className="patient-page-heading screening-page-title">Screening Results</h1>
-          <p className="patient-page-subheading screening-page-sub">
+          <div className="miora-dash-eyebrow">
+            <span>ASSESSMENT REPORT</span>
+            <span className="miora-dash-eyebrow-line" aria-hidden="true" />
+          </div>
+          <h1 className="miora-dash-title patient-page-heading screening-page-title">
+            Screening <em>Results</em>
+          </h1>
+          <p className="miora-dash-subtitle patient-page-subheading screening-page-sub">
             Your AI screening has been analysed. Here's a clear, supportive overview of your assessment.
           </p>
         </div>

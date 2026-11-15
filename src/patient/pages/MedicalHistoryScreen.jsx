@@ -207,8 +207,14 @@ export function MedicalHistoryScreen() {
       </div>
 
       <div className="patient-page-banner">
-        <h1 className="patient-page-heading">Medical History</h1>
-        <p className="patient-page-subheading">
+        <div className="miora-dash-eyebrow">
+          <span>MEDICAL HISTORY</span>
+          <span className="miora-dash-eyebrow-line" aria-hidden="true" />
+        </div>
+        <h1 className="miora-dash-title patient-page-heading">
+          Medical <em>History</em>
+        </h1>
+        <p className="miora-dash-subtitle patient-page-subheading">
           Help us understand your background for a more accurate and personalised emotional wellbeing screening.
         </p>
       </div>

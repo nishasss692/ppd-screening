@@ -109,8 +109,14 @@ export function ConnectDoctorPage() {
 
       {/* Page Banner */}
       <div className="patient-page-banner">
-        <h1 className="patient-page-heading">Connect to a Doctor</h1>
-        <p className="patient-page-subheading">
+        <div className="miora-dash-eyebrow">
+          <span>CLINICAL CARE</span>
+          <span className="miora-dash-eyebrow-line" aria-hidden="true" />
+        </div>
+        <h1 className="miora-dash-title patient-page-heading">
+          Connect to a <em>Doctor</em>
+        </h1>
+        <p className="miora-dash-subtitle patient-page-subheading">
           Confidential telehealth consultations, clinical evaluations, and ongoing postpartum emotional guidance coordinated with Dr. Elena Rostova.
         </p>
       </div>

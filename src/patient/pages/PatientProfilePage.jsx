@@ -72,18 +72,18 @@ export function PatientProfilePage() {
         <span className="medhist-breadcrumb-current">Profile</span>
       </div>
 
-      {/* Hero Welcome Banner */}
-      <div className="patient-card patient-home-hero-card">
-        <div className="patient-home-hero-text">
-          <div className="patient-home-greeting-badge">
-            <PatientIcon name="profile" size={13} />
-            <span>Maternal Emotional Care</span>
-          </div>
-          <h1 className="patient-home-title">Patient Profile</h1>
-          <p className="patient-home-subtitle">
-            Manage your personal profile, postpartum recovery timeline, and emergency care contacts. All details persist directly in PostgreSQL.
-          </p>
+      {/* Page Header */}
+      <div className="patient-page-banner">
+        <div className="miora-dash-eyebrow">
+          <span>PATIENT PROFILE</span>
+          <span className="miora-dash-eyebrow-line" aria-hidden="true" />
         </div>
+        <h1 className="miora-dash-title patient-page-heading">
+          Maternal Profile &amp; <em>Preferences</em>
+        </h1>
+        <p className="miora-dash-subtitle patient-page-subheading">
+          Manage your personal profile, postpartum recovery timeline, and emergency care contacts. All details persist directly in PostgreSQL.
+        </p>
       </div>
 
       {saveSuccess && (

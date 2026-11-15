@@ -1339,8 +1339,14 @@ export function PatientScreeningPage() {
             <span className="screening-breadcrumb-sep" aria-hidden="true">&rsaquo;</span>
             <span className="screening-breadcrumb-current">AI Screening Session</span>
           </div>
-          <h1 className="patient-page-heading screening-page-title">AI Screening Session</h1>
-          <p className="patient-page-subheading screening-page-sub">
+          <div className="miora-dash-eyebrow">
+            <span>AI SCREENING</span>
+            <span className="miora-dash-eyebrow-line" aria-hidden="true" />
+          </div>
+          <h1 className="miora-dash-title patient-page-heading screening-page-title">
+            AI Screening <em>Session</em>
+          </h1>
+          <p className="miora-dash-subtitle patient-page-subheading screening-page-sub">
             A private, conversational screening to understand your emotional well-being after childbirth.
           </p>
         </div>

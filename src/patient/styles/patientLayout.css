@@ -385,6 +385,8 @@
   margin-bottom: 24px;
 }
 
+/* Eyebrow & Title Components matching Doctor Dashboard */
+.miora-dash-eyebrow,
 .patient-page-eyebrow {
   display: flex;
   align-items: center;
@@ -397,27 +399,32 @@
   margin-bottom: 8px;
 }
 
+.miora-dash-eyebrow-line,
 .patient-page-eyebrow-line {
   width: 60px;
   height: 1px;
   background: #e1b8c1;
 }
 
+.miora-dash-title,
 .patient-page-heading {
   margin: 0 0 6px;
   font-family: var(--serif, 'Playfair Display', Georgia, serif);
-  font-size: clamp(26px, 2.8vw, 36px);
+  font-size: clamp(28px, 3.2vw, 41px);
   font-weight: 500;
+  line-height: 1.1;
   color: var(--patient-ink, #271218);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
 }
 
+.miora-dash-title em,
 .patient-page-heading em {
   color: #c93769;
   font-style: italic;
   font-weight: 400;
 }
 
+.miora-dash-subtitle,
 .patient-page-subheading {
   margin: 0;
   font-size: 14px;

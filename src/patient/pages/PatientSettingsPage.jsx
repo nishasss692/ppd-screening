@@ -58,18 +58,18 @@ export function PatientSettingsPage() {
         <span className="medhist-breadcrumb-current">Settings</span>
       </div>
 
-      {/* Hero Welcome Banner */}
-      <div className="patient-card patient-home-hero-card">
-        <div className="patient-home-hero-text">
-          <div className="patient-home-greeting-badge">
-            <PatientIcon name="settings" size={13} />
-            <span>Preferences &amp; Confidentiality</span>
-          </div>
-          <h1 className="patient-home-title">Account &amp; Privacy Settings</h1>
-          <p className="patient-home-subtitle">
-            Configure confidential screening device permissions, clinical consultation alerts, and privacy rules. Saved in PostgreSQL.
-          </p>
+      {/* Page Header */}
+      <div className="patient-page-banner">
+        <div className="miora-dash-eyebrow">
+          <span>SETTINGS &amp; PRIVACY</span>
+          <span className="miora-dash-eyebrow-line" aria-hidden="true" />
         </div>
+        <h1 className="miora-dash-title patient-page-heading">
+          Account &amp; <em>Privacy Settings</em>
+        </h1>
+        <p className="miora-dash-subtitle patient-page-subheading">
+          Configure confidential screening device permissions, clinical consultation alerts, and privacy rules. Saved in PostgreSQL.
+        </p>
       </div>
 
       {saveSuccess && (

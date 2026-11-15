@@ -109,8 +109,14 @@ export function PatientReportsPage() {
       {/* Hero Header Banner with Mother & Baby Illustration */}
       <div className="patient-card reports-hero-card">
         <div className="reports-hero-text">
-          <h1 className="patient-page-heading reports-title">My Reports &amp; Analytics</h1>
-          <p className="patient-page-subheading reports-subtitle">
+          <div className="miora-dash-eyebrow">
+            <span>REPORTS &amp; ANALYTICS</span>
+            <span className="miora-dash-eyebrow-line" aria-hidden="true" />
+          </div>
+          <h1 className="miora-dash-title patient-page-heading reports-title">
+            My Reports &amp; <em>Analytics</em>
+          </h1>
+          <p className="miora-dash-subtitle patient-page-subheading reports-subtitle">
             Track your screenings, clinical evaluations, and emotional well-being trajectory over time.
           </p>
         </div>

@@ -93,8 +93,14 @@ export function CareSuggestionsPage() {
       {/* Hero Header Banner */}
       <div className="patient-card care-hero-card">
         <div className="care-hero-text">
-          <h1 className="patient-page-heading care-title">Personalised Care Suggestions</h1>
-          <p className="patient-page-subheading care-subtitle">
+          <div className="miora-dash-eyebrow">
+            <span>CARE &amp; RECOVERY</span>
+            <span className="miora-dash-eyebrow-line" aria-hidden="true" />
+          </div>
+          <h1 className="miora-dash-title patient-page-heading care-title">
+            Personalised Care <em>Suggestions</em>
+          </h1>
+          <p className="miora-dash-subtitle patient-page-subheading care-subtitle">
             Evidence-based recovery plans, mindful restorative practices, and clinical guidance tailored to your postpartum journey.
           </p>
         </div>

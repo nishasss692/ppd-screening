@@ -1039,8 +1039,14 @@ export function AiAssistantScreen() {
       {/* Hero Header Banner */}
       <div className="patient-card companion-hero-banner">
         <div className="companion-hero-text">
-          <h1 className="patient-page-heading companion-title">Your AI Companion</h1>
-          <p className="patient-page-subheading companion-sub">
+          <div className="miora-dash-eyebrow">
+            <span>AI ASSISTANT</span>
+            <span className="miora-dash-eyebrow-line" aria-hidden="true" />
+          </div>
+          <h1 className="miora-dash-title patient-page-heading companion-title">
+            Your AI <em>Companion</em>
+          </h1>
+          <p className="miora-dash-subtitle patient-page-subheading companion-sub">
             A safe, confidential space to talk, reflect, and receive compassionate guidance through your postpartum journey.
           </p>
         </div>
