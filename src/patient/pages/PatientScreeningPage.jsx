@@ -8,6 +8,7 @@ import {
   LOCALIZED_Q10_CRISIS_MESSAGES,
   sendVoiceAssistantChat,
   SUPPORTED_LANGUAGES_MAP,
+  getBestNaturalVoice,
 } from '../services/voiceAssistantService.js';
 import { saveScreeningSession, uploadScreeningVideo } from '../services/patientApiService.js';
 import canonicalQuestionsJson from '../../../data/questions.json';
@@ -100,6 +101,10 @@ export function PatientScreeningPage() {
   const recognizedTranscriptRef = useRef('');
   const lastSavedScreeningIdRef = useRef(null);
   const askedClarificationForQRef = useRef(null);
+  const listenWatchdogRef = useRef(null);
+  const speechErrorRef = useRef(null);
+  const isProcessingSpeechRef = useRef(false);
+  const lastSpokenQuestionIdxRef = useRef(-1);
   const msgIdCounterRef = useRef(100);
 
   const nextMsgId = (prefix) => `${prefix}-${Date.now()}-${msgIdCounterRef.current++}`;
@@ -147,6 +152,46 @@ export function PatientScreeningPage() {
     };
   }, []);
 
+  // Read displayed EPDS question aloud using the browser's speech synthesis in selected language
+  const speakQuestion = useCallback(
+    (qIndex, force = false) => {
+      if (typeof window === 'undefined' || !window.speechSynthesis) return;
+      if (speechStatus === 'listening') return;
+
+      const currentQ = questionsRef.current?.[qIndex];
+      if (!currentQ) return;
+      if (!force && lastSpokenQuestionIdxRef.current === qIndex) return;
+
+      try {
+        window.speechSynthesis.cancel();
+        const textToSpeak = `Question ${currentQ.question_number} of 10: ${currentQ.question}`;
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        const targetLocale = SUPPORTED_LANGUAGES_MAP[selectedLanguage]?.locale || 'en-IN';
+        utterance.lang = targetLocale;
+        utterance.rate = 0.92;
+        utterance.pitch = 1.04;
+
+        const bestVoice = getBestNaturalVoice(targetLocale);
+        if (bestVoice) {
+          utterance.voice = bestVoice;
+        }
+
+        lastSpokenQuestionIdxRef.current = qIndex;
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        console.warn('Speech synthesis unavailable:', err);
+      }
+    },
+    [selectedLanguage, speechStatus]
+  );
+
+  // Automatically read displayed question aloud when it appears
+  useEffect(() => {
+    if (questions && questions.length > 0 && currentQuestionIdx < questions.length && !isScreeningComplete) {
+      speakQuestion(currentQuestionIdx);
+    }
+  }, [currentQuestionIdx, questions, isScreeningComplete, speakQuestion]);
+
   // ============================================================================
   // Continuous Video Recording Pipeline (MediaRecorder)
   // ============================================================================
@@ -160,8 +205,8 @@ export function PatientScreeningPage() {
         mimeType = MediaRecorder.isTypeSupported('video/webm')
           ? 'video/webm'
           : MediaRecorder.isTypeSupported('video/mp4')
-          ? 'video/mp4'
-          : '';
+            ? 'video/mp4'
+            : '';
       }
       const options = mimeType ? { mimeType } : undefined;
       const recorder = new MediaRecorder(stream, options);
@@ -230,9 +275,9 @@ export function PatientScreeningPage() {
         try {
           const p = el.play();
           if (p && typeof p.catch === 'function') {
-            p.catch(() => {});
+            p.catch(() => { });
           }
-        } catch {}
+        } catch { }
       }
     };
 
@@ -276,9 +321,9 @@ export function PatientScreeningPage() {
       try {
         const p = el.play();
         if (p && typeof p.catch === 'function') {
-          p.catch(() => {});
+          p.catch(() => { });
         }
-      } catch {}
+      } catch { }
     }
   };
 
@@ -289,7 +334,7 @@ export function PatientScreeningPage() {
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
         try {
           mediaRecorderRef.current.stop();
-        } catch {}
+        } catch { }
       }
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((t) => t.stop());
@@ -298,12 +343,16 @@ export function PatientScreeningPage() {
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         try {
           window.speechSynthesis.cancel();
-        } catch {}
+        } catch { }
       }
       if (recognitionRef.current) {
         try {
           recognitionRef.current.abort();
-        } catch {}
+        } catch { }
+      }
+      if (listenWatchdogRef.current) {
+        clearTimeout(listenWatchdogRef.current);
+        listenWatchdogRef.current = null;
       }
     };
   }, []);
@@ -357,10 +406,10 @@ export function PatientScreeningPage() {
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
-      videoContainerRef.current?.requestFullscreen?.().catch(() => {});
+      videoContainerRef.current?.requestFullscreen?.().catch(() => { });
       setIsFullscreen(true);
     } else {
-      document.exitFullscreen?.().catch(() => {});
+      document.exitFullscreen?.().catch(() => { });
       setIsFullscreen(false);
     }
   };
@@ -461,8 +510,20 @@ export function PatientScreeningPage() {
   // ============================================================================
 
   const startVoiceListening = useCallback(() => {
-    if (!isMountedRef.current || isSubmitting || isScreeningComplete) return;
+    if (!isMountedRef.current || isSubmitting || isScreeningComplete || isProcessingSpeechRef.current) return;
     if (typeof window === 'undefined') return;
+
+    // Cancel speech synthesis so assistant does not talk over the mother
+    if (window.speechSynthesis) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch { }
+    }
+
+    if (!micOn) {
+      setMicOn(true);
+    }
+
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
@@ -474,9 +535,15 @@ export function PatientScreeningPage() {
       if (recognitionRef.current) {
         try {
           recognitionRef.current.abort();
-        } catch {}
+        } catch { }
+        recognitionRef.current = null;
+      }
+      if (listenWatchdogRef.current) {
+        clearTimeout(listenWatchdogRef.current);
+        listenWatchdogRef.current = null;
       }
 
+      speechErrorRef.current = null;
       const recognition = new SpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = true;
@@ -484,9 +551,20 @@ export function PatientScreeningPage() {
 
       recognition.onstart = () => {
         if (!isMountedRef.current) return;
+        speechErrorRef.current = null;
         setSpeechStatus('listening');
         setRecognizedTranscript('');
         recognizedTranscriptRef.current = '';
+
+        // 15-second watchdog timer to avoid stuck listening state
+        listenWatchdogRef.current = setTimeout(() => {
+          if (isMountedRef.current && recognitionRef.current) {
+            try {
+              recognitionRef.current.stop();
+            } catch { }
+            setSpeechStatus('idle');
+          }
+        }, 15000);
       };
 
       recognition.onresult = (event) => {
@@ -496,10 +574,18 @@ export function PatientScreeningPage() {
           .join('');
         recognizedTranscriptRef.current = transcript;
         setRecognizedTranscript(transcript);
+        // Display transcript in the chat input area so patient can edit, retry, or type manually
+        setChatInput(transcript);
       };
 
       recognition.onerror = (event) => {
         if (!isMountedRef.current) return;
+        speechErrorRef.current = event.error || 'error';
+        if (listenWatchdogRef.current) {
+          clearTimeout(listenWatchdogRef.current);
+          listenWatchdogRef.current = null;
+        }
+
         if (event.error === 'not-allowed') {
           setSpeechStatus('denied');
         } else if (event.error === 'no-speech') {
@@ -511,7 +597,15 @@ export function PatientScreeningPage() {
 
       recognition.onend = () => {
         if (!isMountedRef.current) return;
+        if (listenWatchdogRef.current) {
+          clearTimeout(listenWatchdogRef.current);
+          listenWatchdogRef.current = null;
+        }
         recognitionRef.current = null;
+
+        if (speechErrorRef.current) {
+          return;
+        }
         handleVoiceRecognitionEnd();
       };
 
@@ -520,15 +614,19 @@ export function PatientScreeningPage() {
     } catch {
       if (isMountedRef.current) setSpeechStatus('error');
     }
-  }, [isSubmitting, isScreeningComplete, selectedLanguage]);
+  }, [isSubmitting, isScreeningComplete, selectedLanguage, micOn]);
 
   const stopVoiceListening = () => {
+    if (listenWatchdogRef.current) {
+      clearTimeout(listenWatchdogRef.current);
+      listenWatchdogRef.current = null;
+    }
     if (recognitionRef.current) {
       const rec = recognitionRef.current;
       recognitionRef.current = null;
       try {
         rec.stop();
-      } catch {}
+      } catch { }
     }
     setSpeechStatus('idle');
   };
@@ -563,26 +661,26 @@ export function PatientScreeningPage() {
 
   // Instant deterministic greetings across all 8 supported languages (0ms latency)
   const LOCAL_GREETINGS = {
-    en: "Hello! I'm here to support you. Whenever you're ready, please answer the question above, or click Listen to speak.",
-    hi: "नमस्ते! मैं आपकी सहायता के लिए यहाँ हूँ। जब भी आप तैयार हों, कृपया ऊपर दिए गए प्रश्न का उत्तर दें या बोलने के लिए Listen पर क्लिक करें।",
-    kn: "ನಮಸ್ಕಾರ! ನಾನು ನಿಮಗೆ ಸಹಾಯ ಮಾಡಲು ಇಲ್ಲಿದ್ದೇನೆ. ನೀವು ಸಿದ್ಧರಾದಾಗ ಮೇಲಿನ ಪ್ರಶ್ನೆಗೆ ಉತ್ತರಿಸಿ ಅಥವಾ ಮಾತನಾಡಲು Listen ಕ್ಲಿಕ್ ಮಾಡಿ.",
-    ta: "வணக்கம்! நான் உங்களுக்கு உதவ இங்கே இருக்கிறேன். நீங்கள் தயாராக இருக்கும்போது மேலே உள்ள கேள்விக்கு பதிலளிக்கவும் அல்லது பேச Listen என்பதைக் கிளிக் செய்யவும்.",
-    te: "నమస్కారం! నేను మీకు సహాయం చేయడానికి ఇక్కడ ఉన్నాను. మీరు సిద్ధంగా ఉన్నప్పుడు సమాధానం ఇవ్వవచ్చు లేదా మాట్లాడటానికి Listen క్లిక్ చేయండి.",
-    ml: "നമസ്കാരം! ഞാൻ നിങ്ങളെ സഹായിക്കാൻ ഇവിടെയുണ്ട്. നിങ്ങൾ തയ്യാറാകുമ്പോൾ മുകളിലെ ചോദ്യത്തിന് ഉത്തരം നൽകാം അല്ലെങ്കിൽ സംസാരിക്കാൻ Listen ക്ലിക്ക് ചെയ്യുക.",
-    bn: "নমস্কার! আমি আপনাকে সাহায্য করতে এখানে আছি। আপনি প্রস্তুত হলে উত্তর দিতে পারেন বা কথা বলতে Listen ক্লিক করুন।",
-    mr: "नमस्कार! मी तुम्हाला मदत करण्यासाठी येथे आहे. आपण तयार असाल तेव्हा कृपया वरील प्रश्नाचे उत्तर द्या किंवा बोलण्यासाठी Listen वर क्लिक करा.",
+    en: "Hello! Welcome to MIORA. How are you feeling today?",
+    hi: "नमस्ते! मियोरा (MIORA) में आपका स्वागत है। आज आप कैसा महसूस कर रही हैं?",
+    kn: "ನಮಸ್ಕಾರ! ಮಿಯೋರಾ (MIORA) ಗೆ ಸುಸ್ವಾಗತ. ಇಂದು ನೀವು ಹೇಗೆ ಭಾವಿಸುತ್ತಿದ್ದೀರಿ?",
+    ta: "வணக்கம்! மியோராவுக்கு (MIORA) வரவேற்கிறோம். இன்று நீங்கள் எப்படி உணர்கிறீர்கள்?",
+    te: "నమస్కారం! మియోరా (MIORA) కు స్వాగతం. ఈ రోజు మీరు ఎలా ఉన్నారు?",
+    ml: "നമസ്കാരം! മിയോറയിലേക്ക് (MIORA) സ്വാഗതം. ഇന്ന് നിങ്ങൾക്ക് എങ്ങനെ തോന്നുന്നു?",
+    bn: "নমস্কার! মিওরাতে (MIORA) আপনাকে স্বাগতম। আজ আপনি কেমন অনুভব করছেন?",
+    mr: "नमस्कार! मियोरा (MIORA) मध्ये आपले स्वागत आहे. आज आपल्याला कसे वाटत आहे?",
   };
 
   // Instant deterministic start confirmations across 8 supported languages
   const LOCAL_START = {
-    en: (num, text) => `Of course! Let's begin. Here is Question ${num} of 10: "${text}". Please take your time and answer when you're ready.`,
-    hi: (num, text) => `बिल्कुल! चलिए शुरू करते हैं। यह 10 में से प्रश्न ${num} है: "${text}"। कृपया अपना समय लें और जब तैयार हों तब उत्तर दें।`,
-    kn: (num, text) => `ಖಂಡಿತ! ಪ್ರಾರಂಭಿಸೋಣ. 10 ರಲ್ಲಿ ಪ್ರಶ್ನೆ ${num}: "${text}". ದಯವಿಟ್ಟು ನಿಮ್ಮ ಸಮಯವನ್ನು ತೆಗೆದುಕೊಳ್ಳಿ ಮತ್ತು ಸಿದ್ಧವಾದಾಗ ಉತ್ತರಿಸಿ.`,
-    ta: (num, text) => `நிச்சயமாக! தொடங்கலாம். 10 இல் கேள்வி ${num}: "${text}". தயவுசெய்து உங்கள் நேரத்தை எடுத்துக்கொண்டு பதிலளிக்கவும்.`,
-    te: (num, text) => `ఖచ్చితంగా! ప్రారంభిద్దాం. 10 లో ప్రశ్న ${num}: "${text}". దయచేసి మీ సమయాన్ని తీసుకోండి మరియు సిద్ధంగా ఉన్నప్పుడు సమాధానం ఇవ్వండి.`,
-    ml: (num, text) => `തീർച്ചയായും! നമുക്ക് ആരംഭിക്കാം. 10-ൽ ചോദ്യം ${num}: "${text}". ദയവായി നിങ്ങളുടെ സമയമെടുത്ത് ഉത്തരം നൽകുക.`,
-    bn: (num, text) => `নিশ্চয়ই! চলুন শুরু করা যাক। ১০টির মধ্যে প্রশ্ন ${num}: "${text}"। দয়া করে সময় নিন এবং প্রস্তুত হলে উত্তর দিন।`,
-    mr: (num, text) => `नक्कीच! चला सुरू करूया. १० पैकी प्रश्न ${num}: "${text}". कृपया आपला वेळ घ्या आणि तयार असाल तेव्हा उत्तर द्या.`,
+    en: (num, text) => `Welcome to the EPDS screening. Over the past 7 days, how have you been feeling? Here is Question ${num} of 10: "${text}". Please take your time and answer when you are ready.`,
+    hi: (num, text) => `ईपीडीएस (EPDS) स्क्रीनिंग में आपका स्वागत है। पिछले 7 दिनों में आप कैसा महसूस कर रही हैं? यह 10 में से प्रश्न ${num} है: "${text}"। कृपया अपना समय लें और तैयार होने पर उत्तर दें।`,
+    kn: (num, text) => `ಇಪಿಡಿಎಸ್ (EPDS) ಸ್ಕ್ರೀನಿಂಗ್‌ಗೆ ಸುಸ್ವಾಗತ. ಕಳೆದ 7 ದಿನಗಳಲ್ಲಿ ನೀವು ಹೇಗೆ ಭಾವಿಸುತ್ತಿದ್ದೀರಿ? 10 ರಲ್ಲಿ ಪ್ರಶ್ನೆ ${num}: "${text}". ದಯವಿಟ್ಟು ಸಿದ್ಧವಾದಾಗ ಉತ್ತರಿಸಿ.`,
+    ta: (num, text) => `EPDS திரையிடலுக்கு வரவேற்கிறோம். கடந்த 7 நாட்களில் நீங்கள் எப்படி உணர்ந்தீர்கள்? 10 இல் கேள்வி ${num}: "${text}". தயாரானதும் பதிலளிக்கவும்.`,
+    te: (num, text) => `EPDS స్క్రీనింగ్‌కు స్వాగతం. గత 7 రోజుల్లో మీరు ఎలా భావిస్తున్నారు? 10 లో ప్రశ్న ${num}: "${text}". సిద్ధమైనప్పుడు సమాధానం ఇవ్వండి.`,
+    ml: (num, text) => `EPDS സ്ക്രീനിംഗിലേക്ക് സ്വാഗതം. കഴിഞ്ഞ 7 ദിവസങ്ങളിൽ നിങ്ങൾക്ക് എങ്ങനെ തോന്നി? 10-ൽ ചോദ്യം ${num}: "${text}". തയ്യാറാകുമ്പോൾ ഉത്തരം നൽകുക.`,
+    bn: (num, text) => `EPDS স্ক্রীনিংয়ে আপনাকে স্বাগতম। গত ৭ দিনে আপনি কেমন অনুভব করছেন? ১০টির মধ্যে প্রশ্ন ${num}: "${text}"। প্রস্তুত হলে উত্তর দিন।`,
+    mr: (num, text) => `EPDS तपासणीमध्ये आपले स्वागत आहे. गेल्या ७ दिवसांत आपल्याला कसे वाटले? १० पैकी प्रश्न ${num}: "${text}". तयार असाल तेव्हा उत्तर द्या.`,
   };
 
   // Instant deterministic clinical explanations for all 10 canonical EPDS questions (0ms latency)
@@ -702,27 +800,27 @@ export function PatientScreeningPage() {
   const classifyIntent = (text, options) => {
     const t = text.trim();
 
-    // 1. Direct match against canonical EPDS options (highest priority for answer recognition)
-    if (matchOptionIndex(t, options) >= 0) return 'EPDS_ANSWER';
+    // 1. Repeat request (checked first so questions can be repeated easily)
+    const repeatRe = /\b(repeat|say\s+again|once\s+more|read\s+again|pardon|can\s+you\s+repeat|फिर\s+से|दोबारा|ಮತ್ತೆ\s*ಹೇಳಿ|ಇನ್ನೊಮ್ಮೆ|ಮೀண்டும்|மறுபடியும்|மళ్ళీ|మరోసారి|വീണ്ടും|ഒന്നുകൂടി|আবার|পুনরায়|पुन्हा|परत)\b/i;
+    if (repeatRe.test(t) || isClarificationOrRepeatRequest(t)) return 'REPEAT';
 
     // 2. Explanation / clarification request for question meaning
     const explainRe = /\b(what\s+does\s+(this|that|the|it)\s+mean|what\s+do\s+you\s+mean|what\s+is\s+the\s+meaning|mean|meaning|explain|clarify|clarification|don'?t\s+understand|do\s+not\s+understand|confused|confusing|क्या\s*मतलब|मतलब\s*क्या|समझाओ|समझाइए|अर्थ|ಅರ್ಥ|ವಿವರಿಸಿ|ತಿಳಿಸಿ|விளக்குங்கள்|விளக்கம்|புரியவில்லை|వివరించండి|స్పష్టపరచండి|വിശദീകരിക്കൂ|വ്യക്തമാക്കൂ|বুঝিয়ে\s*বলুন|অর্থ|समजावून\s*सांगा|स्पष्ट\s*करा)\b/i;
     if (explainRe.test(t)) return 'EXPLAIN';
 
-    // 3. Repeat request
-    const repeatRe = /\b(repeat|say\s+again|once\s+more|read\s+again|pardon|फिर\s+से|दोबारा|ಮತ್ತೆ\s*ಹೇಳಿ|ಇನ್ನೊಮ್ಮೆ|மீண்டும்|மறுபடியும்|మళ్ళీ|మరోసారి|വീണ്ടും|ഒന്നുകൂടി|আবার|পুনরায়|पुन्हा|परत)\b/i;
-    if (repeatRe.test(t) || isClarificationOrRepeatRequest(t)) return 'REPEAT';
+    // 3. Direct match against canonical EPDS options (highest priority for answer recognition)
+    if (matchOptionIndex(t, options) >= 0) return 'EPDS_ANSWER';
 
     // 4. Greeting patterns (all 8 languages)
-    const greetingRe = /^(hi|hello|hey|namaste|namaskar|vanakkam|salaam|good\s+morning|good\s+afternoon|good\s+evening|नमस्ते|नमस्कार|हेलो|ಹಲೋ|ನಮಸ್ಕಾರ|வணக்கம்|ஹலோ|నమస్కారం|హలో|ഹലോ|നമസ്കാരം|হ্যালো|নমস্কার|हॅलो)[\s!,?.]*$/i;
+    const greetingRe = /^(hi|hello|hey|namaste|namaskar|vanakkam|salaam|good\s+morning|good\s+afternoon|good\s+evening|नमस्ते|नमस्कार|हेलो|ಹಲೋ|ನಮಸ್ಕಾರ|வணக்கம்|ஹலோ|నమస్కారం|హలో|హలో|നമസ്കാരം|হ্যালো|নমস্কার|हॅलो)[\s!,?.]*$/i;
     if (greetingRe.test(t)) return 'GREETING';
 
     // 5. Start-screening intent
-    const startRe = /\b(start|begin|let'?s\s+go|let'?s\s+start|start\s+screening|ready|i'?m\s+ready|sure|yes|शुरू|आरंभ|शुरुआत|ಪ್ರಾರಂಭ|ಶುರು|ಸಿದ್ಧ|தொடங்க|தயார்|ప్రారంభ|సిద్ధం|ആരംഭ|തയ്യാർ|শুরু|প্রস্তুত|सुरुवात|तयार)\b/i;
+    const startRe = /\b(start|begin|let'?s\s+go|let'?s\s+start|start\s+screening|start\s+the\s+screening|ready|i'?m\s+ready|i\s+want\s+to\s+start|i\s+want\s+to\s+start\s+the\s+screening|शुरू|आरंभ|शुरुआत|ಪ್ರಾರಂಭ|ಶುರು|ಸಿದ್ಧ|தொடங்க|தயார்|ప్రారంభ|సిద్ధం|ಆരംഭ|തയ്യാർ|শুরু|প্রস্তুত|सुरुवात|तयार)\b/i;
     if (startRe.test(t)) return 'START';
 
     // 6. End / pause intent
-    const endRe = /\b(stop|pause|quit|exit|cancel|later|निल्लिसि|रुको|நிறுத்து|ఆపు|നിർത്ത്|থামো|थांब)\b/i;
+    const endRe = /\b(stop|pause|quit|exit|cancel|later|ನಿಲ್ಲಿಸಿ|रुको|நிறுத்து|ఆపు|നിർത്ത്|থামো|थांब)\b/i;
     if (endRe.test(t)) return 'END';
 
     // 7. Unmatched / unclear input
@@ -804,20 +902,31 @@ export function PatientScreeningPage() {
 
   // Evaluate captured speech when speech stops
   const handleVoiceRecognitionEnd = () => {
+    if (isProcessingSpeechRef.current || isSubmitting) return;
+
     const clean = (recognizedTranscriptRef.current || '').trim();
     if (!clean) {
       setSpeechStatus('idle');
       return;
     }
 
+    setSpeechStatus('processing');
+    isProcessingSpeechRef.current = true;
+
     const currentQ = questionsRef.current[currentIdxRef.current];
-    if (!currentQ) return;
+    if (!currentQ) {
+      setSpeechStatus('idle');
+      isProcessingSpeechRef.current = false;
+      return;
+    }
 
     const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const intent = classifyIntent(clean, currentQ?.response_options || []);
 
     if (intent === 'REPEAT') {
       setSpeechStatus('idle');
+      isProcessingSpeechRef.current = false;
+      speakQuestion(currentQ.question_number - 1, true);
       const repeatMsg = {
         id: nextMsgId('msg-user-repeat'),
         sender: 'user',
@@ -833,14 +942,22 @@ export function PatientScreeningPage() {
       setMessages((prev) => [...prev, repeatMsg, explainMsg]);
     } else if (intent === 'EPDS_ANSWER') {
       setSpeechStatus('confirmed');
-      handleSelectOption(matchOptionIndex(clean, currentQ.response_options), clean);
+      const matchedIdx = matchOptionIndex(clean, currentQ.response_options);
+      handleSelectOption(matchedIdx, clean);
+      setTimeout(() => {
+        isProcessingSpeechRef.current = false;
+      }, 500);
     } else if (intent === 'EXPLAIN') {
+      isProcessingSpeechRef.current = false;
       handleExplainQuestion(clean, currentQ, timeStr);
     } else if (intent === 'GREETING') {
+      isProcessingSpeechRef.current = false;
       handleGreeting(clean, timeStr);
     } else if (intent === 'START') {
+      isProcessingSpeechRef.current = false;
       handleStart(clean, currentQ, timeStr);
     } else {
+      isProcessingSpeechRef.current = false;
       // If clarification was already requested for this question, do not trap the mother in a repeat loop
       if (askedClarificationForQRef.current === currentQ.id) {
         askedClarificationForQRef.current = null;
@@ -1037,12 +1154,12 @@ export function PatientScreeningPage() {
       // 2. Prepare video recording metadata
       const videoMetadata = videoBlob
         ? {
-            status: 'recorded',
-            mime_type: videoBlob.type || 'video/webm',
-            size_bytes: videoBlob.size,
-            duration_seconds: durationSeconds,
-            question_count: 10,
-          }
+          status: 'recorded',
+          mime_type: videoBlob.type || 'video/webm',
+          size_bytes: videoBlob.size,
+          duration_seconds: durationSeconds,
+          question_count: 10,
+        }
         : null;
 
       // 3. Persist screening responses, scores, and timestamps to PostgreSQL
@@ -1140,7 +1257,7 @@ export function PatientScreeningPage() {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       try {
         mediaRecorderRef.current.stop();
-      } catch {}
+      } catch { }
     }
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
@@ -1168,6 +1285,7 @@ export function PatientScreeningPage() {
     const intent = classifyIntent(text, currentQ?.response_options || []);
 
     if (intent === 'REPEAT') {
+      speakQuestion(currentQ.question_number - 1, true);
       const userMsg = {
         id: nextMsgId('msg-user'),
         sender: 'user',
@@ -1405,8 +1523,8 @@ export function PatientScreeningPage() {
                 {isVideoAnalyzing
                   ? '⏳ Analyzing video dynamics...'
                   : videoUploadStatus === 'uploaded'
-                  ? '✓ PPD video analysis complete'
-                  : '✓ Video file ready'}
+                    ? '✓ PPD video analysis complete'
+                    : '✓ Video file ready'}
               </span>
             )}
             {videoPpdAnalysis && (
@@ -1459,6 +1577,35 @@ export function PatientScreeningPage() {
                 <div className="screening-bubble-wrapper">
                   <div className={`screening-speech-bubble ${m.sender === 'user' ? 'user-speech' : 'bot-speech'}`}>
                     {m.text}
+                    {m.isQuestion && (
+                      <button
+                        type="button"
+                        className="screening-replay-btn"
+                        onClick={() => speakQuestion(m.questionNumber - 1, true)}
+                        title="Replay this question aloud"
+                        aria-label={`Replay Question ${m.questionNumber}`}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          marginLeft: '10px',
+                          padding: '3px 8px',
+                          fontSize: '11.5px',
+                          fontWeight: '600',
+                          borderRadius: '12px',
+                          border: '1px solid #ebdcd7',
+                          background: '#fff',
+                          color: '#c73566',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+                        </svg>
+                        <span>Replay</span>
+                      </button>
+                    )}
                   </div>
 
                   {/* Question 10 Emergency Crisis Alert Card */}
@@ -1559,8 +1706,8 @@ export function PatientScreeningPage() {
                         {m.reportData.tier === 'High'
                           ? 'Your responses indicate significant symptoms of postpartum depression. A timely clinical consultation with your healthcare provider or maternal mental health specialist is strongly advised.'
                           : m.reportData.tier === 'Moderate'
-                          ? 'Your responses suggest moderate depressive symptoms. Discussing your feelings and emotional well-being with your obstetrician or clinical provider is recommended.'
-                          : 'Your responses suggest mild or low risk of postpartum depression. Mild emotional adjustments are common after childbirth. Continue to prioritize rest, nutrition, and support.'}
+                            ? 'Your responses suggest moderate depressive symptoms. Discussing your feelings and emotional well-being with your obstetrician or clinical provider is recommended.'
+                            : 'Your responses suggest mild or low risk of postpartum depression. Mild emotional adjustments are common after childbirth. Continue to prioritize rest, nutrition, and support.'}
                       </p>
 
                       <div className="screening-report-disclaimer">
@@ -1616,18 +1763,20 @@ export function PatientScreeningPage() {
                     {!micOn
                       ? 'Microphone muted'
                       : isProcessingConversation
-                      ? 'MIORA is thinking…'
-                      : speechStatus === 'listening'
-                      ? 'Listening for your voice...'
-                      : speechStatus === 'processing'
-                      ? 'Processing answer...'
-                      : speechStatus === 'confirmed'
-                      ? 'Answer captured'
-                      : speechStatus === 'unrecognized'
-                      ? 'Speech unclear — click Listen to retry'
-                      : speechStatus === 'denied'
-                      ? 'Microphone permission denied'
-                      : 'Microphone idle — click Listen to speak'}
+                        ? 'MIORA is thinking…'
+                        : speechStatus === 'listening'
+                          ? 'Listening for your voice...'
+                          : speechStatus === 'processing'
+                            ? 'Processing answer...'
+                            : speechStatus === 'confirmed'
+                              ? 'Answer captured'
+                              : speechStatus === 'unrecognized'
+                                ? 'Speech unclear — click Listen to retry'
+                                : speechStatus === 'denied'
+                                  ? 'Microphone permission denied'
+                                  : speechStatus === 'error'
+                                    ? 'Microphone error — click Listen to retry'
+                                    : 'Microphone idle — click Listen to speak'}
                   </span>
                 </div>
 
@@ -1636,7 +1785,7 @@ export function PatientScreeningPage() {
                   type="button"
                   className={`screening-listen-btn ${speechStatus === 'listening' ? 'is-listening' : ''}`}
                   onClick={handleToggleListen}
-                  disabled={!micOn || isSubmitting || isScreeningComplete}
+                  disabled={isSubmitting || isScreeningComplete}
                   aria-label={speechStatus === 'listening' ? 'Stop listening' : 'Listen'}
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -1645,7 +1794,7 @@ export function PatientScreeningPage() {
                     <line x1="12" y1="19" x2="12" y2="23" />
                     <line x1="8" y1="23" x2="16" y2="23" />
                   </svg>
-                  <span>{speechStatus === 'listening' ? 'Listening...' : 'Listen'}</span>
+                  <span>{speechStatus === 'listening' ? 'Stop' : 'Listen'}</span>
                 </button>
 
                 {/* Animated Waveform */}
@@ -1683,7 +1832,7 @@ export function PatientScreeningPage() {
                 </span>
               </div>
 
-              {speechStatus === 'unrecognized' && (
+              {(speechStatus === 'unrecognized' || speechStatus === 'error') && (
                 <div className="screening-voice-retry-box">
                   <span className="screening-retry-hint">
                     Could not match clearly. You can click retry to speak again or type in the box below:
@@ -1712,7 +1861,7 @@ export function PatientScreeningPage() {
               type="button"
               className={`screening-input-mic-btn ${speechStatus === 'listening' ? 'is-listening' : ''}`}
               onClick={handleToggleListen}
-              disabled={!micOn || isSubmitting || isScreeningComplete}
+              disabled={isSubmitting || isScreeningComplete}
               title={speechStatus === 'listening' ? 'Stop listening' : 'Click to Speak (Listen)'}
               aria-label="Listen with microphone"
             >

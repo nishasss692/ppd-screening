@@ -12,6 +12,8 @@ import { ConnectDoctorPage } from './patient/pages/ConnectDoctorPage.jsx';
 import { PatientHomePage } from './patient/pages/PatientHomePage.jsx';
 import { PatientReportsPage } from './patient/pages/PatientReportsPage.jsx';
 import { CareSuggestionsPage } from './patient/pages/CareSuggestionsPage.jsx';
+import { PatientProfilePage } from './patient/pages/PatientProfilePage.jsx';
+import { PatientSettingsPage } from './patient/pages/PatientSettingsPage.jsx';
 import { PatientProvider } from './patient/context/PatientContext.jsx';
 import { ClinicalProvider } from './dashboard/context/ClinicalContext.jsx';
 import { DashboardLayout } from './dashboard/DashboardLayout.jsx';
@@ -46,8 +48,10 @@ export function App() {
               <Route path="/patient/my-reports" element={<Navigate to="/patient/reports" replace />} />
               <Route path="/reports" element={<Navigate to="/patient/reports" replace />} />
               <Route path="/my-reports" element={<Navigate to="/patient/reports" replace />} />
-              <Route path="/patient/profile" element={<PatientHomePage />} />
-              <Route path="/patient/settings" element={<PatientHomePage />} />
+              <Route path="/patient/profile" element={<PatientProfilePage />} />
+              <Route path="/patient/settings" element={<PatientSettingsPage />} />
+              <Route path="/profile" element={<Navigate to="/patient/profile" replace />} />
+              <Route path="/settings" element={<Navigate to="/patient/settings" replace />} />
 
               {/* AI Assistant / Companion */}
               <Route path="/ai-assistant" element={<AiAssistantScreen />} />

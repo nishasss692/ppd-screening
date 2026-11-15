@@ -325,9 +325,11 @@ describe('MIORA Phase 6 — Multilingual Voice Integration', () => {
     const langSelect = screen.getByRole('combobox', { name: /Select conversation language/i });
     fireEvent.change(langSelect, { target: { value: 'hi' } });
 
-    // Start screening
-    const startChip = screen.getByRole('button', { name: /Take EPDS Screening/i });
-    fireEvent.click(startChip);
+    // Start screening via conversational intent
+    const input = screen.getByPlaceholderText(/Ask me anything about your maternal well-being/i);
+    const sendBtn = screen.getByRole('button', { name: /Send message/i });
+    fireEvent.change(input, { target: { value: 'take screening' } });
+    fireEvent.click(sendBtn);
 
     const activeBox = await screen.findByTestId('active-screening-box');
     expect(within(activeBox).getByText(/Question 1 of 10/i)).toBeInTheDocument();
@@ -338,9 +340,6 @@ describe('MIORA Phase 6 — Multilingual Voice Integration', () => {
     expect(provenanceNotice).toHaveTextContent(/Conversational assistance in Hindi/i);
 
     // Mother says unclear statement that does not match any option
-    const input = screen.getByPlaceholderText(/Ask me anything about your maternal well-being/i);
-    const sendBtn = screen.getByRole('button', { name: /Send message/i });
-
     fireEvent.change(input, { target: { value: 'मुझे मौसम अच्छा लग रहा है' } });
     fireEvent.click(sendBtn);
 
@@ -373,9 +372,11 @@ describe('MIORA Phase 6 — Multilingual Voice Integration', () => {
     const langSelect = screen.getByRole('combobox', { name: /Select conversation language/i });
     fireEvent.change(langSelect, { target: { value: 'ta' } });
 
-    // Start screening
-    const startChip = screen.getByRole('button', { name: /Take EPDS Screening/i });
-    fireEvent.click(startChip);
+    // Start screening via conversational intent
+    const input = screen.getByPlaceholderText(/Ask me anything about your maternal well-being/i);
+    const sendBtn = screen.getByRole('button', { name: /Send message/i });
+    fireEvent.change(input, { target: { value: 'take screening' } });
+    fireEvent.click(sendBtn);
 
     const activeBox = await screen.findByTestId('active-screening-box');
     expect(within(activeBox).getByText(/Question 1 of 10/i)).toBeInTheDocument();

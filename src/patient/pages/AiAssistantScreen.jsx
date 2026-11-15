@@ -295,6 +295,8 @@ export function AiAssistantScreen() {
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
+  const voiceWatchdogRef = useRef(null);
+  const isSendingChatRef = useRef(false);
 
   // Voice Interaction States (Browser-Native SpeechRecognition and SpeechSynthesis)
   const [isListening, setIsListening] = useState(false);
@@ -305,6 +307,10 @@ export function AiAssistantScreen() {
   // Cleanup voice operations on unmount or navigation
   useEffect(() => {
     return () => {
+      if (voiceWatchdogRef.current) {
+        clearTimeout(voiceWatchdogRef.current);
+        voiceWatchdogRef.current = null;
+      }
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
@@ -361,8 +367,8 @@ export function AiAssistantScreen() {
       }
 
       const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.rate = 0.95;
-      utterance.pitch = 1.0;
+      utterance.rate = 0.92;
+      utterance.pitch = 1.04;
       utterance.lang = targetLocale;
       if (check.voice) {
         utterance.voice = check.voice;
@@ -401,6 +407,10 @@ export function AiAssistantScreen() {
     }
 
     if (isListening) {
+      if (voiceWatchdogRef.current) {
+        clearTimeout(voiceWatchdogRef.current);
+        voiceWatchdogRef.current = null;
+      }
       try {
         recognitionRef.current?.stop();
       } catch { }
@@ -410,6 +420,10 @@ export function AiAssistantScreen() {
 
     try {
       setSpeechError(null);
+      if (voiceWatchdogRef.current) {
+        clearTimeout(voiceWatchdogRef.current);
+        voiceWatchdogRef.current = null;
+      }
       const recognition = new SpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = true;
@@ -421,6 +435,17 @@ export function AiAssistantScreen() {
 
       recognition.onstart = () => {
         setIsListening(true);
+        // 15-second safety watchdog timer to prevent stuck listening state
+        voiceWatchdogRef.current = setTimeout(() => {
+          if (recognitionRef.current) {
+            try {
+              recognitionRef.current.abort();
+            } catch { }
+            recognitionRef.current = null;
+          }
+          setIsListening(false);
+          setSpeechError('Listening timed out. Please click the microphone to try again.');
+        }, 15000);
       };
 
       recognition.onresult = (event) => {
@@ -431,6 +456,10 @@ export function AiAssistantScreen() {
       };
 
       recognition.onerror = (event) => {
+        if (voiceWatchdogRef.current) {
+          clearTimeout(voiceWatchdogRef.current);
+          voiceWatchdogRef.current = null;
+        }
         setIsListening(false);
         if (event.error === 'not-allowed') {
           setSpeechError('Microphone permission denied. Please allow microphone access in browser settings.');
@@ -440,12 +469,20 @@ export function AiAssistantScreen() {
       };
 
       recognition.onend = () => {
+        if (voiceWatchdogRef.current) {
+          clearTimeout(voiceWatchdogRef.current);
+          voiceWatchdogRef.current = null;
+        }
         setIsListening(false);
       };
 
       recognitionRef.current = recognition;
       recognition.start();
     } catch (err) {
+      if (voiceWatchdogRef.current) {
+        clearTimeout(voiceWatchdogRef.current);
+        voiceWatchdogRef.current = null;
+      }
       setIsListening(false);
       setSpeechError('Unable to start speech recognition.');
     }
@@ -869,6 +906,9 @@ export function AiAssistantScreen() {
       return;
     }
 
+    // Prevent duplicate simultaneous AI requests
+    if (isSendingChatRef.current) return;
+
     // Standard Gemini Voice Assistant conversation
     const newMsg = {
       id: `msg-${Date.now()}`,
@@ -880,10 +920,47 @@ export function AiAssistantScreen() {
 
     setMessages((prev) => [...prev, newMsg]);
     setInputText('');
+
+    // Handle simple greetings locally without unnecessary network requests
+    const isGreeting = /^(hi|hello|hey|good\s+morning|good\s+afternoon|good\s+evening|namaste|namaskar|vanakkam|salaam)[\s!,?.]*$/i.test(text.trim());
+    if (isGreeting) {
+      const gLang = selectedLanguage !== 'auto' ? selectedLanguage : 'en';
+      const GREETING_RESPONSES = {
+        en: 'Hello! Welcome to MIORA. How are you and your baby feeling today?',
+        hi: 'नमस्ते! मियोरा (MIORA) में आपका स्वागत है। आज आप और आपका शिशु कैसा महसूस कर रहे हैं?',
+        kn: 'ನಮಸ್ಕಾರ! ಮಿಯೋರಾ (MIORA) ಗೆ ಸುಸ್ವಾಗತ. ಇಂದು ನೀವು ಮತ್ತು ನಿಮ್ಮ ಮಗು ಹೇಗೆ ಭಾವಿಸುತ್ತಿದ್ದೀರಿ?',
+        ta: 'வணக்கம்! மியோராவுக்கு (MIORA) வரவேற்கிறோம். இன்று நீங்கள் எப்படி உணர்கிறீர்கள்?',
+        te: 'నమస్కారం! మియోరా (MIORA) కు స్వాగతం. ఈ రోజు మీరు ఎలా ఉన్నారు?',
+        ml: 'നമസ്കാരം! മിയോറയിലേക്ക് (MIORA) സ്വാഗതം. ഇന്ന് നിങ്ങൾക്ക് എങ്ങനെ തോന്നുന്നു?',
+        bn: 'নমস্কার! মিওরাতে (MIORA) আপনাকে স্বাগতম। আজ আপনি কেমন অনুভব করছেন?',
+        mr: 'नमस्कार! मियोरा (MIORA) मध्ये आपले स्वागत आहे. आज आपल्याला कसे वाटत आहे?',
+      };
+      const botReply = {
+        id: `msg-${Date.now() + 1}`,
+        sender: 'bot',
+        text: GREETING_RESPONSES[gLang] || GREETING_RESPONSES.en,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isEmergency: false,
+        safetyStatus: 'safe',
+        isFallback: false,
+        source: 'local_deterministic',
+        model: 'miora-fast',
+        voiceLocale: supportedLanguages[gLang]?.locale || 'en-IN',
+        language: gLang,
+      };
+      setMessages((prev) => {
+        const updated = [...prev, botReply];
+        savePatientAiConversations(updated, activeMood).catch(() => { });
+        return updated;
+      });
+      return;
+    }
+
+    isSendingChatRef.current = true;
     setIsTyping(true);
 
-    // Format conversation history turns for backend Gemini service
-    const historyPayload = messages.map((m) => ({
+    // Format concise conversation history (recent 6 turns) to reduce payload size and latency
+    const historyPayload = messages.slice(-6).map((m) => ({
       role: m.sender === 'user' ? 'user' : 'model',
       content: m.text,
     }));
@@ -939,6 +1016,7 @@ export function AiAssistantScreen() {
       });
     } finally {
       setIsTyping(false);
+      isSendingChatRef.current = false;
     }
   };
 
@@ -1285,14 +1363,6 @@ export function AiAssistantScreen() {
           <div className="companion-chips-row" aria-label="Suggested Prompts">
             <button
               type="button"
-              className="companion-prompt-chip is-epds-chip"
-              onClick={() => startEPDSScreening()}
-            >
-              <span className="companion-chip-icon">📝</span>
-              <span>Take EPDS Screening</span>
-            </button>
-            <button
-              type="button"
               className="companion-prompt-chip"
               onClick={() => handlePromptClick('Could you share some simple coping strategies?')}
             >
@@ -1450,13 +1520,6 @@ export function AiAssistantScreen() {
               <h3 id="help-card-title" className="companion-card-title">How I Can Help</h3>
             </div>
             <ul className="companion-help-list">
-              <li
-                className="companion-help-item"
-                onClick={() => startEPDSScreening()}
-              >
-                <span className="companion-help-icon">📝</span>
-                <span>Take EPDS mood screening (10 items)</span>
-              </li>
               <li
                 className="companion-help-item"
                 onClick={() => handlePromptClick("I'd like to talk about how I've been feeling.")}

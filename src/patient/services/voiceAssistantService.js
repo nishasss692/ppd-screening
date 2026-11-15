@@ -70,19 +70,88 @@ export function checkVoiceAvailability(voiceLocale) {
     const target = (voiceLocale || 'en-IN').toLowerCase().replace('_', '-');
     const langPrefix = target.split('-')[0];
 
-    const match = voices.find((v) => {
+    // Check if any installed voice matches the language prefix or target locale
+    const hasLangMatch = voices.some((v) => {
       const vLang = (v?.lang || '').toLowerCase().replace('_', '-');
       return vLang === target || vLang.startsWith(`${langPrefix}-`) || vLang === langPrefix;
     });
 
+    if (!hasLangMatch) {
+      return {
+        supported: true,
+        available: false,
+        voice: null,
+      };
+    }
+
+    const voice = getBestNaturalVoice(voiceLocale);
     return {
       supported: true,
-      available: Boolean(match),
-      voice: match || null,
+      available: true,
+      voice: voice || null,
     };
   } catch (err) {
     console.warn('Error checking voice availability:', err);
     return { supported: true, available: false, voice: null };
+  }
+}
+
+/**
+ * Enhanced natural/neural voice selector for empathetic maternal care.
+ * Prioritizes natural, neural, and warm maternal speech synthesizers
+ * (e.g. Edge Natural voices, Google UK/US English, Apple Samantha/Karen/Moira, Indian English/regional voices)
+ * instead of robotic desktop legacy SAPI5 voices (like Microsoft David).
+ *
+ * @param {string} voiceLocale e.g. 'en-IN', 'en-US', 'hi-IN'
+ * @returns {SpeechSynthesisVoice|null}
+ */
+export function getBestNaturalVoice(voiceLocale) {
+  if (typeof window === 'undefined' || !window.speechSynthesis) return null;
+
+  try {
+    const voices = window.speechSynthesis.getVoices?.() || [];
+    if (!Array.isArray(voices) || voices.length === 0) return null;
+
+    const target = (voiceLocale || 'en-IN').toLowerCase().replace('_', '-');
+    const langPrefix = target.split('-')[0];
+
+    // Filter to candidates that match either exact locale or language prefix
+    const matching = voices.filter((v) => {
+      const vLang = (v?.lang || '').toLowerCase().replace('_', '-');
+      return vLang === target || vLang.startsWith(`${langPrefix}-`) || vLang === langPrefix;
+    });
+
+    const candidates = matching.length > 0 ? matching : voices;
+
+    // Helper to score voice quality & natural maternal resonance
+    const scoreVoice = (v) => {
+      let score = 0;
+      const name = (v.name || '').toLowerCase();
+      const lang = (v.lang || '').toLowerCase().replace('_', '-');
+
+      // Exact language match bonus
+      if (lang === target) score += 50;
+      else if (lang.startsWith(`${langPrefix}-`)) score += 30;
+
+      // Modern Natural / Neural voices
+      if (name.includes('natural') || name.includes('neural') || name.includes('online')) score += 100;
+      if (name.includes('google')) score += 80;
+
+      // Empathetic maternal voice favorites
+      if (name.includes('neerja') || name.includes('swara') || name.includes('prabhat')) score += 70; // Indian neural
+      if (name.includes('samantha') || name.includes('zira') || name.includes('victoria') || name.includes('karen') || name.includes('moira') || name.includes('serena') || name.includes('fiona')) score += 60;
+      if (name.includes('female') || name.includes('woman')) score += 40;
+
+      // Penalize harsh or notoriously robotic legacy synthesizers
+      if (name.includes('david') || name.includes('desktop') || name.includes('mark') || name.includes('george')) score -= 30;
+
+      return score;
+    };
+
+    return [...candidates].sort((a, b) => scoreVoice(b) - scoreVoice(a))[0] || null;
+  } catch (err) {
+    console.warn('Error selecting natural voice:', err);
+    return null;
   }
 }
 
@@ -246,12 +315,12 @@ export async function sendVoiceAssistantChat({ message, history = [], language }
   // Format history payload into backend schema [{role: 'user'|'model', content: string}]
   const formattedHistory = Array.isArray(history)
     ? history
-        .filter((turn) => turn && (turn.content || turn.text))
-        .map((turn) => ({
-          role: turn.role || (turn.sender === 'user' ? 'user' : 'model'),
-          content: (turn.content || turn.text || '').trim(),
-        }))
-        .filter((turn) => turn.content.length > 0)
+      .filter((turn) => turn && (turn.content || turn.text))
+      .map((turn) => ({
+        role: turn.role || (turn.sender === 'user' ? 'user' : 'model'),
+        content: (turn.content || turn.text || '').trim(),
+      }))
+      .filter((turn) => turn.content.length > 0)
     : [];
 
   const payload = {
@@ -260,30 +329,38 @@ export async function sendVoiceAssistantChat({ message, history = [], language }
     language: language && language !== 'auto' ? language : undefined,
   };
 
-  const response = await fetchImpl(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timeoutId = controller ? setTimeout(() => controller.abort(), 10000) : null;
 
-  if (!response.ok) {
-    let errorDetail = 'Voice assistant service error';
-    try {
-      const errorJson = await response.json();
-      errorDetail = errorJson.detail || errorDetail;
-    } catch {
-      errorDetail = `HTTP ${response.status}: ${response.statusText}`;
+  try {
+    const response = await fetchImpl(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(payload),
+      signal: controller?.signal,
+    });
+
+    if (!response.ok) {
+      let errorDetail = 'Voice assistant service error';
+      try {
+        const errorJson = await response.json();
+        errorDetail = errorJson.detail || errorDetail;
+      } catch {
+        errorDetail = `HTTP ${response.status}: ${response.statusText}`;
+      }
+      const error = new Error(errorDetail);
+      error.status = response.status;
+      throw error;
     }
-    const error = new Error(errorDetail);
-    error.status = response.status;
-    throw error;
-  }
 
-  const result = await response.json();
-  return result;
+    const result = await response.json();
+    return result;
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
 }
 
 /**

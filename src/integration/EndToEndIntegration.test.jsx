@@ -113,9 +113,11 @@ describe('MIORA Phase 7 — End-to-End Application Integration', () => {
     fireEvent.change(langSelect, { target: { value: 'hi' } });
     expect(langSelect.value).toBe('hi');
 
-    // 4. Start EPDS Screening
-    const startChip = screen.getByRole('button', { name: /Take EPDS Screening/i });
-    fireEvent.click(startChip);
+    // 4. Start EPDS Screening via conversational intent
+    const input = screen.getByPlaceholderText(/Ask me anything about your maternal well-being/i);
+    const sendBtn = screen.getByRole('button', { name: /Send message/i });
+    fireEvent.change(input, { target: { value: 'take screening' } });
+    fireEvent.click(sendBtn);
 
     const activeBox = await screen.findByTestId('active-screening-box');
     expect(within(activeBox).getByText(/Question 1 of 10/i)).toBeInTheDocument();
@@ -237,8 +239,10 @@ describe('MIORA Phase 7 — End-to-End Application Integration', () => {
 
     renderFullApplication(['/patient/ai-assistant']);
 
-    const startChip = screen.getByRole('button', { name: /Take EPDS Screening/i });
-    fireEvent.click(startChip);
+    const input = screen.getByPlaceholderText(/Ask me anything about your maternal well-being/i);
+    const sendBtn = screen.getByRole('button', { name: /Send message/i });
+    fireEvent.change(input, { target: { value: 'take screening' } });
+    fireEvent.click(sendBtn);
 
     await screen.findByTestId('active-screening-box');
 

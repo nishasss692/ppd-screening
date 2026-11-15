@@ -10,7 +10,7 @@ import re
 from typing import Any, Dict, Optional
 
 # Default verified model recommendation (configurable via GEMINI_MODEL)
-DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
+DEFAULT_GEMINI_MODEL = "gemini-3.5-flash-lite"
 
 # Relative path to default system prompt file
 DEFAULT_SYSTEM_PROMPT_PATH = Path(__file__).resolve().parent / "system_prompt.txt"
@@ -152,7 +152,7 @@ class VoiceAssistantConfig:
         )
         self.system_prompt_path: Path = system_prompt_path or DEFAULT_SYSTEM_PROMPT_PATH
         self.temperature: float = temperature
-        self.max_output_tokens: int = max_output_tokens
+        self.max_output_tokens: int = 1000
         self._cached_prompt: Optional[str] = None
 
     @property

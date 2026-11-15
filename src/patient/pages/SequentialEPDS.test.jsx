@@ -20,6 +20,13 @@ function renderAssistant() {
   );
 }
 
+function triggerStartScreening() {
+  const input = screen.getByPlaceholderText(/Ask me anything about your maternal well-being/i);
+  const sendBtn = screen.getByRole('button', { name: /Send message/i });
+  fireEvent.change(input, { target: { value: 'take screening' } });
+  fireEvent.click(sendBtn);
+}
+
 describe('Sequential EPDS Questionnaire Flow (Phase 4)', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -57,10 +64,8 @@ describe('Sequential EPDS Questionnaire Flow (Phase 4)', () => {
 
     renderAssistant();
 
-    // Click "Take EPDS Screening" prompt chip
-    const startChip = screen.getByRole('button', { name: /Take EPDS Screening/i });
-    expect(startChip).toBeInTheDocument();
-    fireEvent.click(startChip);
+    // Start screening via conversational intent
+    triggerStartScreening();
 
     await waitFor(() => {
       expect(fetchSpy).toHaveBeenCalledTimes(1);
@@ -88,8 +93,7 @@ describe('Sequential EPDS Questionnaire Flow (Phase 4)', () => {
 
     renderAssistant();
 
-    const startChip = screen.getByRole('button', { name: /Take EPDS Screening/i });
-    fireEvent.click(startChip);
+    triggerStartScreening();
 
     const activeBox = await screen.findByTestId('active-screening-box');
     expect(within(activeBox).getByText(/Question 1 of 10/i)).toBeInTheDocument();
@@ -126,8 +130,7 @@ describe('Sequential EPDS Questionnaire Flow (Phase 4)', () => {
 
     renderAssistant();
 
-    const startChip = screen.getByRole('button', { name: /Take EPDS Screening/i });
-    fireEvent.click(startChip);
+    triggerStartScreening();
 
     const activeBox = await screen.findByTestId('active-screening-box');
     expect(within(activeBox).getByText(/Question 1 of 10/i)).toBeInTheDocument();
@@ -152,7 +155,7 @@ describe('Sequential EPDS Questionnaire Flow (Phase 4)', () => {
 
     renderAssistant();
 
-    fireEvent.click(screen.getByRole('button', { name: /Take EPDS Screening/i }));
+    triggerStartScreening();
 
     const activeBox = await screen.findByTestId('active-screening-box');
     expect(within(activeBox).getByText(/Question 1 of 10/i)).toBeInTheDocument();
@@ -207,7 +210,7 @@ describe('Sequential EPDS Questionnaire Flow (Phase 4)', () => {
 
     renderAssistant();
 
-    fireEvent.click(screen.getByRole('button', { name: /Take EPDS Screening/i }));
+    triggerStartScreening();
 
     await screen.findByTestId('active-screening-box');
 
@@ -277,7 +280,7 @@ describe('Sequential EPDS Questionnaire Flow (Phase 4)', () => {
 
     renderAssistant();
 
-    fireEvent.click(screen.getByRole('button', { name: /Take EPDS Screening/i }));
+    triggerStartScreening();
 
     await screen.findByTestId('active-screening-box');
 
@@ -324,7 +327,7 @@ describe('Sequential EPDS Questionnaire Flow (Phase 4)', () => {
 
     renderAssistant();
 
-    fireEvent.click(screen.getByRole('button', { name: /Take EPDS Screening/i }));
+    triggerStartScreening();
 
     const activeBox = await screen.findByTestId('active-screening-box');
     expect(within(activeBox).getByText(/Question 1 of 10/i)).toBeInTheDocument();

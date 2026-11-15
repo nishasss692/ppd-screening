@@ -177,8 +177,8 @@ describe('MIORA — EPDS Conversational Screening and Persistence (Verification 
     expect(document.querySelector('.screening-options-grid')).toBeNull();
     expect(document.querySelector('.screening-option-button')).toBeNull();
 
-    // STRICT CHECK: NO automatic TTS speech synthesis
-    expect(window.speechSynthesis.speak).not.toHaveBeenCalled();
+    // Assistant automatically reads the displayed question aloud
+    expect(window.speechSynthesis.speak).toHaveBeenCalled();
 
     // STRICT CHECK: Microphone is initially IDLE (not listening)
     expect(screen.getByText(/Microphone idle — click Listen to speak/i)).toBeInTheDocument();

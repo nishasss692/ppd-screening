@@ -56,35 +56,29 @@ describe('Miora Patient Portal Visual Refinement & Six Screens', () => {
     }
   });
 
-  it('renders the shared patient portal shell with sidebar navigation and top header', () => {
+  it('renders the shared patient portal shell with top navbar navigation and profile utilities', () => {
     renderPatientApp('/patient/reports');
 
-    // Sidebar branding & tagline
-    const sidebar = screen.getByRole('complementary', { name: /Patient Portal Navigation/i });
-    expect(sidebar).toBeInTheDocument();
-    expect(sidebar).toHaveTextContent(/Maternal Emotional/i);
-    expect(sidebar).toHaveTextContent(/Intelligence/i);
+    // Top navbar navigation
+    const nav = screen.getByRole('navigation', { name: /Patient Portal Navigation/i });
+    expect(nav).toBeInTheDocument();
 
     // Brand logo navigates to landing page
     const brandLink = screen.getByRole('link', { name: /Miora Home/i });
     expect(brandLink).toBeInTheDocument();
     expect(brandLink).toHaveAttribute('href', '/');
 
-    // All navigation links in sidebar
-    expect(screen.getByRole('link', { name: /Dashboard/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Medical History/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /AI Screening/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /AI Assistant/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Connect to a Doctor/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /My Reports/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Care Suggestions/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Profile/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Settings/i })).toBeInTheDocument();
+    // All core navigation links in top navbar
+    expect(screen.getByRole('link', { name: /^Dashboard$/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^Medical History$/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^Screening$/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^AI Assistant$/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^Connect to a Doctor$/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^My Reports$/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^Care Suggestions$/i })).toBeInTheDocument();
 
-    // Top Header
-    expect(screen.getByText('Confidential Maternal Emotional Care')).toBeInTheDocument();
+    // Top Navbar Profile & Status
     expect(screen.getByLabelText(/Patient profile menu/i)).toBeInTheDocument();
-    expect(screen.getByText('Amara')).toBeInTheDocument();
   });
 
   it('Screen 1 — Medical History: renders PPD diagnosis question, radio options, records upload, and Save action', () => {
@@ -128,7 +122,7 @@ describe('Miora Patient Portal Visual Refinement & Six Screens', () => {
 
     // Progress tracker stages
     expect(screen.getAllByText('Medical History').length).toBeGreaterThan(0);
-    expect(screen.getByText('Screening')).toBeInTheDocument();
+    expect(screen.getAllByText('Screening').length).toBeGreaterThan(0);
     expect(screen.getByText('Analysis')).toBeInTheDocument();
     expect(screen.getByText('Results')).toBeInTheDocument();
 

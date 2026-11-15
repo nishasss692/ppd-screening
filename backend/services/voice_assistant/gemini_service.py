@@ -8,7 +8,11 @@ import logging
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
+# pyrefly: ignore[missing-import]
+import httpx
+# pyrefly: ignore[missing-import]
 from google import genai
+# pyrefly: ignore[missing-import]
 from google.genai import types
 
 from backend.services.voice_assistant.config import (
@@ -131,7 +135,17 @@ class GeminiVoiceAssistantService:
                 "Gemini API key is missing. Set GEMINI_API_KEY in the environment or configuration."
             )
 
-        self._client = genai.Client(api_key=self.config.api_key)
+        httpx_transport = httpx.HTTPTransport(retries=3)
+        httpx_timeout = httpx.Timeout(connect=15.0, read=25.0, write=15.0, pool=15.0)
+        custom_httpx_client = httpx.Client(timeout=httpx_timeout, transport=httpx_transport)
+
+        self._client = genai.Client(
+            api_key=self.config.api_key,
+            http_options=types.HttpOptions(
+                api_version="v1beta",
+                httpx_client=custom_httpx_client,
+            ),
+        )
         return self._client
 
     def generate_response(
@@ -169,7 +183,8 @@ class GeminiVoiceAssistantService:
             raise ValueError("user_message cannot be empty or whitespace.")
 
         clean_message = user_message.strip()
-        history = conversation_history or []
+        # Bound conversation history to recent 6 turns to reduce token payload and latency
+        history = (conversation_history or [])[-6:]
 
         # Automatically detect or resolve the conversational language
         resolved_lang = (language or self.config.detect_language(clean_message)).lower().strip()

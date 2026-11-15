@@ -58,14 +58,36 @@ export function PatientProfilePage() {
   };
 
   return (
-    <div style={{ padding: '24px 32px', maxWidth: 860 }}>
+    <div style={{ padding: '24px 32px', maxWidth: 960, margin: '0 auto', fontFamily: 'var(--patient-font-sans)' }}>
       {/* Title */}
-      <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontSize: 24, margin: '0 0 6px 0', color: 'var(--patient-text-primary)' }}>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: '4px 12px',
+          borderRadius: 9999,
+          fontSize: 12,
+          fontWeight: 600,
+          color: 'var(--patient-brand-rose-deep)',
+          background: 'var(--patient-brand-rose-subtle, #fde7ec)',
+          border: '1px solid rgba(234, 58, 122, 0.2)',
+          marginBottom: 10,
+        }}>
+          <span>Personal Account</span>
+        </div>
+        <h1 style={{
+          fontFamily: 'var(--patient-font-serif)',
+          fontSize: 28,
+          margin: '0 0 6px 0',
+          color: 'var(--patient-ink, #271218)',
+          fontWeight: 600,
+          letterSpacing: '-0.02em',
+        }}>
           Patient Profile
         </h1>
-        <p style={{ margin: 0, fontSize: 13, color: 'var(--patient-text-muted)' }}>
-          Manage your personal details, postpartum timeline, and emergency contacts.
+        <p style={{ margin: 0, fontSize: 13.5, color: 'var(--patient-muted, #62555a)' }}>
+          Manage your personal details, postpartum timeline, and emergency contacts. Connected directly to PostgreSQL.
         </p>
       </div>
 
@@ -82,17 +104,35 @@ export function PatientProfilePage() {
       )}
 
       {/* Main Profile Card */}
-      <div style={{ background: '#ffffff', border: '1px solid var(--patient-border)', borderRadius: 12, padding: 24, boxShadow: 'var(--patient-shadow-card)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, borderBottom: '1px solid var(--patient-border-subtle)', paddingBottom: 20, marginBottom: 20 }}>
-          <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--patient-primary)', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700 }}>
+      <div style={{
+        background: '#ffffff',
+        border: '1px solid var(--patient-blush-border, #f0dfe2)',
+        borderRadius: 'var(--patient-radius-lg, 16px)',
+        padding: '28px 32px',
+        boxShadow: '0 4px 20px rgba(197, 35, 97, 0.05)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18, borderBottom: '1px solid var(--patient-blush-border, #f0dfe2)', paddingBottom: 22, marginBottom: 22 }}>
+          <div style={{
+            width: 60,
+            height: 60,
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, var(--patient-brand-rose, #d93c75), var(--patient-brand-rose-deep, #ca2261))',
+            color: '#ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 22,
+            fontWeight: 700,
+            boxShadow: '0 4px 12px rgba(217, 60, 117, 0.25)',
+          }}>
             {patient?.avatarInitials || 'P'}
           </div>
           <div style={{ flex: 1 }}>
-            <h2 style={{ fontSize: 18, margin: '0 0 4px 0', color: 'var(--patient-text-primary)' }}>
+            <h2 style={{ fontFamily: 'var(--patient-font-serif)', fontSize: 20, margin: '0 0 4px 0', color: 'var(--patient-ink, #271218)', fontWeight: 600 }}>
               {patient?.fullName || 'Patient'}
             </h2>
-            <span style={{ fontSize: 12, color: 'var(--patient-text-muted)' }}>
-              Patient ID: <strong>{patient?.id || 'P-101'}</strong> · Week {patient?.postpartumWeek || 4} Postpartum
+            <span style={{ fontSize: 13, color: 'var(--patient-muted, #62555a)' }}>
+              Patient ID: <strong style={{ color: 'var(--patient-ink, #271218)' }}>{patient?.id || 'P-101'}</strong> · Week {patient?.postpartumWeek || 4} Postpartum
             </span>
           </div>
           <button
@@ -102,14 +142,15 @@ export function PatientProfilePage() {
               setSaveError('');
             }}
             style={{
-              background: isEditing ? 'none' : 'var(--patient-primary-subtle)',
-              border: '1px solid var(--patient-primary)',
-              color: 'var(--patient-primary)',
+              background: isEditing ? 'none' : 'var(--patient-brand-rose-subtle, #fde7ec)',
+              border: '1px solid var(--patient-brand-rose, #d93c75)',
+              color: 'var(--patient-brand-rose-deep, #ca2261)',
               borderRadius: 8,
-              padding: '6px 14px',
-              fontSize: 12.5,
+              padding: '8px 16px',
+              fontSize: 13,
               fontWeight: 600,
               cursor: 'pointer',
+              transition: 'all 0.15s ease',
             }}
           >
             {isEditing ? 'Cancel' : 'Edit Profile'}
@@ -184,15 +225,16 @@ export function PatientProfilePage() {
                 type="submit"
                 disabled={isSaving}
                 style={{
-                  background: 'var(--patient-primary)',
+                  background: 'var(--patient-brand-rose, #d93c75)',
                   border: 'none',
                   color: '#ffffff',
-                  padding: '9px 20px',
+                  padding: '10px 22px',
                   borderRadius: 8,
                   fontWeight: 600,
                   fontSize: 13,
                   cursor: isSaving ? 'not-allowed' : 'pointer',
                   opacity: isSaving ? 0.7 : 1,
+                  boxShadow: '0 2px 8px rgba(217, 60, 117, 0.25)',
                 }}
               >
                 {isSaving ? 'Saving to Database...' : 'Save Changes'}

@@ -9,15 +9,20 @@
   min-height: 100vh;
   background: var(--patient-page-bg);
   color: var(--patient-ink);
-  font-family: var(--patient-font-sans);
+  font-family: var(--sans, 'DM Sans', Arial, sans-serif);
   display: flex;
   position: relative;
   overflow-x: hidden;
 }
 
+.patient-app-shell.is-topnav-layout {
+  flex-direction: column;
+}
+
 .patient-main-container {
   flex: 1;
   min-width: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
   background: transparent;
