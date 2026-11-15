@@ -385,61 +385,86 @@
   margin-bottom: 24px;
 }
 
+.patient-page-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2.6px;
+  text-transform: uppercase;
+  color: #4d3c42;
+  margin-bottom: 8px;
+}
+
+.patient-page-eyebrow-line {
+  width: 60px;
+  height: 1px;
+  background: #e1b8c1;
+}
+
 .patient-page-heading {
   margin: 0 0 6px;
-  font-family: var(--patient-font-serif);
-  font-size: 28px;
-  font-weight: 600;
-  color: var(--patient-ink);
-  letter-spacing: -0.015em;
+  font-family: var(--serif, 'Playfair Display', Georgia, serif);
+  font-size: clamp(26px, 2.8vw, 36px);
+  font-weight: 500;
+  color: var(--patient-ink, #271218);
+  letter-spacing: -0.02em;
+}
+
+.patient-page-heading em {
+  color: #c93769;
+  font-style: italic;
+  font-weight: 400;
 }
 
 .patient-page-subheading {
   margin: 0;
   font-size: 14px;
-  color: var(--patient-muted);
+  color: var(--patient-muted, #54464b);
   line-height: 1.5;
   max-width: 680px;
 }
 
-/* Card Surface */
+/* Card Surface matching Clinician miora-card */
 .patient-card {
-  background: var(--patient-surface);
-  border: 1px solid var(--patient-blush-border);
-  border-radius: var(--patient-radius-card);
-  box-shadow: var(--patient-shadow-card);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #eed9dd;
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(130, 52, 74, 0.035);
   padding: 24px;
   transition: var(--patient-transition);
 }
 
 .patient-card:hover {
-  box-shadow: var(--patient-shadow-elevated);
+  box-shadow: 0 8px 24px rgba(130, 52, 74, 0.07);
+  border-color: #e4bcc6;
 }
 
-/* Primary Raspberry Button */
+/* Primary Raspberry Button matching miora-cta-primary */
 .patient-btn-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: var(--patient-primary-gradient);
+  background: linear-gradient(180deg, #e05082 0%, #c83668 100%);
   color: #ffffff;
-  border: none;
-  border-radius: var(--patient-radius-pill);
-  padding: 11px 24px;
-  font-size: 14px;
+  border: 1px solid #c23263;
+  border-radius: var(--patient-radius-pill, 999px);
+  padding: 10px 22px;
+  font-size: 13.5px;
   font-weight: 600;
   letter-spacing: -0.005em;
   cursor: pointer;
-  box-shadow: var(--patient-shadow-button);
-  transition: var(--patient-transition);
+  box-shadow: 0 6px 16px rgba(199, 53, 102, 0.22);
+  transition: transform 150ms ease, box-shadow 150ms ease, filter 150ms ease;
   text-decoration: none;
 }
 
 .patient-btn-primary:hover:not(:disabled) {
-  background: var(--patient-primary-gradient-hover);
-  box-shadow: var(--patient-shadow-button-hover);
   transform: translateY(-1px);
+  box-shadow: 0 9px 20px rgba(199, 53, 102, 0.28);
+  filter: brightness(1.03);
 }
 
 .patient-btn-primary:active:not(:disabled) {
@@ -452,28 +477,28 @@
   box-shadow: none;
 }
 
-/* Secondary White Button */
+/* Secondary Button matching miora-pill-btn */
 .patient-btn-secondary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: #ffffff;
-  color: var(--patient-ink-light);
-  border: 1px solid var(--patient-blush-border);
-  border-radius: var(--patient-radius-pill);
-  padding: 10px 20px;
-  font-size: 14px;
+  background: #fffbfa;
+  color: #3a292f;
+  border: 1px solid #ead4d8;
+  border-radius: var(--patient-radius-pill, 999px);
+  padding: 9px 18px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: var(--patient-transition);
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
   text-decoration: none;
 }
 
 .patient-btn-secondary:hover:not(:disabled) {
-  background: #fdf0f2;
-  border-color: rgba(217, 60, 117, 0.25);
-  color: var(--patient-brand-rose-deep);
+  background: #fdeef2;
+  border-color: #d9a7b3;
+  color: var(--rose-deep, #c93769);
 }
 
 /* Responsive Breakpoints */

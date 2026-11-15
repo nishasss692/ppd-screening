@@ -42,8 +42,9 @@
 }
 
 .patient-brand-link .brand-wordmark {
-  font-size: 28px;
-  color: var(--patient-brand-rose, #d93c75);
+  font-size: 29px;
+  color: #d93c75;
+  padding-bottom: 0.14em;
 }
 
 /* Desktop Nav Links */

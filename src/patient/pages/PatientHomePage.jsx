@@ -1,12 +1,28 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePatient } from '../context/PatientContext.jsx';
+import { useClinicalData } from '../../dashboard/context/ClinicalContext.jsx';
+import { DashboardIcon } from '../../dashboard/components/DashboardIcon.jsx';
+import { KpiCard } from '../../dashboard/components/KpiCard.jsx';
 import { PatientIcon } from '../components/PatientIcons.jsx';
 import './patientHome.css';
 
 export function PatientHomePage() {
   const navigate = useNavigate();
-  const { patient, screening, consultations } = usePatient();
+  const { patient, screening } = usePatient();
+  const clinical = useClinicalData();
+  const metrics = clinical?.metrics || {
+    registeredMothers: 344,
+    screeningsCompleted: 263,
+    casesForReview: 33,
+    potentialDiscordance: 7,
+    trends: {
+      registeredMothers: '+5%',
+      screeningsCompleted: '+8%',
+      casesForReview: '+12%',
+      potentialDiscordance: '+3%',
+    },
+  };
 
   const patientName = patient?.name || 'Amara';
   const riskScore = screening?.riskScore ?? 64;
@@ -19,60 +35,68 @@ export function PatientHomePage() {
 
   return (
     <div className="patient-home-container">
-      {/* Breadcrumb Bar */}
-      <div className="medhist-breadcrumb-bar">
-        <span className="medhist-breadcrumb-current">Dashboard</span>
-      </div>
-
-      {/* Hero Welcome Banner */}
-      <div className="patient-card patient-home-hero-card">
-        <div className="patient-home-hero-text">
-          <div className="patient-home-greeting-badge">
-            <PatientIcon name="heart" size={13} />
-            <span>Maternal Emotional Wellness</span>
+      {/* Dashboard Header matching Clinician Command Center exactly */}
+      <section className="miora-dash-header" aria-labelledby="patient-home-heading">
+        <div className="miora-dash-header-copy">
+          <div className="miora-dash-eyebrow">
+            <span>DASHBOARD</span>
+            <span className="miora-dash-eyebrow-line" aria-hidden="true" />
           </div>
-
-          <h1 className="patient-home-title">
-            Welcome back, {patientName}
+          <h1 id="patient-home-heading" className="miora-dash-title">
+            Welcome back, <em>{patientName}</em>
           </h1>
-
-          <p className="patient-home-subtitle">
-            Your personalized companion for postpartum recovery and emotional intelligence.
-            Track your well-being trajectory, start guided screening check-ins, and connect with your clinical support team.
+          <p className="miora-dash-subtitle">
+            Your personalized companion for postpartum recovery and emotional intelligence. A real-time overview of maternal wellbeing, screenings and cases requiring attention.
           </p>
-
-          <div className="patient-home-hero-actions">
-            <button
-              type="button"
-              className="patient-btn-primary"
-              onClick={() => navigate('/patient/screening')}
-            >
-              <PatientIcon name="ai-screening" size={15} />
-              <span>Start AI Screening</span>
-            </button>
-
-            <button
-              type="button"
-              className="patient-btn-secondary"
-              onClick={() => navigate('/patient/ai-assistant')}
-            >
-              <PatientIcon name="ai-assistant" size={15} />
-              <span>Talk with AI Assistant</span>
-            </button>
-          </div>
         </div>
 
-        <div className="patient-home-hero-illu-wrap" aria-hidden="true">
-          <img
-            src="/assets/care-mother-feathered.png"
-            alt=""
-            className="patient-home-hero-illustration"
-            onError={(e) => {
-              e.target.style.display = 'none';
-            }}
-          />
+        <div className="miora-dash-header-actions">
+          <button
+            type="button"
+            className="miora-cta-primary"
+            onClick={() => navigate('/patient/screening')}
+          >
+            <DashboardIcon name="plus" size={16} strokeWidth={2.2} />
+            <span>Start Screening</span>
+          </button>
         </div>
-      </div>
+      </section>
+
+      {/* 4 KPI Cards Grid matching Doctor Dashboard exactly */}
+      <section className="miora-kpi-grid" aria-label="Key clinical metrics">
+        <KpiCard
+          icon="users"
+          value={metrics.registeredMothers || 344}
+          trend={metrics.trends?.registeredMothers || '+5%'}
+          trendTone="positive"
+          label="Registered Mothers"
+          onClick={() => navigate('/patient/reports')}
+        />
+        <KpiCard
+          icon="mic"
+          value={metrics.screeningsCompleted || 263}
+          trend={metrics.trends?.screeningsCompleted || '+8%'}
+          trendTone="positive"
+          label="Screenings Completed"
+          onClick={() => navigate('/patient/screening')}
+        />
+        <KpiCard
+          icon="alertTriangle"
+          value={metrics.casesForReview || 33}
+          trend={metrics.trends?.casesForReview || '+12%'}
+          trendTone="attention"
+          label="Cases for Review"
+          onClick={() => navigate('/patient/reports')}
+        />
+        <KpiCard
+          icon="layers"
+          value={metrics.potentialDiscordance || 7}
+          trend={metrics.trends?.potentialDiscordance || '+3%'}
+          trendTone="positive"
+          label="Potential Discordance"
+          onClick={() => navigate('/patient/care-suggestions')}
+        />
+      </section>
 
       {/* 6-Card Dashboard Grid */}
       <div className="patient-home-grid">

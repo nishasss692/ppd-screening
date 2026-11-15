@@ -128,13 +128,13 @@ export function PatientTopNav() {
   };
 
   return (
-    <header className="patient-topnav" ref={navRef} role="banner">
-      <div className="patient-topnav-inner">
+    <header className="dash-topnav patient-topnav" ref={navRef} role="banner">
+      <div className="dash-topnav-inner patient-topnav-inner">
         {/* Brand Group */}
-        <div className="patient-brand-group">
+        <div className="dash-brand-group patient-brand-group">
           <Link
             to="/"
-            className="patient-brand-link"
+            className="dash-brand-link patient-brand-link"
             aria-label="Miora Home"
             onClick={() => setOpenMenu(null)}
           >
@@ -144,7 +144,7 @@ export function PatientTopNav() {
 
         {/* Desktop Navigation Links */}
         <nav
-          className="patient-nav-links"
+          className="dash-nav-links patient-nav-links"
           role="navigation"
           aria-label="Patient Portal Navigation"
         >
@@ -154,7 +154,7 @@ export function PatientTopNav() {
               <NavLink
                 key={item.to}
                 to={item.to}
-                className={`patient-nav-link ${active ? 'is-active' : ''}`}
+                className={`dash-nav-link patient-nav-link ${active ? 'is-active' : ''}`}
               >
                 <span>{item.label}</span>
               </NavLink>
@@ -163,12 +163,12 @@ export function PatientTopNav() {
         </nav>
 
         {/* Right Utilities: Assistant, Notifications, Avatar, Mobile Menu Button */}
-        <div className="patient-nav-utilities">
+        <div className="dash-nav-utilities patient-nav-utilities">
           {/* AI Assistant sparkle button matching Doctor Dashboard Copilot */}
-          <div className="patient-utility-wrap">
+          <div className="dash-utility-wrap patient-utility-wrap">
             <Link
               to="/patient/ai-assistant"
-              className="patient-icon-btn"
+              className="dash-icon-btn patient-icon-btn"
               aria-label="Patient AI Assistant"
               title="Miora AI Assistant"
             >
@@ -177,10 +177,10 @@ export function PatientTopNav() {
           </div>
 
           {/* Notifications Dropdown */}
-          <div className="patient-utility-wrap">
+          <div className="dash-utility-wrap patient-utility-wrap">
             <button
               type="button"
-              className={`patient-icon-btn ${openMenu === 'notifs' ? 'is-open' : ''}`}
+              className={`dash-icon-btn patient-icon-btn ${openMenu === 'notifs' ? 'is-open' : ''}`}
               aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
               aria-expanded={openMenu === 'notifs'}
               onClick={() => setOpenMenu((prev) => (prev === 'notifs' ? null : 'notifs'))}
@@ -237,7 +237,7 @@ export function PatientTopNav() {
           </div>
 
           {/* Profile Dropdown — Minimal circular avatar button matching Doctor Dashboard */}
-          <div className="patient-utility-wrap">
+          <div className="dash-utility-wrap patient-utility-wrap">
             <button
               type="button"
               className={`dash-avatar-btn ${openMenu === 'profile' ? 'is-open' : ''}`}
