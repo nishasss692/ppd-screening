@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { NavLink } from 'react-router-dom';
 import { usePatient } from '../context/PatientContext.jsx';
+import { PatientIcon } from '../components/PatientIcons.jsx';
+import './profileSettings.css';
 
 export function PatientProfilePage() {
   const { patient, updatePatientProfile } = usePatient();
@@ -58,99 +61,63 @@ export function PatientProfilePage() {
   };
 
   return (
-    <div style={{ padding: '24px 32px', maxWidth: 960, margin: '0 auto', fontFamily: 'var(--patient-font-sans)' }}>
-      {/* Title */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 6,
-          padding: '4px 12px',
-          borderRadius: 9999,
-          fontSize: 12,
-          fontWeight: 600,
-          color: 'var(--patient-brand-rose-deep)',
-          background: 'var(--patient-brand-rose-subtle, #fde7ec)',
-          border: '1px solid rgba(234, 58, 122, 0.2)',
-          marginBottom: 10,
-        }}>
-          <span>Personal Account</span>
+    <div className="patient-profile-shell">
+      {/* Breadcrumb Bar */}
+      <div className="medhist-breadcrumb-bar">
+        <NavLink to="/patient/dashboard" className="medhist-breadcrumb-link">
+          <PatientIcon name="home" size={13} />
+          <span>Dashboard</span>
+        </NavLink>
+        <span className="medhist-breadcrumb-sep" aria-hidden="true">&rsaquo;</span>
+        <span className="medhist-breadcrumb-current">Profile</span>
+      </div>
+
+      {/* Hero Welcome Banner */}
+      <div className="patient-card patient-home-hero-card">
+        <div className="patient-home-hero-text">
+          <div className="patient-home-greeting-badge">
+            <PatientIcon name="profile" size={13} />
+            <span>Maternal Emotional Care</span>
+          </div>
+          <h1 className="patient-home-title">Patient Profile</h1>
+          <p className="patient-home-subtitle">
+            Manage your personal profile, postpartum recovery timeline, and emergency care contacts. All details persist directly in PostgreSQL.
+          </p>
         </div>
-        <h1 style={{
-          fontFamily: 'var(--patient-font-serif)',
-          fontSize: 28,
-          margin: '0 0 6px 0',
-          color: 'var(--patient-ink, #271218)',
-          fontWeight: 600,
-          letterSpacing: '-0.02em',
-        }}>
-          Patient Profile
-        </h1>
-        <p style={{ margin: 0, fontSize: 13.5, color: 'var(--patient-muted, #62555a)' }}>
-          Manage your personal details, postpartum timeline, and emergency contacts. Connected directly to PostgreSQL.
-        </p>
       </div>
 
       {saveSuccess && (
-        <div style={{ background: 'var(--patient-success-bg, #ecfdf5)', color: 'var(--patient-success, #059669)', border: '1px solid #a7f3d0', padding: '10px 16px', borderRadius: 8, marginBottom: 16, fontSize: 13 }}>
-          ✓ Profile details updated and saved to database successfully.
+        <div className="patient-notice-banner is-success">
+          ✓ Profile details updated and saved to PostgreSQL successfully.
         </div>
       )}
 
       {saveError && (
-        <div style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca', padding: '10px 16px', borderRadius: 8, marginBottom: 16, fontSize: 13 }}>
+        <div className="patient-notice-banner is-error">
           ✕ {saveError}
         </div>
       )}
 
       {/* Main Profile Card */}
-      <div style={{
-        background: '#ffffff',
-        border: '1px solid var(--patient-blush-border, #f0dfe2)',
-        borderRadius: 'var(--patient-radius-lg, 16px)',
-        padding: '28px 32px',
-        boxShadow: '0 4px 20px rgba(197, 35, 97, 0.05)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18, borderBottom: '1px solid var(--patient-blush-border, #f0dfe2)', paddingBottom: 22, marginBottom: 22 }}>
-          <div style={{
-            width: 60,
-            height: 60,
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, var(--patient-brand-rose, #d93c75), var(--patient-brand-rose-deep, #ca2261))',
-            color: '#ffffff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 22,
-            fontWeight: 700,
-            boxShadow: '0 4px 12px rgba(217, 60, 117, 0.25)',
-          }}>
+      <div className="patient-profile-card">
+        <div className="patient-profile-user-row">
+          <div className="patient-profile-avatar-large">
             {patient?.avatarInitials || 'P'}
           </div>
-          <div style={{ flex: 1 }}>
-            <h2 style={{ fontFamily: 'var(--patient-font-serif)', fontSize: 20, margin: '0 0 4px 0', color: 'var(--patient-ink, #271218)', fontWeight: 600 }}>
+          <div className="patient-profile-user-meta">
+            <h2 className="patient-profile-name">
               {patient?.fullName || 'Patient'}
             </h2>
-            <span style={{ fontSize: 13, color: 'var(--patient-muted, #62555a)' }}>
-              Patient ID: <strong style={{ color: 'var(--patient-ink, #271218)' }}>{patient?.id || 'P-101'}</strong> · Week {patient?.postpartumWeek || 4} Postpartum
+            <span className="patient-profile-sub">
+              Patient ID: <strong style={{ color: 'var(--patient-ink)' }}>{patient?.id || 'P-101'}</strong> · Week {patient?.postpartumWeek || 4} Postpartum
             </span>
           </div>
           <button
             type="button"
+            className="patient-btn-secondary"
             onClick={() => {
               setIsEditing((prev) => !prev);
               setSaveError('');
-            }}
-            style={{
-              background: isEditing ? 'none' : 'var(--patient-brand-rose-subtle, #fde7ec)',
-              border: '1px solid var(--patient-brand-rose, #d93c75)',
-              color: 'var(--patient-brand-rose-deep, #ca2261)',
-              borderRadius: 8,
-              padding: '8px 16px',
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
             }}
           >
             {isEditing ? 'Cancel' : 'Edit Profile'}
@@ -158,110 +125,99 @@ export function PatientProfilePage() {
         </div>
 
         {isEditing ? (
-          <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--patient-text-primary)' }}>Full Name</label>
+          <form onSubmit={handleSubmit} className="patient-profile-form">
+            <div className="patient-form-group">
+              <label className="patient-form-label">Full Name</label>
               <input
                 type="text"
+                className="patient-form-input"
                 value={formData.fullName}
                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--patient-border)', borderRadius: 6, fontSize: 13 }}
                 required
               />
             </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--patient-text-primary)' }}>Email Address</label>
+            <div className="patient-form-group">
+              <label className="patient-form-label">Email Address</label>
               <input
                 type="email"
+                className="patient-form-input"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--patient-border)', borderRadius: 6, fontSize: 13 }}
                 required
               />
             </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--patient-text-primary)' }}>Phone Number</label>
+            <div className="patient-form-group">
+              <label className="patient-form-label">Phone Number</label>
               <input
                 type="tel"
+                className="patient-form-input"
                 value={formData.phone}
                 placeholder="Optional"
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--patient-border)', borderRadius: 6, fontSize: 13 }}
               />
             </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--patient-text-primary)' }}>Postpartum Week</label>
+            <div className="patient-form-group">
+              <label className="patient-form-label">Postpartum Week</label>
               <input
                 type="number"
                 min="1"
                 max="52"
+                className="patient-form-input"
                 value={formData.postpartumWeek}
                 onChange={(e) => setFormData({ ...formData, postpartumWeek: Number(e.target.value) })}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--patient-border)', borderRadius: 6, fontSize: 13 }}
               />
             </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--patient-text-primary)' }}>Emergency Contact Name</label>
+            <div className="patient-form-group">
+              <label className="patient-form-label">Emergency Contact Name</label>
               <input
                 type="text"
+                className="patient-form-input"
                 value={formData.emergencyName}
                 placeholder="Partner, relative, or friend"
                 onChange={(e) => setFormData({ ...formData, emergencyName: e.target.value })}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--patient-border)', borderRadius: 6, fontSize: 13 }}
               />
             </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--patient-text-primary)' }}>Emergency Contact Phone</label>
+            <div className="patient-form-group">
+              <label className="patient-form-label">Emergency Contact Phone</label>
               <input
                 type="tel"
+                className="patient-form-input"
                 value={formData.emergencyPhone}
                 placeholder="Contact number"
                 onChange={(e) => setFormData({ ...formData, emergencyPhone: e.target.value })}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--patient-border)', borderRadius: 6, fontSize: 13 }}
               />
             </div>
             <div style={{ gridColumn: 'span 2', marginTop: 8 }}>
               <button
                 type="submit"
                 disabled={isSaving}
-                style={{
-                  background: 'var(--patient-brand-rose, #d93c75)',
-                  border: 'none',
-                  color: '#ffffff',
-                  padding: '10px 22px',
-                  borderRadius: 8,
-                  fontWeight: 600,
-                  fontSize: 13,
-                  cursor: isSaving ? 'not-allowed' : 'pointer',
-                  opacity: isSaving ? 0.7 : 1,
-                  boxShadow: '0 2px 8px rgba(217, 60, 117, 0.25)',
-                }}
+                className="patient-btn-primary"
               >
                 {isSaving ? 'Saving to Database...' : 'Save Changes'}
               </button>
             </div>
           </form>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-            <div>
-              <span style={{ display: 'block', fontSize: 11, color: 'var(--patient-text-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Email Address</span>
-              <strong style={{ fontSize: 13.5, color: 'var(--patient-text-body)' }}>{patient?.email || 'Not provided'}</strong>
+          <div className="patient-profile-info-grid">
+            <div className="patient-profile-info-item">
+              <span className="patient-profile-info-label">Email Address</span>
+              <strong className="patient-profile-info-val">{patient?.email || 'Not provided'}</strong>
             </div>
-            <div>
-              <span style={{ display: 'block', fontSize: 11, color: 'var(--patient-text-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Phone Number</span>
-              <strong style={{ fontSize: 13.5, color: 'var(--patient-text-body)' }}>{patient?.phone || 'Not provided'}</strong>
+            <div className="patient-profile-info-item">
+              <span className="patient-profile-info-label">Phone Number</span>
+              <strong className="patient-profile-info-val">{patient?.phone || 'Not provided'}</strong>
             </div>
-            <div>
-              <span style={{ display: 'block', fontSize: 11, color: 'var(--patient-text-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Emergency Contact</span>
-              <strong style={{ fontSize: 13.5, color: 'var(--patient-text-body)' }}>
+            <div className="patient-profile-info-item">
+              <span className="patient-profile-info-label">Emergency Contact</span>
+              <strong className="patient-profile-info-val">
                 {patient?.emergencyContact?.name
                   ? `${patient.emergencyContact.name} ${patient.emergencyContact.phone ? `(${patient.emergencyContact.phone})` : ''}`
                   : 'Not registered'}
               </strong>
             </div>
-            <div>
-              <span style={{ display: 'block', fontSize: 11, color: 'var(--patient-text-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Account Status</span>
-              <strong style={{ fontSize: 13.5, color: 'var(--patient-success, #059669)' }}>
+            <div className="patient-profile-info-item">
+              <span className="patient-profile-info-label">Account Status</span>
+              <strong className="patient-profile-info-val is-status">
                 Active (Connected to PostgreSQL)
               </strong>
             </div>

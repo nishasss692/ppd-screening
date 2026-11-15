@@ -13,12 +13,15 @@
   /* Color Palette */
   --patient-ink: #271218;
   --patient-ink-light: #46383d;
+  --patient-ink-secondary: #54464b;
   --patient-muted: #62555a;
+  --patient-text-muted: #62555a;
   --patient-subtle: #8a7880;
 
   --patient-brand-rose: #d93c75;
   --patient-brand-rose-deep: #ca2261;
   --patient-brand-rose-light: #ea3a7a;
+  --patient-brand-rose-subtle: #fde7ec;
 
   --patient-cream: #fdf8f4;
   --patient-cream-deep: #fcf6f2;
