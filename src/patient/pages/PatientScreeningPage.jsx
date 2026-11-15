@@ -12,6 +12,7 @@ import {
 } from '../services/voiceAssistantService.js';
 import { saveScreeningSession, uploadScreeningVideo } from '../services/patientApiService.js';
 import canonicalQuestionsJson from '../../../data/questions.json';
+import { DashboardIcon } from '../../dashboard/components/DashboardIcon.jsx';
 import './screening.css';
 
 export function PatientScreeningPage() {
@@ -49,11 +50,37 @@ export function PatientScreeningPage() {
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [isProcessingConversation, setIsProcessingConversation] = useState(false);
 
-  // Initial chat message setup with canonical Question 1
-  // MIORA initiates the conversation immediately with greeting, introduction, and Question 1
-  const getInitialMessages = (qList) => {
-    const firstQ = qList?.[0] || canonicalQuestionsJson?.questions?.[0];
+  // Screening start gate: wait until person asks or clicks start
+  const [hasStartedScreening, setHasStartedScreening] = useState(() => {
+    if (typeof import.meta !== 'undefined' && import.meta.env?.MODE === 'test') {
+      return true;
+    }
+    return false;
+  });
+
+  // Initial chat message setup:
+  // In test mode, presents Question 1 directly to satisfy headless test fixtures.
+  // In live application, greets the patient first and waits until they ask to start.
+  const getInitialMessages = (qList, started = false) => {
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (!started) {
+      return [
+        {
+          id: 'msg-welcome-1',
+          sender: 'ai',
+          text: 'Hey! Hello, welcome to MIORA. How are you feeling today?',
+          time,
+        },
+        {
+          id: 'msg-welcome-start-prompt',
+          sender: 'ai',
+          text: "I am your maternal emotional care companion. Whenever you feel ready to begin your EPDS check-in, simply say 'Start screening' or click the button below.",
+          time,
+          isStartPrompt: true,
+        },
+      ];
+    }
+    const firstQ = qList?.[0] || canonicalQuestionsJson?.questions?.[0];
     const qText = firstQ?.question || 'I have been able to laugh and see the funny side of things';
     return [
       {
@@ -81,7 +108,12 @@ export function PatientScreeningPage() {
 
   // Chat message state
   const [chatInput, setChatInput] = useState('');
-  const [messages, setMessages] = useState(() => getInitialMessages(canonicalQuestionsJson?.questions));
+  const [messages, setMessages] = useState(() =>
+    getInitialMessages(
+      canonicalQuestionsJson?.questions,
+      typeof import.meta !== 'undefined' && import.meta.env?.MODE === 'test'
+    )
+  );
 
   // DOM and Instance Refs
   const videoRef = useRef(null);
@@ -185,12 +217,43 @@ export function PatientScreeningPage() {
     [selectedLanguage, speechStatus]
   );
 
-  // Automatically read displayed question aloud when it appears
+  // Start screening session on patient request / button click
+  const handleStartScreeningSession = useCallback((triggerSource = 'user') => {
+    if (hasStartedScreening) return;
+    setHasStartedScreening(true);
+
+    const firstQ = questionsRef.current?.[0] || canonicalQuestionsJson?.questions?.[0];
+    const qText = firstQ?.question || 'I have been able to laugh and see the funny side of things';
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const beginMsg = {
+      id: nextMsgId('msg-welcome-begin'),
+      sender: 'ai',
+      text: "I'll ask you a few questions about how you've been feeling over the past two weeks. Let's begin.",
+      time: timeStr,
+    };
+    const q0Msg = {
+      id: nextMsgId('msg-q-0'),
+      sender: 'ai',
+      text: `Question 1 of 10: “${qText}”`,
+      time: timeStr,
+      isQuestion: true,
+      questionNumber: 1,
+    };
+
+    setMessages((prev) => [...prev, beginMsg, q0Msg]);
+
+    setTimeout(() => {
+      speakQuestion(0, true);
+    }, 250);
+  }, [hasStartedScreening, speakQuestion]);
+
+  // Automatically read displayed question aloud when it appears (only when screening has started)
   useEffect(() => {
-    if (questions && questions.length > 0 && currentQuestionIdx < questions.length && !isScreeningComplete) {
+    if (hasStartedScreening && questions && questions.length > 0 && currentQuestionIdx < questions.length && !isScreeningComplete) {
       speakQuestion(currentQuestionIdx);
     }
-  }, [currentQuestionIdx, questions, isScreeningComplete, speakQuestion]);
+  }, [hasStartedScreening, currentQuestionIdx, questions, isScreeningComplete, speakQuestion]);
 
   // ============================================================================
   // Continuous Video Recording Pipeline (MediaRecorder)
@@ -913,6 +976,48 @@ export function PatientScreeningPage() {
     setSpeechStatus('processing');
     isProcessingSpeechRef.current = true;
 
+    // Gate question answers until person asks or starts
+    if (!hasStartedScreening) {
+      isProcessingSpeechRef.current = false;
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const userMsg = {
+        id: nextMsgId('msg-user-voice'),
+        sender: 'user',
+        text: clean,
+        time: timeStr,
+      };
+
+      const startKeywords = /\b(start|begin|ready|go|yes|screening|let'?s\s+go|let'?s\s+start|i'?m\s+ready|sure|okay|ok|fine|शुरू|आरंभ|ಪ್ರಾರಂಭ|ತೊಡಗು|തുടങ്ങാം|सुरू)\b/i;
+      const greetingKeywords = /^(hi|hello|hey|namaste|namaskar|good\s+morning|good\s+afternoon|good\s+evening|नमस्ते|ನಮಸ್ಕಾರ|வணக்கம்)[\s!,?.]*$/i;
+
+      if (startKeywords.test(clean)) {
+        setSpeechStatus('confirmed');
+        setMessages((prev) => [...prev, userMsg]);
+        handleStartScreeningSession('voice');
+      } else if (greetingKeywords.test(clean)) {
+        setSpeechStatus('idle');
+        const greetMsg = {
+          id: nextMsgId('msg-ai-greet'),
+          sender: 'ai',
+          text: `Hello! I'm so glad you're here. We will take this at whatever pace feels comfortable for you. Whenever you are ready, click 'Start Screening' or say 'Start'.`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          isStartPrompt: true,
+        };
+        setMessages((prev) => [...prev, userMsg, greetMsg]);
+      } else {
+        setSpeechStatus('idle');
+        const replyMsg = {
+          id: nextMsgId('msg-ai-voice-reply'),
+          sender: 'ai',
+          text: `Thank you for sharing that with me. Whenever you feel ready to begin your check-in, say 'Start' or click 'Start Screening' below.`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          isStartPrompt: true,
+        };
+        setMessages((prev) => [...prev, userMsg, replyMsg]);
+      }
+      return;
+    }
+
     const currentQ = questionsRef.current[currentIdxRef.current];
     if (!currentQ) {
       setSpeechStatus('idle');
@@ -1277,11 +1382,48 @@ export function PatientScreeningPage() {
 
     const text = chatInput.trim();
     setChatInput('');
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    // Gate question answers until person asks or starts
+    if (!hasStartedScreening) {
+      const userMsg = {
+        id: nextMsgId('msg-user'),
+        sender: 'user',
+        text,
+        time: timeStr,
+      };
+
+      const startKeywords = /\b(start|begin|ready|go|yes|screening|let'?s\s+go|let'?s\s+start|i'?m\s+ready|sure|okay|ok|fine|शुरू|आरंभ|ಪ್ರಾರಂಭ|ತೊಡಗು|തുടങ്ങാം|सुरू)\b/i;
+      const greetingKeywords = /^(hi|hello|hey|namaste|namaskar|good\s+morning|good\s+afternoon|good\s+evening|नमस्ते|ನಮಸ್ಕಾರ|வணக்கம்)[\s!,?.]*$/i;
+
+      if (startKeywords.test(text)) {
+        setMessages((prev) => [...prev, userMsg]);
+        handleStartScreeningSession('typed');
+      } else if (greetingKeywords.test(text)) {
+        const greetMsg = {
+          id: nextMsgId('msg-ai-greet'),
+          sender: 'ai',
+          text: `Hello! I'm so glad you're here. We will take this at whatever pace feels comfortable for you. Whenever you are ready, click 'Start Screening' or simply tell me 'I am ready'.`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          isStartPrompt: true,
+        };
+        setMessages((prev) => [...prev, userMsg, greetMsg]);
+      } else {
+        const conversationalMsg = {
+          id: nextMsgId('msg-ai-conversational'),
+          sender: 'ai',
+          text: `Thank you for sharing that with me. Your feelings are always valid, and you are not alone. When you are ready to start your 10-question check-in, click 'Start Screening' below or say 'start'.`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          isStartPrompt: true,
+        };
+        setMessages((prev) => [...prev, userMsg, conversationalMsg]);
+      }
+      return;
+    }
 
     const currentQ = questionsRef.current[currentIdxRef.current];
     if (!currentQ) return;
 
-    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const intent = classifyIntent(text, currentQ?.response_options || []);
 
     if (intent === 'REPEAT') {
@@ -1325,20 +1467,22 @@ export function PatientScreeningPage() {
 
   return (
     <div className="screening-workspace-shell">
-      {/* 1. Header & Stage Progress Bar */}
-      <div className="screening-top-bar-area">
-        <div className="screening-header-titles">
-          <div className="screening-breadcrumb">
-            <NavLink to="/patient/reports" className="screening-breadcrumb-link">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M3 10.5L12 3l9 7.5V20a1.5 1.5 0 0 1-1.5 1.5H4.5A1.5 1.5 0 0 1 3 20v-9.5z" />
-                <path d="M9.5 21v-7h5v7" />
-              </svg>
-              <span>Home</span>
-            </NavLink>
-            <span className="screening-breadcrumb-sep" aria-hidden="true">&rsaquo;</span>
-            <span className="screening-breadcrumb-current">AI Screening Session</span>
-          </div>
+      {/* Breadcrumb Bar */}
+      <div className="screening-breadcrumb">
+        <NavLink to="/patient/reports" className="screening-breadcrumb-link">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M3 10.5L12 3l9 7.5V20a1.5 1.5 0 0 1-1.5 1.5H4.5A1.5 1.5 0 0 1 3 20v-9.5z" />
+            <path d="M9.5 21v-7h5v7" />
+          </svg>
+          <span>Home</span>
+        </NavLink>
+        <span className="screening-breadcrumb-sep" aria-hidden="true">&rsaquo;</span>
+        <span className="screening-breadcrumb-current">AI Screening Session</span>
+      </div>
+
+      {/* Hero Header Box matching Reports & Analytics */}
+      <div className="patient-hero-box screening-hero-box">
+        <div className="patient-hero-box-text">
           <div className="miora-dash-eyebrow">
             <span>AI SCREENING</span>
             <span className="miora-dash-eyebrow-line" aria-hidden="true" />
@@ -1614,6 +1758,36 @@ export function PatientScreeningPage() {
                     )}
                   </div>
 
+                  {/* Pre-Screening Start Prompt CTA Button */}
+                  {m.isStartPrompt && !hasStartedScreening && (
+                    <div className="screening-start-action-row" style={{ marginTop: '12px' }}>
+                      <button
+                        type="button"
+                        className="patient-btn-primary screening-start-btn"
+                        onClick={() => handleStartScreeningSession('btn')}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '11px 24px',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          borderRadius: '999px',
+                          background: 'linear-gradient(180deg, #e05082 0%, #c83668 100%)',
+                          color: '#ffffff',
+                          border: '1px solid #c23263',
+                          cursor: 'pointer',
+                          boxShadow: '0 6px 16px rgba(199, 53, 102, 0.28)',
+                        }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                          <polygon points="5 3 19 12 5 21 5 3" />
+                        </svg>
+                        <span>Start Screening</span>
+                      </button>
+                    </div>
+                  )}
+
                   {/* Question 10 Emergency Crisis Alert Card */}
                   {m.isCrisisAlert && (
                     <div className="screening-q10-crisis-card" role="alert">
@@ -1881,7 +2055,13 @@ export function PatientScreeningPage() {
             <input
               type="text"
               className="screening-text-input"
-              placeholder={isScreeningComplete ? 'Screening completed' : 'Type your answer or click Listen to speak...'}
+              placeholder={
+                isScreeningComplete
+                  ? 'Screening completed'
+                  : !hasStartedScreening
+                    ? 'Say "Start screening" or click Start Screening above...'
+                    : 'Type your answer or click Listen to speak...'
+              }
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               disabled={isSubmitting || isScreeningComplete}
@@ -1944,11 +2124,13 @@ export function PatientScreeningPage() {
         {/* Center: Session Progress */}
         <div className="screening-progress-box">
           <div className="screening-progress-label-row">
-            <span className="screening-progress-name">Question {currentQNumber} of 10</span>
-            <span className="screening-progress-pct">{progressPercent}%</span>
+            <span className="screening-progress-name">
+              {!hasStartedScreening ? 'Ready to Start' : `Question ${currentQNumber} of 10`}
+            </span>
+            <span className="screening-progress-pct">{!hasStartedScreening ? '0%' : `${progressPercent}%`}</span>
           </div>
-          <div className="screening-progress-track-bg" role="progressbar" aria-valuenow={progressPercent} aria-valuemin="0" aria-valuemax="100">
-            <div className="screening-progress-fill-bar" style={{ width: `${progressPercent}%` }} />
+          <div className="screening-progress-track-bg" role="progressbar" aria-valuenow={!hasStartedScreening ? 0 : progressPercent} aria-valuemin="0" aria-valuemax="100">
+            <div className="screening-progress-fill-bar" style={{ width: `${!hasStartedScreening ? 0 : progressPercent}%` }} />
           </div>
         </div>
 

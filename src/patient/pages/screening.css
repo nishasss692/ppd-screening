@@ -11,6 +11,14 @@
 }
 
 /* 1. Header & Stage Tracker Area */
+.screening-hero-box {
+  margin-bottom: 20px;
+}
+
+.screening-hero-box .screening-stages-tracker {
+  flex-shrink: 0;
+}
+
 .screening-top-bar-area {
   display: flex;
   align-items: flex-end;

@@ -206,17 +206,29 @@ export function MedicalHistoryScreen() {
         <span className="medhist-breadcrumb-current">Medical History</span>
       </div>
 
-      <div className="patient-page-banner">
-        <div className="miora-dash-eyebrow">
-          <span>MEDICAL HISTORY</span>
-          <span className="miora-dash-eyebrow-line" aria-hidden="true" />
+      {/* Hero Header Box matching Reports & Analytics */}
+      <div className="patient-hero-box">
+        <div className="patient-hero-box-text">
+          <div className="miora-dash-eyebrow">
+            <span>MEDICAL HISTORY</span>
+            <span className="miora-dash-eyebrow-line" aria-hidden="true" />
+          </div>
+          <h1 className="miora-dash-title patient-page-heading">
+            Medical <em>History</em>
+          </h1>
+          <p className="miora-dash-subtitle patient-page-subheading">
+            Help us understand your background for a more accurate and personalised emotional wellbeing screening.
+          </p>
         </div>
-        <h1 className="miora-dash-title patient-page-heading">
-          Medical <em>History</em>
-        </h1>
-        <p className="miora-dash-subtitle patient-page-subheading">
-          Help us understand your background for a more accurate and personalised emotional wellbeing screening.
-        </p>
+        <div className="patient-hero-box-illu" aria-hidden="true">
+          <img
+            src="/assets/mother-baby-header-crop.png"
+            alt=""
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
+        </div>
       </div>
 
       {/* Card 1: Question & Options with Clipboard Illustration */}

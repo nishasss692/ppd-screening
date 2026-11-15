@@ -107,18 +107,29 @@ export function ConnectDoctorPage() {
         <span className="medhist-breadcrumb-current">Connect to a Doctor</span>
       </div>
 
-      {/* Page Banner */}
-      <div className="patient-page-banner">
-        <div className="miora-dash-eyebrow">
-          <span>CLINICAL CARE</span>
-          <span className="miora-dash-eyebrow-line" aria-hidden="true" />
+      {/* Hero Header Box matching Reports & Analytics */}
+      <div className="patient-hero-box">
+        <div className="patient-hero-box-text">
+          <div className="miora-dash-eyebrow">
+            <span>CLINICAL CARE</span>
+            <span className="miora-dash-eyebrow-line" aria-hidden="true" />
+          </div>
+          <h1 className="miora-dash-title patient-page-heading">
+            Connect to a <em>Doctor</em>
+          </h1>
+          <p className="miora-dash-subtitle patient-page-subheading">
+            Confidential telehealth consultations, clinical evaluations, and ongoing postpartum emotional guidance coordinated with Dr. Elena Rostova.
+          </p>
         </div>
-        <h1 className="miora-dash-title patient-page-heading">
-          Connect to a <em>Doctor</em>
-        </h1>
-        <p className="miora-dash-subtitle patient-page-subheading">
-          Confidential telehealth consultations, clinical evaluations, and ongoing postpartum emotional guidance coordinated with Dr. Elena Rostova.
-        </p>
+        <div className="patient-hero-box-illu" aria-hidden="true">
+          <img
+            src="/assets/mother-baby-header-crop.png"
+            alt=""
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
+        </div>
       </div>
 
       {/* Telehealth Simulation Notice Banner */}

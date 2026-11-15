@@ -211,6 +211,7 @@
     opacity: 0;
     transform: translateY(-4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -385,6 +386,53 @@
   margin-bottom: 24px;
 }
 
+/* Hero Banner Card Box matching Reports & Analytics */
+.patient-hero-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px 32px;
+  background: linear-gradient(135deg, #ffffff 0%, #fdf5f7 100%);
+  border: 1px solid #eed9dd;
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(130, 52, 74, 0.035);
+  margin-bottom: 24px;
+  overflow: hidden;
+  position: relative;
+}
+
+.patient-hero-box-text {
+  max-width: 680px;
+}
+
+.patient-hero-box-illu {
+  width: 140px;
+  height: 105px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.patient-hero-box-illu img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(197, 35, 97, 0.08));
+}
+
+@media (max-width: 768px) {
+  .patient-hero-box {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px;
+  }
+  .patient-hero-box-illu {
+    display: none;
+  }
+}
+
 /* Eyebrow & Title Components matching Doctor Dashboard */
 .miora-dash-eyebrow,
 .patient-page-eyebrow {
@@ -513,6 +561,7 @@
   .patient-header {
     padding: 0 20px;
   }
+
   .patient-content-area {
     padding: 20px 20px 40px;
   }
@@ -522,6 +571,7 @@
   .patient-header-mobile-toggle {
     display: inline-flex;
   }
+
   .patient-confidential-badge {
     display: none;
   }
@@ -532,20 +582,24 @@
     padding: 0 16px;
     height: 60px;
   }
+
   .patient-content-area {
     padding: 16px 16px 36px;
   }
+
   .patient-header-title {
     font-size: 18px;
   }
+
   .patient-avatar-name {
     display: none;
   }
+
   .patient-profile-pill {
     padding: 4px;
   }
+
   .patient-chevron-icon {
     display: none;
   }
 }
-
