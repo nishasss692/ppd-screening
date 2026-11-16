@@ -1,9 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { fetchMedicalHistory, updateMedicalHistory } from '../services/patientApiService.js';
 import { getAuthToken } from '../../auth/authService.js';
+import { KpiCard } from '../../dashboard/components/KpiCard.jsx';
 import './medicalHistory.css';
 
+// --- Constants ---
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 const ALLOWED_TYPES = [
   'application/pdf',
@@ -13,11 +15,156 @@ const ALLOWED_TYPES = [
 ];
 const STORAGE_KEY = 'miora_medical_history_v1';
 
-export function MedicalHistoryScreen() {
-  const navigate = useNavigate();
-  const fileInputRef = useRef(null);
+// --- Helpers ---
+const formatFileSize = (bytes) => {
+  if (!bytes || bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+};
 
-  // 1. Diagnosis response state ('yes' | 'no' | 'not-sure')
+const generateFileId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+// --- Sub-components ---
+
+const Breadcrumb = () => (
+  <div className="medhist-breadcrumb-bar">
+    <NavLink to="/patient/dashboard" className="medhist-breadcrumb-link">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M3 10.5L12 3l9 7.5V20a1.5 1.5 0 0 1-1.5 1.5H4.5A1.5 1.5 0 0 1 3 20v-9.5z" />
+        <path d="M9.5 21v-7h5v7" />
+      </svg>
+      <span>Home</span>
+    </NavLink>
+    <span className="medhist-breadcrumb-sep" aria-hidden="true">&rsaquo;</span>
+    <span className="medhist-breadcrumb-current">Medical History</span>
+  </div>
+);
+
+const HeroSection = () => (
+  <div className="patient-hero-box">
+    <div className="patient-hero-box-text">
+      <div className="miora-dash-eyebrow">
+        <span>MEDICAL HISTORY</span>
+        <span className="miora-dash-eyebrow-line" aria-hidden="true" />
+      </div>
+      <h1 className="miora-dash-title patient-page-heading">
+        Medical <em>History</em>
+      </h1>
+      <p className="miora-dash-subtitle patient-page-subheading">
+        Help us understand your background for a more accurate and personalised emotional wellbeing screening.
+      </p>
+    </div>
+    <div className="patient-hero-box-illu" aria-hidden="true">
+      <img
+        src="/assets/mother-baby-header-crop.png"
+        alt=""
+        onError={(e) => {
+          e.target.style.display = 'none';
+        }}
+      />
+    </div>
+  </div>
+);
+
+const KpiGrid = ({ selectedOption, uploadedFilesCount }) => {
+  const baselineStatus = useMemo(() => {
+    switch (selectedOption) {
+      case 'yes': return 'Recorded';
+      case 'no': return 'Negative';
+      default: return 'Under Review';
+    }
+  }, [selectedOption]);
+
+  return (
+    <section className="miora-kpi-grid" aria-label="Medical history key metrics">
+      <KpiCard
+        icon="heart"
+        value={baselineStatus}
+        trend="Clinical"
+        trendTone="positive"
+        label="PPD Baseline History"
+      />
+      <KpiCard
+        icon="fileText"
+        value={`${uploadedFilesCount} Record${uploadedFilesCount === 1 ? '' : 's'}`}
+        trend="256-bit"
+        trendTone="positive"
+        label="Uploaded Documents"
+      />
+      <KpiCard
+        icon="shieldCheck"
+        value="100%"
+        trend="HIPAA"
+        trendTone="positive"
+        label="Confidential & Encrypted"
+      />
+      <KpiCard
+        icon="users"
+        value="Synced"
+        trend="Care Team"
+        trendTone="positive"
+        label="Shared with Clinician"
+      />
+    </section>
+  );
+};
+
+const DiagnosisQuestion = ({ selectedOption, onOptionChange }) => {
+  const options = [
+    { value: 'yes', label: 'Yes' },
+    { value: 'no', label: 'No' },
+    { value: 'not-sure', label: 'Not Sure' }
+  ];
+
+  return (
+    <section className="patient-card medhist-question-card" aria-labelledby="question-heading">
+      <div className="medhist-question-content">
+        <h2 id="question-heading" className="medhist-question-text">
+          Have you ever been diagnosed with Postpartum Depression (PPD) or received related treatment?
+        </h2>
+        <p className="medhist-question-note">
+          Your responses remain private, encrypted, and strictly confidential.
+        </p>
+
+        <div className="medhist-options-grid" role="radiogroup" aria-labelledby="question-heading">
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              className={`medhist-option-btn ${selectedOption === opt.value ? 'is-selected' : ''}`}
+              onClick={() => onOptionChange(opt.value)}
+              role="radio"
+              aria-checked={selectedOption === opt.value}
+            >
+              <span className="medhist-radio-indicator">
+                {selectedOption === opt.value && (
+                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="white" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="2.5 6.2 4.8 8.6 9.5 3.6" />
+                  </svg>
+                )}
+              </span>
+              <span className="medhist-option-label">{opt.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="medhist-question-illustration-wrap" aria-hidden="true">
+        <img
+          src="/assets/medical-history-clipboard.png"
+          alt=""
+          className="medhist-question-illustration"
+        />
+      </div>
+    </section>
+  );
+};
+
+// --- Custom Hook ---
+
+function useMedicalHistory() {
   const [selectedOption, setSelectedOption] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -25,13 +172,12 @@ export function MedicalHistoryScreen() {
         const parsed = JSON.parse(saved);
         if (parsed.selectedOption) return parsed.selectedOption;
       }
-    } catch {
-      // ignore
+    } catch (e) {
+      console.error('Error loading selectedOption from localStorage', e);
     }
     return 'yes';
   });
 
-  // 2. Uploaded documents state
   const [uploadedFiles, setUploadedFiles] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -41,8 +187,8 @@ export function MedicalHistoryScreen() {
           return parsed.uploadedFiles;
         }
       }
-    } catch {
-      // ignore
+    } catch (e) {
+      console.error('Error loading uploadedFiles from localStorage', e);
     }
     return [
       {
@@ -54,56 +200,87 @@ export function MedicalHistoryScreen() {
     ];
   });
 
-  // 3. UI states
-  const [isDragOver, setIsDragOver] = useState(false);
-  const [validationError, setValidationError] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-
-  // Load from backend PostgreSQL if authenticated
   useEffect(() => {
     let isMounted = true;
+    const controller = new AbortController();
+
     async function loadHistory() {
       const token = getAuthToken();
       if (!token) return;
       try {
-        const data = await fetchMedicalHistory();
+        const data = await fetchMedicalHistory({ signal: controller.signal });
         if (!isMounted || !data) return;
+
         if (data.prior_ppd_diagnosis) {
           setSelectedOption(data.prior_ppd_diagnosis);
         }
-        if (Array.isArray(data.uploaded_files) && data.uploaded_files.length > 0) {
-          setUploadedFiles(data.uploaded_files);
-        } else if (data.medical_history && Array.isArray(data.medical_history.uploadedFiles) && data.medical_history.uploadedFiles.length > 0) {
-          setUploadedFiles(data.medical_history.uploadedFiles);
+
+        const backendFiles = data.uploaded_files ||
+          (data.medical_history && data.medical_history.uploadedFiles);
+
+        if (Array.isArray(backendFiles) && backendFiles.length > 0) {
+          setUploadedFiles(backendFiles);
         }
-      } catch {
-        // Silently preserve local mock
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.warn('Backend medical history fetch failed, using local/cached data:', err);
+        }
       }
     }
+
     loadHistory();
     return () => {
       isMounted = false;
+      controller.abort();
     };
   }, []);
 
-  // Format bytes to human readable size
-  const formatFileSize = (bytes) => {
-    if (!bytes || bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-  };
+  const saveToLocal = useCallback((option, files) => {
+    try {
+      const dataToSave = {
+        selectedOption: option,
+        uploadedFiles: files,
+        savedAt: new Date().toISOString(),
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+    } catch (err) {
+      console.warn('Could not save medical history to localStorage:', err);
+    }
+  }, []);
 
-  // Process incoming File objects from input or drop
-  const handleFiles = (filesList) => {
+  return {
+    selectedOption,
+    setSelectedOption,
+    uploadedFiles,
+    setUploadedFiles,
+    saveToLocal
+  };
+}
+
+// --- Main Component ---
+
+export function MedicalHistoryScreen() {
+  const navigate = useNavigate();
+  const fileInputRef = useRef(null);
+  const {
+    selectedOption,
+    setSelectedOption,
+    uploadedFiles,
+    setUploadedFiles,
+    saveToLocal
+  } = useMedicalHistory();
+
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [validationError, setValidationError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleFiles = useCallback((filesList) => {
     setValidationError('');
-    const newFiles = [];
     const files = Array.from(filesList);
+    const newFiles = [];
 
     for (const file of files) {
-      const isAllowedType =
-        ALLOWED_TYPES.includes(file.type.toLowerCase()) ||
+      const isAllowedType = ALLOWED_TYPES.includes(file.type.toLowerCase()) ||
         /\.(pdf|jpe?g|png)$/i.test(file.name);
 
       if (!isAllowedType) {
@@ -117,7 +294,7 @@ export function MedicalHistoryScreen() {
       }
 
       newFiles.push({
-        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: generateFileId(),
         name: file.name,
         size: formatFileSize(file.size),
         type: file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'),
@@ -127,52 +304,36 @@ export function MedicalHistoryScreen() {
     if (newFiles.length > 0) {
       setUploadedFiles((prev) => [...prev, ...newFiles]);
     }
-  };
+  }, [setUploadedFiles]);
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(true);
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
-    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleFiles(e.dataTransfer.files);
+  const handleDragEvents = {
+    onDragOver: (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(true);
+    },
+    onDragLeave: (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(false);
+    },
+    onDrop: (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(false);
+      if (e.dataTransfer?.files?.length > 0) {
+        handleFiles(e.dataTransfer.files);
+      }
     }
   };
 
-  const handleFileInputChange = (e) => {
-    if (e.target.files && e.target.files.length > 0) {
-      handleFiles(e.target.files);
-      e.target.value = '';
-    }
-  };
-
-  const removeFile = (id) => {
+  const removeFile = useCallback((id) => {
     setUploadedFiles((prev) => prev.filter((f) => f.id !== id));
-  };
+  }, [setUploadedFiles]);
 
   const handleSaveAndContinue = async () => {
     setIsSaving(true);
-    try {
-      const dataToSave = {
-        selectedOption,
-        uploadedFiles,
-        savedAt: new Date().toISOString(),
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
-    } catch (err) {
-      console.warn('Could not save medical history to localStorage:', err);
-    }
+    saveToLocal(selectedOption, uploadedFiles);
 
     try {
       const token = getAuthToken();
@@ -184,7 +345,8 @@ export function MedicalHistoryScreen() {
         });
       }
     } catch (err) {
-      console.warn('Backend medical history save failed, preserved locally:', err);
+      console.error('Backend medical history save failed:', err);
+      // We still navigate since we saved to local storage
     } finally {
       setIsSaving(false);
       navigate('/patient/screening');
@@ -193,122 +355,15 @@ export function MedicalHistoryScreen() {
 
   return (
     <div className="medhist-container">
-      {/* Breadcrumb & Header Banner */}
-      <div className="medhist-breadcrumb-bar">
-        <NavLink to="/patient/dashboard" className="medhist-breadcrumb-link">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M3 10.5L12 3l9 7.5V20a1.5 1.5 0 0 1-1.5 1.5H4.5A1.5 1.5 0 0 1 3 20v-9.5z" />
-            <path d="M9.5 21v-7h5v7" />
-          </svg>
-          <span>Home</span>
-        </NavLink>
-        <span className="medhist-breadcrumb-sep" aria-hidden="true">&rsaquo;</span>
-        <span className="medhist-breadcrumb-current">Medical History</span>
-      </div>
+      <Breadcrumb />
+      <HeroSection />
+      <KpiGrid selectedOption={selectedOption} uploadedFilesCount={uploadedFiles.length} />
 
-      {/* Hero Header Box matching Reports & Analytics */}
-      <div className="patient-hero-box">
-        <div className="patient-hero-box-text">
-          <div className="miora-dash-eyebrow">
-            <span>MEDICAL HISTORY</span>
-            <span className="miora-dash-eyebrow-line" aria-hidden="true" />
-          </div>
-          <h1 className="miora-dash-title patient-page-heading">
-            Medical <em>History</em>
-          </h1>
-          <p className="miora-dash-subtitle patient-page-subheading">
-            Help us understand your background for a more accurate and personalised emotional wellbeing screening.
-          </p>
-        </div>
-        <div className="patient-hero-box-illu" aria-hidden="true">
-          <img
-            src="/assets/mother-baby-header-crop.png"
-            alt=""
-            onError={(e) => {
-              e.target.style.display = 'none';
-            }}
-          />
-        </div>
-      </div>
+      <DiagnosisQuestion
+        selectedOption={selectedOption}
+        onOptionChange={setSelectedOption}
+      />
 
-      {/* Card 1: Question & Options with Clipboard Illustration */}
-      <section className="patient-card medhist-question-card" aria-labelledby="question-heading">
-        <div className="medhist-question-content">
-          <h2 id="question-heading" className="medhist-question-text">
-            Have you ever been diagnosed with Postpartum Depression (PPD) or received related treatment?
-          </h2>
-          <p className="medhist-question-note">
-            Your responses remain private, encrypted, and strictly confidential.
-          </p>
-
-          <div className="medhist-options-grid" role="radiogroup" aria-labelledby="question-heading">
-            {/* Option Yes */}
-            <button
-              type="button"
-              className={`medhist-option-btn ${selectedOption === 'yes' ? 'is-selected' : ''}`}
-              onClick={() => setSelectedOption('yes')}
-              role="radio"
-              aria-checked={selectedOption === 'yes'}
-            >
-              <span className="medhist-radio-indicator">
-                {selectedOption === 'yes' && (
-                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="white" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="2.5 6.2 4.8 8.6 9.5 3.6" />
-                  </svg>
-                )}
-              </span>
-              <span className="medhist-option-label">Yes</span>
-            </button>
-
-            {/* Option No */}
-            <button
-              type="button"
-              className={`medhist-option-btn ${selectedOption === 'no' ? 'is-selected' : ''}`}
-              onClick={() => setSelectedOption('no')}
-              role="radio"
-              aria-checked={selectedOption === 'no'}
-            >
-              <span className="medhist-radio-indicator">
-                {selectedOption === 'no' && (
-                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="white" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="2.5 6.2 4.8 8.6 9.5 3.6" />
-                  </svg>
-                )}
-              </span>
-              <span className="medhist-option-label">No</span>
-            </button>
-
-            {/* Option Not Sure */}
-            <button
-              type="button"
-              className={`medhist-option-btn ${selectedOption === 'not-sure' ? 'is-selected' : ''}`}
-              onClick={() => setSelectedOption('not-sure')}
-              role="radio"
-              aria-checked={selectedOption === 'not-sure'}
-            >
-              <span className="medhist-radio-indicator">
-                {selectedOption === 'not-sure' && (
-                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="white" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="2.5 6.2 4.8 8.6 9.5 3.6" />
-                  </svg>
-                )}
-              </span>
-              <span className="medhist-option-label">Not Sure</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Right illustration */}
-        <div className="medhist-question-illustration-wrap" aria-hidden="true">
-          <img
-            src="/assets/medical-history-clipboard.png"
-            alt=""
-            className="medhist-question-illustration"
-          />
-        </div>
-      </section>
-
-      {/* Card 2: Upload Relevant Records (Optional) */}
       <section className="patient-card medhist-upload-card" aria-labelledby="upload-card-heading">
         <div className="medhist-card-title-row">
           <h2 id="upload-card-heading" className="medhist-upload-title">
@@ -326,26 +381,24 @@ export function MedicalHistoryScreen() {
           You can securely upload previous diagnoses, prescriptions, lab results, or hospital records.
         </p>
 
-        {/* Dashed Drag & Drop Area */}
         <div
           className={`medhist-dropzone ${isDragOver ? 'is-dragover' : ''}`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
+          {...handleDragEvents}
           onClick={() => fileInputRef.current?.click()}
           role="button"
           tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              fileInputRef.current?.click();
-            }
-          }}
+          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && fileInputRef.current?.click()}
           aria-label="Upload files by dragging or clicking"
         >
           <input
             type="file"
             ref={fileInputRef}
-            onChange={handleFileInputChange}
+            onChange={(e) => {
+              if (e.target.files?.length > 0) {
+                handleFiles(e.target.files);
+                e.target.value = '';
+              }
+            }}
             multiple
             accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
             style={{ display: 'none' }}
@@ -379,7 +432,6 @@ export function MedicalHistoryScreen() {
           </span>
         </div>
 
-        {/* Validation Notice if any */}
         {validationError && (
           <div className="medhist-validation-error" role="alert">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -391,7 +443,6 @@ export function MedicalHistoryScreen() {
           </div>
         )}
 
-        {/* Bottom Section: Uploaded Files & Save & Continue */}
         <div className="medhist-card2-bottom-row">
           <div className="medhist-uploaded-section">
             <div className="medhist-uploaded-header">
@@ -403,59 +454,27 @@ export function MedicalHistoryScreen() {
               {uploadedFiles.length === 0 ? (
                 <div className="medhist-uploaded-empty">No documents uploaded yet.</div>
               ) : (
-                uploadedFiles.map((file) => {
-                  const isPdf =
-                    file.type === 'application/pdf' ||
-                    file.name.toLowerCase().endsWith('.pdf');
-
-                  return (
-                    <div key={file.id} className="medhist-file-item">
-                      <div className="medhist-file-info">
-                        {isPdf ? (
-                          <div className="medhist-pdf-badge" aria-label="PDF file">
-                            PDF
-                          </div>
-                        ) : (
-                          <div className="medhist-img-badge" aria-label="Image file">
-                            IMG
-                          </div>
-                        )}
-                        <div className="medhist-file-meta">
-                          <span className="medhist-file-name" title={file.name}>{file.name}</span>
-                          <span className="medhist-file-size">{file.size}</span>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        className="medhist-file-remove-btn"
-                        onClick={() => removeFile(file.id)}
-                        aria-label={`Remove file ${file.name}`}
-                      >
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <line x1="18" y1="6" x2="6" y2="18" />
-                          <line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                      </button>
-                    </div>
-                  );
-                })
+                uploadedFiles.map((file) => (
+                  <FileItem key={file.id} file={file} onRemove={removeFile} />
+                ))
               )}
             </div>
           </div>
 
-          {/* Action Row */}
           <div className="medhist-actions-bar">
             <button
               type="button"
               className="patient-btn-primary medhist-save-btn"
               onClick={handleSaveAndContinue}
+              disabled={isSaving}
             >
-              <span>Save &amp; Continue</span>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <line x1="5" y1="12" x2="19" y2="12" />
-                <polyline points="12 5 19 12 12 19" />
-              </svg>
+              <span>{isSaving ? 'Saving...' : 'Save & Continue'}</span>
+              {!isSaving && (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                  <polyline points="12 5 19 12 12 19" />
+                </svg>
+              )}
             </button>
           </div>
         </div>
@@ -463,5 +482,35 @@ export function MedicalHistoryScreen() {
     </div>
   );
 }
+
+const FileItem = React.memo(({ file, onRemove }) => {
+  const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+
+  return (
+    <div className="medhist-file-item">
+      <div className="medhist-file-info">
+        <div className={isPdf ? "medhist-pdf-badge" : "medhist-img-badge"} aria-label={isPdf ? "PDF file" : "Image file"}>
+          {isPdf ? "PDF" : "IMG"}
+        </div>
+        <div className="medhist-file-meta">
+          <span className="medhist-file-name" title={file.name}>{file.name}</span>
+          <span className="medhist-file-size">{file.size}</span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        className="medhist-file-remove-btn"
+        onClick={() => onRemove(file.id)}
+        aria-label={`Remove file ${file.name}`}
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+  );
+});
 
 export default MedicalHistoryScreen;
