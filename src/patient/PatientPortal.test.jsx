@@ -266,7 +266,7 @@ describe('Miora Patient Portal Visual Refinement & Six Screens', () => {
     renderPatientApp('/patient/dashboard');
 
     // Heading for Patient Home
-    expect(screen.getByRole('heading', { level: 1, name: /Welcome back, Amara/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: /Welcome back, Maa/i })).toBeInTheDocument();
     expect(screen.getByText(/Your personalized companion for postpartum recovery/i)).toBeInTheDocument();
 
     // Dashboard quick action cards

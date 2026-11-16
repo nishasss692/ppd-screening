@@ -1,30 +1,14 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePatient } from '../context/PatientContext.jsx';
-import { useClinicalData } from '../../dashboard/context/ClinicalContext.jsx';
 import { DashboardIcon } from '../../dashboard/components/DashboardIcon.jsx';
-import { KpiCard } from '../../dashboard/components/KpiCard.jsx';
 import { PatientIcon } from '../components/PatientIcons.jsx';
 import './patientHome.css';
 
 export function PatientHomePage() {
   const navigate = useNavigate();
-  const { patient, screening } = usePatient();
-  const clinical = useClinicalData();
-  const metrics = clinical?.metrics || {
-    registeredMothers: 344,
-    screeningsCompleted: 263,
-    casesForReview: 33,
-    potentialDiscordance: 7,
-    trends: {
-      registeredMothers: '+5%',
-      screeningsCompleted: '+8%',
-      casesForReview: '+12%',
-      potentialDiscordance: '+3%',
-    },
-  };
+  const { screening } = usePatient();
 
-  const patientName = patient?.name || 'Amara';
   const riskScore = screening?.riskScore ?? 64;
   const riskLabel = screening?.riskLabel || screening?.riskLevel || 'Moderate Attention';
 
@@ -43,10 +27,10 @@ export function PatientHomePage() {
             <span className="miora-dash-eyebrow-line" aria-hidden="true" />
           </div>
           <h1 id="patient-home-heading" className="miora-dash-title">
-            Welcome back, <em>{patientName}</em>
+            Welcome back, <em>Maa</em>
           </h1>
           <p className="miora-dash-subtitle">
-            Your personalized companion for postpartum recovery and emotional intelligence. A real-time overview of maternal wellbeing, screenings and cases requiring attention.
+            Your personalized companion for postpartum recovery, emotional care, and gentle guidance.
           </p>
         </div>
 
@@ -60,42 +44,6 @@ export function PatientHomePage() {
             <span>Start Screening</span>
           </button>
         </div>
-      </section>
-
-      {/* 4 KPI Cards Grid matching Doctor Dashboard exactly */}
-      <section className="miora-kpi-grid" aria-label="Key clinical metrics">
-        <KpiCard
-          icon="users"
-          value={metrics.registeredMothers || 344}
-          trend={metrics.trends?.registeredMothers || '+5%'}
-          trendTone="positive"
-          label="Registered Mothers"
-          onClick={() => navigate('/patient/reports')}
-        />
-        <KpiCard
-          icon="mic"
-          value={metrics.screeningsCompleted || 263}
-          trend={metrics.trends?.screeningsCompleted || '+8%'}
-          trendTone="positive"
-          label="Screenings Completed"
-          onClick={() => navigate('/patient/screening')}
-        />
-        <KpiCard
-          icon="alertTriangle"
-          value={metrics.casesForReview || 33}
-          trend={metrics.trends?.casesForReview || '+12%'}
-          trendTone="attention"
-          label="Cases for Review"
-          onClick={() => navigate('/patient/reports')}
-        />
-        <KpiCard
-          icon="layers"
-          value={metrics.potentialDiscordance || 7}
-          trend={metrics.trends?.potentialDiscordance || '+3%'}
-          trendTone="positive"
-          label="Potential Discordance"
-          onClick={() => navigate('/patient/care-suggestions')}
-        />
       </section>
 
       {/* 6-Card Dashboard Grid */}

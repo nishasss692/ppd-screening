@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom';
 import { fetchMedicalHistory, updateMedicalHistory } from '../services/patientApiService.js';
 import { getAuthToken } from '../../auth/authService.js';
-import { KpiCard } from '../../dashboard/components/KpiCard.jsx';
 import './medicalHistory.css';
 
 // --- Constants ---
@@ -67,49 +66,6 @@ const HeroSection = () => (
     </div>
   </div>
 );
-
-const KpiGrid = ({ selectedOption, uploadedFilesCount }) => {
-  const baselineStatus = useMemo(() => {
-    switch (selectedOption) {
-      case 'yes': return 'Recorded';
-      case 'no': return 'Negative';
-      default: return 'Under Review';
-    }
-  }, [selectedOption]);
-
-  return (
-    <section className="miora-kpi-grid" aria-label="Medical history key metrics">
-      <KpiCard
-        icon="heart"
-        value={baselineStatus}
-        trend="Clinical"
-        trendTone="positive"
-        label="PPD Baseline History"
-      />
-      <KpiCard
-        icon="fileText"
-        value={`${uploadedFilesCount} Record${uploadedFilesCount === 1 ? '' : 's'}`}
-        trend="256-bit"
-        trendTone="positive"
-        label="Uploaded Documents"
-      />
-      <KpiCard
-        icon="shieldCheck"
-        value="100%"
-        trend="HIPAA"
-        trendTone="positive"
-        label="Confidential & Encrypted"
-      />
-      <KpiCard
-        icon="users"
-        value="Synced"
-        trend="Care Team"
-        trendTone="positive"
-        label="Shared with Clinician"
-      />
-    </section>
-  );
-};
 
 const DiagnosisQuestion = ({ selectedOption, onOptionChange }) => {
   const options = [
@@ -357,7 +313,6 @@ export function MedicalHistoryScreen() {
     <div className="medhist-container">
       <Breadcrumb />
       <HeroSection />
-      <KpiGrid selectedOption={selectedOption} uploadedFilesCount={uploadedFiles.length} />
 
       <DiagnosisQuestion
         selectedOption={selectedOption}
