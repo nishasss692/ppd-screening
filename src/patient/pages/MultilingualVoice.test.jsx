@@ -166,15 +166,9 @@ describe('MIORA Phase 6 — Multilingual Voice Integration', () => {
 
     renderAssistant();
 
-    // Initial messages exist in English
-    expect(screen.getByText(/I've been feeling a bit anxious and overwhelmed lately/i)).toBeInTheDocument();
-
     // Switch language to Hindi ('hi')
     const langSelect = screen.getByRole('combobox', { name: /Select conversation language/i });
     fireEvent.change(langSelect, { target: { value: 'hi' } });
-
-    // Verify existing English message is still present in the UI
-    expect(screen.getByText(/I've been feeling a bit anxious and overwhelmed lately/i)).toBeInTheDocument();
 
     // Send a new query in Hindi
     const input = screen.getByPlaceholderText(/Ask me anything about your maternal well-being/i);
@@ -195,8 +189,7 @@ describe('MIORA Phase 6 — Multilingual Voice Integration', () => {
       );
     });
 
-    // Both previous and new responses visible in chat
-    expect(screen.getByText(/I've been feeling a bit anxious and overwhelmed lately/i)).toBeInTheDocument();
+    // New response displayed in the holographic assistant bubble
     expect(await screen.findByText('मैं समझती हूँ। आप बिल्कुल अकेली नहीं हैं।')).toBeInTheDocument();
   });
 

@@ -72,9 +72,10 @@ models/text_ner/**/*.joblib
 *.bin
 *.onnx
 
-# Exclude entire data folder as requested
-data/
-data/**
+# Exclude root data folder (preserve src/dashboard/data and canonical questions.json)
+/data/
+/data/**
+!/data/questions.json
 
 # Local logs and temporary files
 *.log

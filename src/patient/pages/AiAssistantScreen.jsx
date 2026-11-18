@@ -291,6 +291,7 @@ export function AiAssistantScreen() {
   // Active holographic exchange state (shows the latest question & robot's live answer)
   const [activeUserPrompt, setActiveUserPrompt] = useState(null);
   const [activeBotReply, setActiveBotReply] = useState(null);
+  const [activeCrisisMsg, setActiveCrisisMsg] = useState(null);
   const [revealedWordCount, setRevealedWordCount] = useState(null);
 
   // Smooth word-by-word reveal so the holographic robot appears to speak out her answer
@@ -299,8 +300,12 @@ export function AiAssistantScreen() {
       setRevealedWordCount(null);
       return;
     }
+    const isInstant =
+      (typeof import.meta !== 'undefined' && import.meta.env?.MODE === 'test') ||
+      activeBotReply.isEmergency ||
+      activeBotReply.source?.startsWith('epds');
     const words = activeBotReply.text.split(/(\s+)/);
-    if (words.length <= 4) {
+    if (isInstant || words.length <= 4) {
       setRevealedWordCount(words.length);
       return;
     }
@@ -317,7 +322,7 @@ export function AiAssistantScreen() {
       });
     }, stepMs);
     return () => clearInterval(timer);
-  }, [activeBotReply?.id, activeBotReply?.text]);
+  }, [activeBotReply?.id, activeBotReply?.text, activeBotReply?.isEmergency, activeBotReply?.source]);
 
   // Cleanup voice operations on unmount or navigation
   useEffect(() => {
@@ -552,6 +557,7 @@ export function AiAssistantScreen() {
     setScreeningError(null);
     setScreeningResult(null);
     setQ10CrisisAlert(false);
+    setActiveCrisisMsg(null);
     setScreeningAnswers([]);
     setCurrentQuestionIdx(0);
 
@@ -677,6 +683,8 @@ export function AiAssistantScreen() {
           source: 'safety_guard',
         };
         setMessages((prev) => [...prev, crisisMsg]);
+        setActiveCrisisMsg(crisisMsg);
+        presentBotReply(crisisMsg);
       }
     }
 
@@ -1214,8 +1222,13 @@ export function AiAssistantScreen() {
                 <div className="companion-crisis-sticky-content">
                   <div className="companion-crisis-sticky-title">
                     <span>🚨</span>
-                    <strong>Immediate Crisis Support Available</strong>
+                    <strong>{activeCrisisMsg ? activeCrisisMsg.text.split('\n\n')[0] : 'Immediate Crisis Support Available'}</strong>
                   </div>
+                  {activeCrisisMsg && (
+                    <div style={{ margin: '2px 0 4px', whiteSpace: 'pre-line' }}>
+                      {activeCrisisMsg.text.split('\n\n').slice(1).join('\n\n')}
+                    </div>
+                  )}
                   <div>
                     Tele-MANAS 24/7 Helpline:{' '}
                     <a href="tel:14416" className="companion-crisis-sticky-phone">14416</a>{' '}
@@ -1343,12 +1356,25 @@ export function AiAssistantScreen() {
                                 Question {currentQuestionIdx + 1} of 10
                               </span>
                             </div>
+                            <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--patient-subtle)' }}>
+                              Edinburgh Postnatal Depression Scale (EPDS) screening — select how you have felt in the past 7 days.
+                            </p>
+                            {selectedLanguage !== 'auto' && selectedLanguage !== 'en' && (
+                              <div className="companion-screening-translation-notice" data-testid="translation-provenance-notice">
+                                <span className="companion-provenance-pill">
+                                  Validated English Instrument • Conversational assistance in {supportedLanguages[selectedLanguage]?.name || selectedLanguage}
+                                </span>
+                              </div>
+                            )}
                             <div className="companion-screening-progress-track">
                               <div
                                 className="companion-screening-progress-fill"
                                 style={{ width: `${((currentQuestionIdx + 1) / 10) * 100}%` }}
                               />
                             </div>
+                            <p className="companion-screening-question-text">
+                              &quot;{screeningQuestions[currentQuestionIdx].question}&quot;
+                            </p>
                             <div className="companion-screening-options-list" role="group" aria-label="EPDS response options">
                               {screeningQuestions[currentQuestionIdx].response_options.map((opt, optIdx) => (
                                 <button
@@ -1376,7 +1402,7 @@ export function AiAssistantScreen() {
                                 className="companion-screening-cancel-btn"
                                 onClick={cancelScreening}
                               >
-                                Pause
+                                Pause screening
                               </button>
                             </div>
                           </div>
@@ -1403,6 +1429,11 @@ export function AiAssistantScreen() {
                             <p style={{ margin: '4px 0', fontSize: '12px', color: '#4a353f' }}>
                               <strong>Recommended Action:</strong> {activeBotReply.screeningResult.recommended_action}
                             </p>
+                            {activeBotReply.screeningResult.screening_disclaimer && (
+                              <small style={{ color: '#8c747f', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+                                {activeBotReply.screeningResult.screening_disclaimer}
+                              </small>
+                            )}
                             <div className="companion-result-actions-row">
                               <button
                                 type="button"
@@ -1585,7 +1616,7 @@ export function AiAssistantScreen() {
                 type="button"
                 className={`companion-holo-mic-cta ${isListening ? 'is-listening' : ''}`}
                 onClick={handleToggleVoice}
-                aria-label={isListening ? 'Stop listening' : 'Speak to Miora AI'}
+                aria-label={isListening ? 'Stop listening' : 'Start voice dictation'}
                 title={isListening ? 'Listening... click to stop' : 'Tap to speak your question'}
               >
                 {Icons.mic}

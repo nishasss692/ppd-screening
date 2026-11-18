@@ -13,6 +13,9 @@ from pipelines.clinical_numerical.config import (
     CATEGORICAL_FEATURES,
     TOTAL_PREDICTOR_COUNT,
     EXCLUDED_COLUMNS,
+    MODELING_MATRIX_PATH,
+    SPLIT_MANIFEST_PATH,
+    TARGET_COLUMN,
     RANDOM_SEED,
     ARTIFACTS_DIR,
 )
@@ -23,10 +26,67 @@ from pipelines.clinical_numerical.metrics import compute_classification_metrics,
 from pipelines.clinical_numerical.pipeline import ClinicalNumericalPipeline
 
 
+def _build_synthetic_clinical_fixture(tmp_path: Path):
+    """Build deterministic schema-compliant CSV fixtures when private /data CSVs are excluded (e.g. CI)."""
+    rng = np.random.default_rng(RANDOM_SEED)
+    n_train_pos, n_train_neg = 281, 359
+    n_test_pos, n_test_neg = 70, 90
+
+    y_train = np.array([1] * n_train_pos + [0] * n_train_neg, dtype=int)
+    y_test = np.array([1] * n_test_pos + [0] * n_test_neg, dtype=int)
+    rng.shuffle(y_train)
+    rng.shuffle(y_test)
+
+    y_all = np.concatenate([y_train, y_test])
+    splits = np.array(["train"] * len(y_train) + ["test"] * len(y_test))
+    n_total = len(y_all)
+
+    rows = {}
+    # 2 numerical features with modest class signal and realistic missingness
+    age = np.where(y_all == 1, rng.normal(24.5, 4.0, n_total), rng.normal(28.0, 4.0, n_total)).clip(18, 45)
+    age[rng.random(n_total) < 0.03] = np.nan
+    preg_num = np.where(y_all == 1, rng.integers(1, 5, n_total), rng.integers(1, 3, n_total)).astype(float)
+    rows[NUMERICAL_FEATURES[0]] = np.round(age, 1)
+    rows[NUMERICAL_FEATURES[1]] = preg_num
+
+    # 44 categorical features with informative risk associations for baseline classifier validation
+    for idx, col in enumerate(CATEGORICAL_FEATURES):
+        if idx < 10:
+            vals = np.where(
+                y_all == 1,
+                rng.choice(["High", "Medium", "Low"], size=n_total, p=[0.65, 0.25, 0.10]),
+                rng.choice(["High", "Medium", "Low"], size=n_total, p=[0.15, 0.30, 0.55]),
+            )
+        else:
+            vals = rng.choice(["Category_A", "Category_B", "Category_C"], size=n_total)
+        vals = vals.astype(object)
+        vals[rng.random(n_total) < 0.02] = np.nan
+        rows[col] = vals
+
+    df_matrix = pd.DataFrame(rows)
+    df_manifest = pd.DataFrame(
+        {
+            "participant_id": [f"BGD_CI_{i:04d}" for i in range(n_total)],
+            "split_partition": splits,
+            TARGET_COLUMN: y_all,
+        }
+    )
+
+    matrix_path = tmp_path / "ppd_modeling_matrix.csv"
+    manifest_path = tmp_path / "train_test_split_manifest.csv"
+    df_matrix.to_csv(matrix_path, index=False)
+    df_manifest.to_csv(manifest_path, index=False)
+    return matrix_path, manifest_path
+
+
 @pytest.fixture(scope="module")
-def clinical_data():
-    """Load and return partitioned clinical datasets."""
-    return load_clinical_data()
+def clinical_data(tmp_path_factory):
+    """Load and return partitioned clinical datasets (uses deterministic CI fixture if private CSVs absent)."""
+    if MODELING_MATRIX_PATH.exists() and SPLIT_MANIFEST_PATH.exists():
+        return load_clinical_data()
+    tmp_dir = tmp_path_factory.mktemp("clinical_ci_fixture")
+    matrix_path, manifest_path = _build_synthetic_clinical_fixture(tmp_dir)
+    return load_clinical_data(str(matrix_path), str(manifest_path))
 
 
 def test_dataset_loading_and_dimensions(clinical_data):

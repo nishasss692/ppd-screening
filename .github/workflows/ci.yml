@@ -62,6 +62,10 @@ jobs:
     - name: Install npm dependencies
       run: npm install --legacy-peer-deps
 
+    - name: Provision questionnaire fixture from backend resources
+      run: |
+        mkdir -p data && cp backend/resources/questions.json data/questions.json
+
     - name: Run Frontend Vitest Unit & Integration Tests
       run: npm test -- --run
 
