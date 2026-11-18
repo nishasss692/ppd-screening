@@ -136,8 +136,13 @@ class GeminiVoiceAssistantService:
             )
 
         httpx_transport = httpx.HTTPTransport(retries=3)
-        httpx_timeout = httpx.Timeout(connect=15.0, read=25.0, write=15.0, pool=15.0)
-        custom_httpx_client = httpx.Client(timeout=httpx_timeout, transport=httpx_transport)
+        httpx_timeout = httpx.Timeout(connect=15.0, read=40.0, write=15.0, pool=15.0)
+        httpx_limits = httpx.Limits(max_keepalive_connections=0, max_connections=10)
+        custom_httpx_client = httpx.Client(
+            timeout=httpx_timeout,
+            transport=httpx_transport,
+            limits=httpx_limits,
+        )
 
         self._client = genai.Client(
             api_key=self.config.api_key,
@@ -254,18 +259,22 @@ class GeminiVoiceAssistantService:
             )
 
         # Map conversation history into google-genai Content structures
+        # Drop any leading model-only turns so multi-turn contents begin cleanly with a user turn
         contents: List[types.Content] = []
         for turn in history:
             role_raw = turn.get("role", "user").lower()
             role = "model" if role_raw in ("assistant", "model") else "user"
             turn_content = turn.get("content", "").strip()
-            if turn_content:
-                contents.append(
-                    types.Content(
-                        role=role,
-                        parts=[types.Part.from_text(text=turn_content)],
-                    )
+            if not turn_content:
+                continue
+            if not contents and role != "user":
+                continue
+            contents.append(
+                types.Content(
+                    role=role,
+                    parts=[types.Part.from_text(text=turn_content)],
                 )
+            )
 
         # Append current user prompt
         contents.append(
@@ -282,14 +291,33 @@ class GeminiVoiceAssistantService:
         )
 
         # ---------------------------------------------------------------------
-        # 3. Remote LLM Invocation
+        # 3. Remote LLM Invocation (with transient socket/timeout retry)
         # ---------------------------------------------------------------------
         try:
-            response = client.models.generate_content(
-                model=self.config.model,
-                contents=contents,
-                config=generate_config,
-            )
+            response = None
+            last_exc: Optional[Exception] = None
+            for attempt in range(2):
+                try:
+                    response = client.models.generate_content(
+                        model=self.config.model,
+                        contents=contents,
+                        config=generate_config,
+                    )
+                    last_exc = None
+                    break
+                except Exception as attempt_exc:
+                    last_exc = attempt_exc
+                    exc_name = type(attempt_exc).__name__
+                    if attempt == 0 and exc_name in ("RemoteProtocolError", "ReadTimeout", "ConnectError", "ServerError"):
+                        logger.warning(
+                            "Transient Gemini error (%s); retrying with fresh connection...",
+                            exc_name,
+                        )
+                        continue
+                    raise
+
+            if last_exc is not None:
+                raise last_exc
 
             response_text = ""
             if hasattr(response, "text") and response.text:

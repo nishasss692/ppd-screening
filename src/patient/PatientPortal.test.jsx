@@ -150,16 +150,20 @@ describe('Miora Patient Portal Visual Refinement & Six Screens', () => {
     expect(screen.getByText('64%')).toBeInTheDocument();
   });
 
-  it('Screen 3 — AI Assistant: renders hero banner, mood selector, prompt chips, and supports chat interactions', async () => {
+  it('Screen 3 — AI Assistant: renders hero banner, holographic AI assistant stage, prompt chips, and supports chat interactions', async () => {
     renderPatientApp('/patient/ai-assistant');
 
     // Heading
     expect(screen.getByRole('heading', { level: 1, name: /Your AI Companion/i })).toBeInTheDocument();
 
-    // Mood today row
-    expect(screen.getByText('Your Mood Today')).toBeInTheDocument();
-    const okayMood = screen.getByRole('radio', { name: /Okay/i });
-    expect(okayMood).toBeInTheDocument();
+    // Holographic AI Assistant stage (replaces legacy mood/help/resources cards)
+    expect(screen.getByLabelText(/Miora AI Assistant Hologram/i)).toBeInTheDocument();
+    expect(screen.getByText('SMART')).toBeInTheDocument();
+    expect(screen.getByText('ADAPTIVE')).toBeInTheDocument();
+    expect(screen.getByText('SECURE')).toBeInTheDocument();
+    expect(screen.queryByText('Your Mood Today')).not.toBeInTheDocument();
+    expect(screen.queryByText('How I Can Help')).not.toBeInTheDocument();
+    expect(screen.queryByText('Quick Resources')).not.toBeInTheDocument();
 
     // Prompt chips
     const copingChip = screen.getByRole('button', { name: /Coping Strategies/i });
@@ -168,14 +172,6 @@ describe('Miora Patient Portal Visual Refinement & Six Screens', () => {
     // Click prompt chip
     fireEvent.click(copingChip);
     expect(screen.getByText(/Could you share some simple coping strategies\?/i)).toBeInTheDocument();
-
-    // Resources cards & Modal
-    const audioCard = screen.getByRole('button', { name: /Open Relaxation Audio/i });
-    expect(audioCard).toBeInTheDocument();
-    fireEvent.click(audioCard);
-
-    expect(screen.getByText('Relaxation Audio')).toBeInTheDocument();
-    expect(screen.getByText(/Playing: Gentle Ocean Waves/i)).toBeInTheDocument();
   });
 
   it('Screen 4 — Connect to a Doctor: displays Dr. Elena Rostova profile, notice, records, and supports consultation booking', () => {
