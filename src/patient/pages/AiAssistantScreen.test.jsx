@@ -59,8 +59,8 @@ describe('AiAssistantScreen — Voice Assistant Integration', () => {
 
     // Verify Title & Tag
     expect(screen.getByRole('heading', { level: 1, name: /Your AI Companion/i })).toBeInTheDocument();
-    expect(screen.getByText('Miora AI')).toBeInTheDocument();
-    expect(screen.getByText(/Your Maternal Emotional Companion/i)).toBeInTheDocument();
+    expect(screen.getByText(/Miora AI/i)).toBeInTheDocument();
+    expect(screen.getByText('AI ASSISTANT')).toBeInTheDocument();
 
     // Verify Language Selector exists with 8 languages and Auto
     const langSelect = screen.getByRole('combobox', { name: /Select conversation language/i });
@@ -69,14 +69,16 @@ describe('AiAssistantScreen — Voice Assistant Integration', () => {
     expect(screen.getByText(/हिन्दी \(Hindi\)/i)).toBeInTheDocument();
     expect(screen.getByText(/ಕನ್ನಡ \(Kannada\)/i)).toBeInTheDocument();
 
-    // Verify Initial Messages exist
-    expect(screen.getByText(/I'm Miora, your AI companion/i)).toBeInTheDocument();
-    expect(screen.getByText(/I've been feeling a bit anxious and overwhelmed lately/i)).toBeInTheDocument();
-
-    // Verify Quick Resource Cards
-    expect(screen.getByText(/Relaxation/i)).toBeInTheDocument();
-    expect(screen.getByText(/Guided/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Open Postpartum Tips/i })).toBeInTheDocument();
+    // Verify Full-Screen Holographic AI Assistant Stage & Greeting
+    expect(screen.getByLabelText(/Miora AI Assistant Hologram/i)).toBeInTheDocument();
+    expect(screen.getByAltText(/Miora AI Assistant/i)).toBeInTheDocument();
+    expect(screen.getByText(/How can I help support you today\?/i)).toBeInTheDocument();
+    expect(screen.getByText('SMART')).toBeInTheDocument();
+    expect(screen.getByText('ADAPTIVE')).toBeInTheDocument();
+    expect(screen.getByText('SECURE')).toBeInTheDocument();
+    expect(screen.queryByText('Your Mood Today')).not.toBeInTheDocument();
+    expect(screen.queryByText('How I Can Help')).not.toBeInTheDocument();
+    expect(screen.queryByText('Quick Resources')).not.toBeInTheDocument();
   });
 
   it('sends user message to backend Gemini API and renders returned response with model tag', async () => {
@@ -233,7 +235,7 @@ describe('AiAssistantScreen — Voice Assistant Integration', () => {
 
     expect(window.speechSynthesis.speak).toHaveBeenCalled();
     const utteranceArg = window.speechSynthesis.speak.mock.calls[0][0];
-    expect(utteranceArg.text).toContain('Hi Amara');
+    expect(utteranceArg.text).toContain('Miora');
   });
 
   it('handles network failure gracefully with compassionate fallback message', async () => {

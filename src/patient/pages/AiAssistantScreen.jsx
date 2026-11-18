@@ -119,79 +119,61 @@ const Icons = {
       <circle cx="16" cy="11.5" r="1" fill="currentColor" />
     </svg>
   ),
-  documentHeart: (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="8" y1="13" x2="16" y2="13" />
-      <line x1="8" y1="17" x2="14" y2="17" />
+  sparkleStar: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z" />
+    </svg>
+  ),
+  sparkleCluster: (
+    <svg width="26" height="26" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+      <path d="M12 4L14.1 10.9L21 13L14.1 15.1L12 22L9.9 15.1L3 13L9.9 10.9L12 4Z" />
+      <path d="M23.5 16L24.7 19.8L28.5 21L24.7 22.2L23.5 26L22.3 22.2L18.5 21L22.3 19.8L23.5 16Z" opacity="0.82" />
+      <path d="M22.5 5.5L23.2 7.8L25.5 8.5L23.2 9.2L22.5 11.5L21.8 9.2L19.5 8.5L21.8 7.8L22.5 5.5Z" opacity="0.65" />
+    </svg>
+  ),
+  brain: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z" />
+      <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z" />
+    </svg>
+  ),
+  adaptive: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polyline points="16 3 21 3 21 8" />
+      <line x1="4" y1="20" x2="21" y2="3" />
+      <polyline points="21 16 21 21 16 21" />
+      <line x1="15" y1="15" x2="21" y2="21" />
+      <line x1="4" y1="4" x2="9" y2="9" />
+    </svg>
+  ),
+  shieldCheck: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  ),
+  volumeOn: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+      <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+    </svg>
+  ),
+  volumeOff: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+      <line x1="23" y1="9" x2="17" y2="15" />
+      <line x1="17" y1="9" x2="23" y2="15" />
+    </svg>
+  ),
+  history: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+      <path d="M12 7v5l4 2" />
     </svg>
   ),
 };
-
-// 5 Mood face SVGs precisely matching reference
-const MoodFaces = [
-  {
-    id: 'distressed',
-    label: 'Distressed',
-    render: (size = 22) => (
-      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <line x1="8" y1="9" x2="10" y2="9.5" />
-        <line x1="16" y1="9" x2="14" y2="9.5" />
-        <path d="M8 16c1-1.5 2-2 4-2s3 .5 4 2" />
-      </svg>
-    ),
-  },
-  {
-    id: 'down',
-    label: 'Down',
-    render: (size = 22) => (
-      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <circle cx="9" cy="9.5" r="1" fill="currentColor" />
-        <circle cx="15" cy="9.5" r="1" fill="currentColor" />
-        <path d="M9 16c1-1.2 2-1.8 3-1.8s2 .6 3 1.8" />
-      </svg>
-    ),
-  },
-  {
-    id: 'neutral',
-    label: 'Neutral',
-    render: (size = 22) => (
-      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <circle cx="9" cy="9.5" r="1" fill="currentColor" />
-        <circle cx="15" cy="9.5" r="1" fill="currentColor" />
-        <line x1="9" y1="15.5" x2="15" y2="15.5" />
-      </svg>
-    ),
-  },
-  {
-    id: 'okay',
-    label: 'Okay',
-    render: (size = 22) => (
-      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <circle cx="9" cy="9.5" r="1" fill="currentColor" />
-        <circle cx="15" cy="9.5" r="1" fill="currentColor" />
-        <path d="M9 14.5c.8 1 1.8 1.5 3 1.5s2.2-.5 3-1.5" />
-      </svg>
-    ),
-  },
-  {
-    id: 'happy',
-    label: 'Happy',
-    render: (size = 22) => (
-      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <circle cx="9" cy="9.5" r="1" fill="currentColor" />
-        <circle cx="15" cy="9.5" r="1" fill="currentColor" />
-        <path d="M8 13.5c1 2.2 2.5 3 4 3s3-.8 4-3" />
-      </svg>
-    ),
-  },
-];
 
 // Initial conversation messages
 const INITIAL_MESSAGES = [
@@ -217,7 +199,7 @@ const INITIAL_MESSAGES = [
 ];
 
 export function AiAssistantScreen() {
-  const { patient, selectedMood, setPatientMood, setScreening, reloadPatientData } = usePatient();
+  const { patient, setScreening, reloadPatientData } = usePatient();
   const clinical = useClinicalData();
   const navigate = useNavigate();
 
@@ -226,9 +208,6 @@ export function AiAssistantScreen() {
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [activeMood, setActiveMood] = useState('okay');
-
-  // Resource Modal state
-  const [activeModal, setActiveModal] = useState(null); // 'audio' | 'meditation' | 'tips' | null
 
   // Multilingual assistant state
   const [selectedLanguage, setSelectedLanguage] = useState('auto');
@@ -296,13 +275,49 @@ export function AiAssistantScreen() {
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
   const voiceWatchdogRef = useRef(null);
+  const voiceTranscriptRef = useRef('');
+  const voiceCancelledRef = useRef(false);
   const isSendingChatRef = useRef(false);
+  const handleSendMessageRef = useRef(null);
 
   // Voice Interaction States (Browser-Native SpeechRecognition and SpeechSynthesis)
   const [isListening, setIsListening] = useState(false);
   const [speechError, setSpeechError] = useState(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [speakingMsgId, setSpeakingMsgId] = useState(null);
+  const [autoSpeak, setAutoSpeak] = useState(true);
+  const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
+
+  // Active holographic exchange state (shows the latest question & robot's live answer)
+  const [activeUserPrompt, setActiveUserPrompt] = useState(null);
+  const [activeBotReply, setActiveBotReply] = useState(null);
+  const [revealedWordCount, setRevealedWordCount] = useState(null);
+
+  // Smooth word-by-word reveal so the holographic robot appears to speak out her answer
+  useEffect(() => {
+    if (!activeBotReply?.text) {
+      setRevealedWordCount(null);
+      return;
+    }
+    const words = activeBotReply.text.split(/(\s+)/);
+    if (words.length <= 4) {
+      setRevealedWordCount(words.length);
+      return;
+    }
+    setRevealedWordCount(4);
+    const stepMs = Math.max(18, Math.min(42, Math.floor(1400 / Math.max(words.length / 2, 1))));
+    const timer = setInterval(() => {
+      setRevealedWordCount((prev) => {
+        const next = (prev || 0) + 2;
+        if (next >= words.length) {
+          clearInterval(timer);
+          return words.length;
+        }
+        return next;
+      });
+    }, stepMs);
+    return () => clearInterval(timer);
+  }, [activeBotReply?.id, activeBotReply?.text]);
 
   // Cleanup voice operations on unmount or navigation
   useEffect(() => {
@@ -331,9 +346,11 @@ export function AiAssistantScreen() {
     setSpeakingMsgId(null);
   };
 
-  const speakText = (text, msgId, voiceLocale) => {
+  const speakText = (text, msgId, voiceLocale, { silentOnMissing = false } = {}) => {
     if (typeof window === 'undefined' || !window.speechSynthesis) {
-      alert('Speech synthesis is not supported in this browser.');
+      if (!silentOnMissing) {
+        setSpeechError('Speech synthesis is not supported in this browser.');
+      }
       return;
     }
 
@@ -346,7 +363,7 @@ export function AiAssistantScreen() {
 
     const cleanText = text
       .replace(/[*_~`#]/g, '')
-      .replace(/[✨🌸♥✦•]/g, '')
+      .replace(/[✨🌸♥✦•💕💖🚨📋]/g, '')
       .replace(/\n+/g, ' ');
 
     try {
@@ -358,16 +375,18 @@ export function AiAssistantScreen() {
       // Check voice availability before attempting speech
       const check = checkVoiceAvailability(targetLocale);
       if (check.supported && !check.available) {
-        const langName =
-          (selectedLanguage !== 'auto' && supportedLanguages[selectedLanguage]?.name) || targetLocale;
-        setSpeechError(
-          `Browser speech voice for ${langName} is not installed on this system. Responses are displayed in text.`
-        );
+        if (!silentOnMissing) {
+          const langName =
+            (selectedLanguage !== 'auto' && supportedLanguages[selectedLanguage]?.name) || targetLocale;
+          setSpeechError(
+            `Browser speech voice for ${langName} is not installed on this system. Responses are displayed in text.`
+          );
+        }
         return;
       }
 
       const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.rate = 0.92;
+      utterance.rate = 0.94;
       utterance.pitch = 1.04;
       utterance.lang = targetLocale;
       if (check.voice) {
@@ -397,7 +416,7 @@ export function AiAssistantScreen() {
     }
   };
 
-  // Voice input: SpeechRecognition
+  // Voice input: SpeechRecognition (auto-sends spoken question to the robot when finished)
   const handleToggleVoice = () => {
     if (typeof window === 'undefined') return;
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -419,7 +438,10 @@ export function AiAssistantScreen() {
     }
 
     try {
+      stopSpeaking();
       setSpeechError(null);
+      voiceTranscriptRef.current = '';
+      voiceCancelledRef.current = false;
       if (voiceWatchdogRef.current) {
         clearTimeout(voiceWatchdogRef.current);
         voiceWatchdogRef.current = null;
@@ -437,6 +459,7 @@ export function AiAssistantScreen() {
         setIsListening(true);
         // 15-second safety watchdog timer to prevent stuck listening state
         voiceWatchdogRef.current = setTimeout(() => {
+          voiceCancelledRef.current = true;
           if (recognitionRef.current) {
             try {
               recognitionRef.current.abort();
@@ -452,10 +475,12 @@ export function AiAssistantScreen() {
         const transcript = Array.from(event.results)
           .map((r) => r[0].transcript)
           .join('');
+        voiceTranscriptRef.current = transcript;
         setInputText(transcript);
       };
 
       recognition.onerror = (event) => {
+        voiceCancelledRef.current = true;
         if (voiceWatchdogRef.current) {
           clearTimeout(voiceWatchdogRef.current);
           voiceWatchdogRef.current = null;
@@ -463,7 +488,7 @@ export function AiAssistantScreen() {
         setIsListening(false);
         if (event.error === 'not-allowed') {
           setSpeechError('Microphone permission denied. Please allow microphone access in browser settings.');
-        } else {
+        } else if (event.error !== 'no-speech' && event.error !== 'aborted') {
           setSpeechError('Could not recognize voice. Please try speaking again.');
         }
       };
@@ -474,6 +499,11 @@ export function AiAssistantScreen() {
           voiceWatchdogRef.current = null;
         }
         setIsListening(false);
+        const spoken = voiceTranscriptRef.current.trim();
+        voiceTranscriptRef.current = '';
+        if (spoken && !voiceCancelledRef.current && handleSendMessageRef.current) {
+          handleSendMessageRef.current(spoken);
+        }
       };
 
       recognitionRef.current = recognition;
@@ -488,18 +518,6 @@ export function AiAssistantScreen() {
     }
   };
 
-  // Sync initial mood with context
-  useEffect(() => {
-    if (selectedMood) {
-      const found = MoodFaces.find(
-        (m) => m.id === selectedMood.toLowerCase() || m.label.toLowerCase() === selectedMood.toLowerCase()
-      );
-      if (found) {
-        setActiveMood(found.id);
-      }
-    }
-  }, [selectedMood]);
-
   const scrollToBottom = () => {
     if (typeof messagesEndRef.current?.scrollIntoView === 'function') {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -507,15 +525,17 @@ export function AiAssistantScreen() {
   };
 
   useEffect(() => {
-    if (messages.length > INITIAL_MESSAGES.length || isTyping) {
+    if (showHistoryDrawer && (messages.length > INITIAL_MESSAGES.length || isTyping)) {
       scrollToBottom();
     }
-  }, [messages, isTyping]);
+  }, [messages, isTyping, showHistoryDrawer]);
 
-  const handleSelectMood = (mood) => {
-    setActiveMood(mood.id);
-    setPatientMood?.(mood.label);
-    savePatientAiConversations(messages, mood.id).catch(() => { });
+  // Display reply directly from the holographic robot & speak aloud when Auto-Speak is on
+  const presentBotReply = (botMsg, { shouldSpeak = true } = {}) => {
+    setActiveBotReply(botMsg);
+    if (shouldSpeak && autoSpeak && botMsg?.text) {
+      speakText(botMsg.text, botMsg.id, botMsg.voiceLocale, { silentOnMissing: true });
+    }
   };
 
   // ============================================================================
@@ -579,6 +599,7 @@ export function AiAssistantScreen() {
       };
 
       setMessages((prev) => [...prev, q1Msg]);
+      presentBotReply(q1Msg);
     } catch (err) {
       console.error('Failed to start EPDS questionnaire:', err);
       const errMsg = {
@@ -589,6 +610,7 @@ export function AiAssistantScreen() {
         isFallback: true,
       };
       setMessages((prev) => [...prev, errMsg]);
+      presentBotReply(errMsg);
       setScreeningActive(false);
     } finally {
       setIsTyping(false);
@@ -628,6 +650,7 @@ export function AiAssistantScreen() {
       status: 'delivered',
     };
     setMessages((prev) => [...prev, userMsg]);
+    setActiveUserPrompt(userMsg);
 
     // Question 10 Safety Escalation Check:
     // EPDS_Q10 ("The thought of harming myself has occurred to me") reverse-scored:
@@ -673,6 +696,7 @@ export function AiAssistantScreen() {
         question: nextQ,
       };
       setMessages((prev) => [...prev, nextMsg]);
+      presentBotReply(nextMsg);
     } else {
       // All 10 questions answered! Submit to backend for score calculation
       setCurrentQuestionIdx(10);
@@ -685,6 +709,7 @@ export function AiAssistantScreen() {
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages((prev) => [...prev, finalMsg]);
+      presentBotReply(finalMsg, { shouldSpeak: false });
 
       try {
         const submissionPayload = newAnswers.map((ans) => ({
@@ -754,6 +779,7 @@ export function AiAssistantScreen() {
           source: 'epds_result',
         };
         setMessages((prev) => [...prev, scoreMsg]);
+        presentBotReply(scoreMsg);
       } catch (err) {
         console.error('Failed to submit EPDS questionnaire:', err);
         const errSubmissionMsg = {
@@ -764,6 +790,7 @@ export function AiAssistantScreen() {
           isFallback: true,
         };
         setMessages((prev) => [...prev, errSubmissionMsg]);
+        presentBotReply(errSubmissionMsg);
       } finally {
         setIsSubmittingScreening(false);
       }
@@ -780,10 +807,11 @@ export function AiAssistantScreen() {
     const cancelMsg = {
       id: `msg-cancel-${Date.now()}`,
       sender: 'bot',
-      text: "Screening paused. You can restart the 10-item EPDS screening anytime by clicking 'Take EPDS Screening' or asking me.",
+      text: "Screening paused. You can restart the 10-item EPDS screening anytime by clicking 'EPDS Screening' or asking me.",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
     setMessages((prev) => [...prev, cancelMsg]);
+    presentBotReply(cancelMsg);
   };
 
   // ============================================================================
@@ -822,6 +850,7 @@ export function AiAssistantScreen() {
           status: 'delivered',
         };
         setMessages((prev) => [...prev, userMsg]);
+    setActiveUserPrompt(userMsg);
         setInputText('');
 
         const repeatMsg = {
@@ -837,6 +866,7 @@ export function AiAssistantScreen() {
           question: currentQ,
         };
         setMessages((prev) => [...prev, repeatMsg]);
+        presentBotReply(repeatMsg);
         return;
       }
 
@@ -857,6 +887,7 @@ export function AiAssistantScreen() {
         status: 'delivered',
       };
       setMessages((prev) => [...prev, userMsg]);
+      setActiveUserPrompt(userMsg);
       setInputText('');
 
       const langKey = selectedLanguage !== 'auto' ? selectedLanguage : 'en';
@@ -876,6 +907,7 @@ export function AiAssistantScreen() {
         question: currentQ,
       };
       setMessages((prev) => [...prev, invalidMsg]);
+      presentBotReply(invalidMsg);
       return;
     }
 
@@ -901,6 +933,7 @@ export function AiAssistantScreen() {
         status: 'delivered',
       };
       setMessages((prev) => [...prev, userMsg]);
+      setActiveUserPrompt(userMsg);
       setInputText('');
       await startEPDSScreening();
       return;
@@ -919,6 +952,7 @@ export function AiAssistantScreen() {
     };
 
     setMessages((prev) => [...prev, newMsg]);
+    setActiveUserPrompt(newMsg);
     setInputText('');
 
     // Handle simple greetings locally without unnecessary network requests
@@ -953,6 +987,7 @@ export function AiAssistantScreen() {
         savePatientAiConversations(updated, activeMood).catch(() => { });
         return updated;
       });
+      presentBotReply(botReply);
       return;
     }
 
@@ -992,6 +1027,7 @@ export function AiAssistantScreen() {
         savePatientAiConversations(updated, activeMood).catch(() => { });
         return updated;
       });
+      presentBotReply(botReply);
     } catch (err) {
       console.warn('Voice assistant backend communication failed, providing fallback:', err);
       const fallbackReply = {
@@ -1014,654 +1050,646 @@ export function AiAssistantScreen() {
         savePatientAiConversations(updated, activeMood).catch(() => { });
         return updated;
       });
+      presentBotReply(fallbackReply);
     } finally {
       setIsTyping(false);
       isSendingChatRef.current = false;
     }
   };
 
+  handleSendMessageRef.current = handleSendMessage;
+
   const handlePromptClick = (promptQuery) => {
     handleSendMessage(promptQuery);
   };
 
+  // Compute smoothly revealed text for the robot's live answer bubble
+  const displayedReplyText = (() => {
+    if (!activeBotReply?.text) return '';
+    if (revealedWordCount == null) return activeBotReply.text;
+    const words = activeBotReply.text.split(/(\s+)/);
+    return words.slice(0, revealedWordCount).join('');
+  })();
+
+  const isRevealingReply = Boolean(
+    activeBotReply?.text &&
+    revealedWordCount != null &&
+    revealedWordCount < activeBotReply.text.split(/(\s+)/).length
+  );
+
+  const robotStateClass = isListening
+    ? 'is-listening'
+    : isTyping
+      ? 'is-thinking'
+      : isSpeaking || isRevealingReply
+        ? 'is-speaking'
+        : '';
+
+  const welcomeSpeakText =
+    "Hello! I'm Miora, your AI Assistant. How can I help support you today?";
+
   return (
-    <div className="companion-page-content">
-      {/* Breadcrumb Bar */}
-      <div className="companion-breadcrumb-bar">
-        <NavLink to="/patient/reports" className="companion-breadcrumb-link">
-          {Icons.home}
-          <span>Home</span>
-        </NavLink>
-        <span className="companion-breadcrumb-sep" aria-hidden="true">&rsaquo;</span>
-        <span className="companion-breadcrumb-current">AI Assistant</span>
+    <div className="companion-page-content companion-holo-page">
+      {/* Compact Top Bar: Breadcrumb + Title */}
+      <div className="companion-holo-page-header">
+        <div className="companion-breadcrumb-bar">
+          <NavLink to="/patient/reports" className="companion-breadcrumb-link">
+            {Icons.home}
+            <span>Home</span>
+          </NavLink>
+          <span className="companion-breadcrumb-sep" aria-hidden="true">&rsaquo;</span>
+          <span className="companion-breadcrumb-current">AI Assistant</span>
+        </div>
+        <h1 className="sr-only">Your AI Companion</h1>
       </div>
 
-      {/* Hero Header Banner */}
-      <div className="patient-card companion-hero-banner">
-        <div className="companion-hero-text">
-          <div className="miora-dash-eyebrow">
-            <span>AI ASSISTANT</span>
-            <span className="miora-dash-eyebrow-line" aria-hidden="true" />
-          </div>
-          <h1 className="miora-dash-title patient-page-heading companion-title">
-            Your AI <em>Companion</em>
-          </h1>
-          <p className="miora-dash-subtitle patient-page-subheading companion-sub">
-            A safe, confidential space to talk, reflect, and receive compassionate guidance through your postpartum journey.
-          </p>
-        </div>
+      {/* Full-Screen Holographic AI Assistant Experience */}
+      <section
+        className={`companion-holo-fullscreen ${robotStateClass}`}
+        aria-label="Miora AI Assistant Hologram"
+      >
+        <div className="companion-holo-wrapper">
+          {/* Full-Width Translucent Rose-Blush Hologram Frame */}
+          <div className="companion-holo-frame">
+            <div className="companion-holo-ambient-glow" aria-hidden="true" />
+            <div className="companion-holo-light-rays" aria-hidden="true" />
 
-        <div className="companion-hero-illu-wrap" aria-hidden="true">
-          <img
-            src="/assets/companion-mother-baby-smooth.png"
-            alt=""
-            className="companion-hero-illustration"
-            onError={(e) => {
-              e.target.style.display = 'none';
-            }}
-          />
-        </div>
-      </div>
-
-      {/* Main Two-Column Layout */}
-      <div className="companion-columns-layout">
-        {/* Left Column – Conversational Chat Card */}
-        <section className="patient-card companion-chat-card" aria-label="Miora AI Chat Interface">
-          {/* Header */}
-          <div className="companion-chat-header">
-            <div className="companion-chat-header-left">
-              <div className="companion-bot-avatar-badge" aria-hidden="true">
-                <span className="companion-bot-badge-char">M</span>
+            {/* Top Bar inside Hologram Frame */}
+            <div className="companion-holo-top-row">
+              <div className="companion-holo-brand-group">
+                <div className="companion-holo-badge">
+                  <span className="companion-holo-badge-star" aria-hidden="true">
+                    {Icons.sparkleStar}
+                  </span>
+                  <span className="companion-holo-badge-label">AI ASSISTANT</span>
+                </div>
+                <span className="companion-holo-sub-badge">Miora AI • Maternal Companion</span>
               </div>
-              <div>
-                <h2 className="companion-chat-title">Miora AI</h2>
-                <span className="companion-assistant-tag">Your Maternal Emotional Companion</span>
-              </div>
-            </div>
 
-            <div className="companion-chat-header-actions">
-              <select
-                className="companion-language-select"
-                value={selectedLanguage}
-                onChange={(e) => setSelectedLanguage(e.target.value)}
-                aria-label="Select conversation language"
-                title="Select conversation language"
-              >
-                <option value="auto">🌐 Auto Language</option>
-                {Object.entries(supportedLanguages).map(([code, info]) => (
-                  <option key={code} value={code}>
-                    {info.native_name} ({info.name})
-                  </option>
-                ))}
-              </select>
+              <div className="companion-holo-controls">
+                <select
+                  className="companion-language-select"
+                  value={selectedLanguage}
+                  onChange={(e) => setSelectedLanguage(e.target.value)}
+                  aria-label="Select conversation language"
+                  title="Select conversation language"
+                >
+                  <option value="auto">🌐 Auto Language</option>
+                  {Object.entries(supportedLanguages).map(([code, info]) => (
+                    <option key={code} value={code}>
+                      {info.native_name} ({info.name})
+                    </option>
+                  ))}
+                </select>
 
-              {isSpeaking && (
                 <button
                   type="button"
-                  className="companion-stop-speech-pill"
-                  onClick={stopSpeaking}
-                  aria-label="Stop reading response"
-                  title="Stop assistant speech"
+                  className={`companion-holo-ctrl-btn ${autoSpeak ? 'is-active' : ''}`}
+                  onClick={() => {
+                    if (autoSpeak && isSpeaking) stopSpeaking();
+                    setAutoSpeak((prev) => !prev);
+                  }}
+                  aria-pressed={autoSpeak}
+                  title={autoSpeak ? 'Voice replies enabled (click to mute)' : 'Voice replies muted (click to enable)'}
                 >
-                  <span className="companion-audio-wave" aria-hidden="true" />
-                  <span>Stop Speaking</span>
+                  {autoSpeak ? Icons.volumeOn : Icons.volumeOff}
+                  <span>{autoSpeak ? 'Voice On' : 'Muted'}</span>
                 </button>
-              )}
-              <span className={`companion-status-indicator ${isListening ? 'is-listening' : isSpeaking ? 'is-speaking' : ''}`}>
-                <span className="companion-online-dot" />
-                {isListening ? 'Listening...' : isSpeaking ? 'Speaking...' : 'Online • Ready'}
-              </span>
-            </div>
-          </div>
 
-          {/* Voice Engine Fallback Notice Banner */}
-          {voiceNotice && (
-            <div className="companion-voice-notice-banner" role="status" aria-live="polite">
-              <span className="companion-voice-notice-icon" aria-hidden="true">ℹ️</span>
-              <span className="companion-voice-notice-text">{voiceNotice}</span>
-              <button
-                type="button"
-                className="companion-dismiss-error-btn"
-                onClick={() => setVoiceNotice(null)}
-                aria-label="Dismiss voice notice"
-              >
-                ✕
-              </button>
-            </div>
-          )}
+                {isSpeaking && (
+                  <button
+                    type="button"
+                    className="companion-stop-speech-pill"
+                    onClick={stopSpeaking}
+                    aria-label="Stop reading response"
+                    title="Stop assistant speech"
+                  >
+                    <span className="companion-audio-wave" aria-hidden="true" />
+                    <span>Stop</span>
+                  </button>
+                )}
 
-          {/* Sticky Crisis Helpline Banner (triggered by Q10 or backend safety alert) */}
-          {Boolean(q10CrisisAlert || screeningResult?.safety_alert?.triggered) && (
-            <div className="companion-crisis-sticky-banner" role="alert" aria-label="Crisis Safety Helpline">
-              <div className="companion-crisis-sticky-content">
-                <div className="companion-crisis-sticky-title">
-                  <span>🚨</span>
-                  <strong>Immediate Crisis Support Available</strong>
-                </div>
-                <div>
-                  Tele-MANAS 24/7 Helpline:{' '}
-                  <a href="tel:14416" className="companion-crisis-sticky-phone">
-                    14416
-                  </a>{' '}
-                  or{' '}
-                  <a href="tel:18008914416" className="companion-crisis-sticky-phone">
-                    1800-891-4416
-                  </a>{' '}
-                  (Toll-Free, Multilingual)
-                </div>
+                <span className={`companion-status-indicator ${robotStateClass}`}>
+                  <span className="companion-online-dot" />
+                  {isListening
+                    ? 'Listening...'
+                    : isTyping
+                      ? 'Thinking...'
+                      : isSpeaking
+                        ? 'Speaking...'
+                        : 'Online • Ready'}
+                </span>
+
+                <button
+                  type="button"
+                  className="companion-holo-ctrl-btn"
+                  onClick={() => setShowHistoryDrawer(true)}
+                  aria-label="View conversation history"
+                  title="View past conversation"
+                >
+                  {Icons.history}
+                  <span>History</span>
+                </button>
               </div>
-              <button
-                type="button"
-                className="companion-crisis-sticky-btn"
-                onClick={() => navigate('/patient/connect-doctor')}
-              >
-                Connect Care Team
-              </button>
             </div>
-          )}
 
-          {/* Messages Stream */}
-          <div className="companion-chat-messages" role="log" aria-live="polite">
-            {messages.map((msg) => {
-              const isBot = msg.sender === 'bot';
-              return (
-                <div key={msg.id} className={`companion-msg-row ${isBot ? 'is-bot' : 'is-user'}`}>
-                  {isBot && (
-                    <div className="companion-msg-avatar" aria-hidden="true">
-                      <span className="companion-msg-avatar-char">M</span>
+            {/* Optional Notices & Crisis Safety Guardrail */}
+            {voiceNotice && (
+              <div className="companion-holo-inline-banner companion-voice-notice-banner" role="status" aria-live="polite">
+                <span className="companion-voice-notice-icon" aria-hidden="true">ℹ️</span>
+                <span className="companion-voice-notice-text">{voiceNotice}</span>
+                <button
+                  type="button"
+                  className="companion-dismiss-error-btn"
+                  onClick={() => setVoiceNotice(null)}
+                  aria-label="Dismiss voice notice"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            {Boolean(q10CrisisAlert || screeningResult?.safety_alert?.triggered) && (
+              <div className="companion-holo-inline-banner companion-crisis-sticky-banner" role="alert" aria-label="Crisis Safety Helpline">
+                <div className="companion-crisis-sticky-content">
+                  <div className="companion-crisis-sticky-title">
+                    <span>🚨</span>
+                    <strong>Immediate Crisis Support Available</strong>
+                  </div>
+                  <div>
+                    Tele-MANAS 24/7 Helpline:{' '}
+                    <a href="tel:14416" className="companion-crisis-sticky-phone">14416</a>{' '}
+                    or{' '}
+                    <a href="tel:18008914416" className="companion-crisis-sticky-phone">1800-891-4416</a>{' '}
+                    (Toll-Free, Multilingual)
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="companion-crisis-sticky-btn"
+                  onClick={() => navigate('/patient/connect-doctor')}
+                >
+                  Connect Care Team
+                </button>
+              </div>
+            )}
+
+            {/* Center 3-Zone Spatial Stage: User Prompt (Left) · Holographic Robot (Center) · Robot's Answer (Right) */}
+            <div className="companion-holo-center-stage">
+              {/* LEFT ZONE: Sparkle Bubble + Live Spoken/Typed User Question */}
+              <div className="companion-holo-left-zone">
+                <div className="companion-holo-sparkle-bubble" aria-hidden="true">
+                  {Icons.sparkleCluster}
+                </div>
+
+                {(isListening || activeUserPrompt) && (
+                  <div className={`companion-holo-user-bubble ${isListening ? 'is-live' : ''}`} role="status" aria-live="polite">
+                    <div className="companion-holo-user-label">
+                      <span className="companion-holo-user-dot" aria-hidden="true" />
+                      <span>{isListening ? 'Listening to you...' : 'You asked'}</span>
+                    </div>
+                    <p className="companion-holo-user-text">
+                      {isListening
+                        ? (inputText.trim() || 'Speak naturally — I am listening...')
+                        : activeUserPrompt?.text}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* CENTER ZONE: Holographic 3D AI Assistant Avatar + Live Voice/Listening Visualizers */}
+              <div className="companion-holo-center-zone">
+                <div className="companion-holo-avatar-wrap">
+                  {/* Expanding sonar rings while listening or speaking */}
+                  <div className="companion-holo-sonar-ring ring-1" aria-hidden="true" />
+                  <div className="companion-holo-sonar-ring ring-2" aria-hidden="true" />
+
+                  <img
+                    src="/assets/miora-ai-holo-avatar.jpg"
+                    alt="Miora AI Assistant"
+                    className="companion-holo-avatar-img"
+                  />
+
+                  {/* Animated Voice Equalizer Waveform when Robot is Speaking or Revealing Answer */}
+                  {(isSpeaking || isRevealingReply || isTyping) && (
+                    <div
+                      className={`companion-holo-voice-wave ${isTyping ? 'is-thinking' : 'is-talking'}`}
+                      aria-hidden="true"
+                    >
+                      <span />
+                      <span />
+                      <span />
+                      <span />
+                      <span />
+                      <span />
+                      <span />
                     </div>
                   )}
+                </div>
+              </div>
 
-                  <div className="companion-msg-col">
-                    <div className={`companion-msg-bubble ${msg.isEmergency ? 'is-emergency' : ''}`}>
-                      {msg.isEmergency && (
+              {/* RIGHT ZONE: Robot's Live Answer Speech Bubble */}
+              <div className="companion-holo-right-zone">
+                <div
+                  className={`companion-holo-speech-bubble ${activeBotReply?.isEmergency ? 'is-emergency' : ''} ${activeBotReply ? 'has-reply' : ''}`}
+                  role="log"
+                  aria-live="polite"
+                >
+                  {isTyping ? (
+                    <div className="companion-holo-thinking-state">
+                      <div className="companion-holo-reply-head">
+                        <span className="companion-holo-reply-speaker">Miora AI</span>
+                        <span className="companion-holo-reply-state-pill">Thinking</span>
+                      </div>
+                      <div className="companion-holo-typing-dots" aria-label="Miora is typing">
+                        <span className="companion-typing-dot" />
+                        <span className="companion-typing-dot" />
+                        <span className="companion-typing-dot" />
+                      </div>
+                      <p className="companion-holo-bubble-sub">
+                        Listening with care and preparing your response...
+                      </p>
+                    </div>
+                  ) : activeBotReply ? (
+                    <div className="companion-holo-live-reply">
+                      {activeBotReply.isEmergency && (
                         <div className="companion-emergency-alert-banner">
                           <span>🚨 Urgent Crisis Support Helpline</span>
                         </div>
                       )}
-                      {msg.text.split('\n\n').map((para, i) => (
-                        <p key={i} style={{ margin: i === 0 ? 0 : '8px 0 0 0' }}>{para}</p>
-                      ))}
 
-                      {/* Structured EPDS Result Card */}
-                      {msg.screeningResult && (
-                        <div className="companion-result-card" data-testid="epds-result-card">
-                          <div className="companion-result-header">
-                            <span className="companion-result-score-tag">
-                              Score: {msg.screeningResult.total_score} / {msg.screeningResult.maximum_score || 30}
-                            </span>
-                            <span
-                              className={`companion-result-tier ${msg.screeningResult.total_score >= 13
-                                ? 'is-probable'
-                                : msg.screeningResult.total_score >= 10
-                                  ? 'is-possible'
-                                  : 'is-low'
-                                }`}
-                            >
-                              {msg.screeningResult.classification}
-                            </span>
-                          </div>
-                          <p style={{ margin: '4px 0', fontSize: '12.5px', color: '#4a353f' }}>
-                            <strong>Clinical Significance:</strong> {msg.screeningResult.clinical_significance}
+                      <div className="companion-holo-reply-head">
+                        <span className="companion-holo-reply-speaker">Miora AI</span>
+                        {isSpeaking && (
+                          <span className="companion-holo-reply-state-pill is-speaking">
+                            Speaking...
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="companion-holo-reply-body">
+                        {displayedReplyText.split('\n\n').map((para, i) => (
+                          <p key={i} className="companion-holo-reply-para">
+                            {para}
                           </p>
-                          <p style={{ margin: '4px 0', fontSize: '12.5px', color: '#4a353f' }}>
-                            <strong>Recommended Action:</strong> {msg.screeningResult.recommended_action}
-                          </p>
-                          <small style={{ color: '#8c747f', fontSize: '11px', display: 'block', marginTop: '4px' }}>
-                            {msg.screeningResult.screening_disclaimer}
-                          </small>
-                          <div className="companion-result-actions-row">
-                            <button
-                              type="button"
-                              className="companion-result-action-btn"
-                              onClick={() => navigate('/patient/connect-doctor')}
-                            >
-                              Connect with Care Team
-                            </button>
-                            <button
-                              type="button"
-                              className="companion-result-secondary-btn"
-                              onClick={() => startEPDSScreening()}
-                            >
-                              Retake Screening
-                            </button>
+                        ))}
+
+                        {/* Active Sequential EPDS Options right inside Robot's Answer Bubble */}
+                        {screeningActive && currentQuestionIdx < screeningQuestions.length && (
+                          <div className="companion-holo-epds-inline" data-testid="active-screening-box">
+                            <div className="companion-screening-top">
+                              <span className="companion-screening-badge">📋 EPDS Screening</span>
+                              <span className="companion-screening-counter">
+                                Question {currentQuestionIdx + 1} of 10
+                              </span>
+                            </div>
+                            <div className="companion-screening-progress-track">
+                              <div
+                                className="companion-screening-progress-fill"
+                                style={{ width: `${((currentQuestionIdx + 1) / 10) * 100}%` }}
+                              />
+                            </div>
+                            <div className="companion-screening-options-list" role="group" aria-label="EPDS response options">
+                              {screeningQuestions[currentQuestionIdx].response_options.map((opt, optIdx) => (
+                                <button
+                                  key={optIdx}
+                                  type="button"
+                                  className="companion-screening-opt-btn"
+                                  data-testid={`epds-option-${optIdx}`}
+                                  onClick={() => handleAnswerQuestion(optIdx)}
+                                >
+                                  <span className="companion-screening-opt-index">{optIdx + 1}</span>
+                                  <span className="companion-screening-opt-label">{opt.label}</span>
+                                </button>
+                              ))}
+                            </div>
+                            <div className="companion-screening-footer-actions">
+                              <button
+                                type="button"
+                                className="companion-screening-clarify-btn"
+                                onClick={() => handleSendMessage('Could you explain or repeat this question?')}
+                              >
+                                Repeat question
+                              </button>
+                              <button
+                                type="button"
+                                className="companion-screening-cancel-btn"
+                                onClick={cancelScreening}
+                              >
+                                Pause
+                              </button>
+                            </div>
                           </div>
+                        )}
+
+                        {/* Structured EPDS Result Card */}
+                        {activeBotReply.screeningResult && (
+                          <div className="companion-result-card" data-testid="epds-result-card">
+                            <div className="companion-result-header">
+                              <span className="companion-result-score-tag">
+                                Score: {activeBotReply.screeningResult.total_score} / {activeBotReply.screeningResult.maximum_score || 30}
+                              </span>
+                              <span
+                                className={`companion-result-tier ${activeBotReply.screeningResult.total_score >= 13
+                                  ? 'is-probable'
+                                  : activeBotReply.screeningResult.total_score >= 10
+                                    ? 'is-possible'
+                                    : 'is-low'
+                                  }`}
+                              >
+                                {activeBotReply.screeningResult.classification}
+                              </span>
+                            </div>
+                            <p style={{ margin: '4px 0', fontSize: '12px', color: '#4a353f' }}>
+                              <strong>Recommended Action:</strong> {activeBotReply.screeningResult.recommended_action}
+                            </p>
+                            <div className="companion-result-actions-row">
+                              <button
+                                type="button"
+                                className="companion-result-action-btn"
+                                onClick={() => navigate('/patient/connect-doctor')}
+                              >
+                                Connect with Care Team
+                              </button>
+                              <button
+                                type="button"
+                                className="companion-result-secondary-btn"
+                                onClick={() => startEPDSScreening()}
+                              >
+                                Retake Screening
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Reply Footer: Replay / Listen + Model / Safety Tag */}
+                      <div className="companion-holo-reply-footer">
+                        <button
+                          type="button"
+                          className={`companion-msg-listen-btn ${speakingMsgId === activeBotReply.id ? 'is-active' : ''}`}
+                          onClick={() => speakText(activeBotReply.text, activeBotReply.id, activeBotReply.voiceLocale)}
+                          aria-label={speakingMsgId === activeBotReply.id ? 'Stop speaking' : 'Read response aloud'}
+                        >
+                          {speakingMsgId === activeBotReply.id ? (
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                              <rect x="6" y="6" width="12" height="12" rx="1.5" />
+                            </svg>
+                          ) : (
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                              <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                            </svg>
+                          )}
+                          <span>{speakingMsgId === activeBotReply.id ? 'Stop' : 'Listen'}</span>
+                        </button>
+
+                        <div className="companion-holo-reply-tags">
+                          {activeBotReply.source === 'safety_guard' && (
+                            <span className="companion-msg-source-tag is-safety">Safety Guard</span>
+                          )}
+                          {activeBotReply.source?.startsWith('epds') && (
+                            <span className="companion-msg-source-tag is-epds">EPDS Screening</span>
+                          )}
+                          {activeBotReply.source === 'gemini' && !activeBotReply.isFallback && (
+                            <span className="companion-msg-source-tag is-gemini">
+                              {activeBotReply.model || 'Gemini'}
+                            </span>
+                          )}
+                          {activeBotReply.isFallback && (
+                            <span className="companion-msg-source-tag is-fallback">Support Notice</span>
+                          )}
+                          <time className="companion-holo-reply-time">{activeBotReply.timestamp}</time>
                         </div>
-                      )}
+                      </div>
                     </div>
-                    <div className="companion-msg-meta">
-                      <time>{msg.timestamp}</time>
-                      {isBot && (
-                        <>
-                          <button
-                            type="button"
-                            className={`companion-msg-listen-btn ${speakingMsgId === msg.id ? 'is-active' : ''}`}
-                            onClick={() => speakText(msg.text, msg.id, msg.voiceLocale)}
-                            aria-label={speakingMsgId === msg.id ? 'Stop speaking' : 'Read response aloud'}
-                            title={speakingMsgId === msg.id ? 'Stop reading' : 'Listen to response'}
-                          >
-                            {speakingMsgId === msg.id ? (
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                                <rect x="6" y="6" width="12" height="12" rx="1.5" />
-                              </svg>
-                            ) : (
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                              </svg>
-                            )}
-                            <span>{speakingMsgId === msg.id ? 'Stop' : 'Listen'}</span>
-                          </button>
-                          {msg.source === 'safety_guard' && (
-                            <span className="companion-msg-source-tag is-safety" title="Immediate deterministic safety escalation">
-                              Safety Guard
-                            </span>
-                          )}
-                          {msg.source?.startsWith('epds') && (
-                            <span className="companion-msg-source-tag is-epds" title="Validated EPDS Clinical Instrument">
-                              EPDS Screening
-                            </span>
-                          )}
-                          {msg.source === 'gemini' && !msg.isFallback && (
-                            <span className="companion-msg-source-tag is-gemini" title={`Powered by ${msg.model || 'Gemini 2.5 Flash'}`}>
-                              {msg.model || 'Gemini'}
-                            </span>
-                          )}
-                          {msg.isFallback && (
-                            <span className="companion-msg-source-tag is-fallback" title="Compassionate offline support notice">
-                              Support Notice
-                            </span>
-                          )}
-                        </>
-                      )}
-                      {!isBot && msg.status && (
-                        <span className="companion-check-icon" aria-label="Delivered">
-                          ✓
-                        </span>
-                      )}
+                  ) : (
+                    /* Initial Warm Welcome Greeting from the Robot */
+                    <div className="companion-holo-welcome">
+                      <p className="companion-holo-bubble-line">Hello! I&apos;m your</p>
+                      <p className="companion-holo-bubble-accent">AI Assistant.</p>
+                      <p className="companion-holo-bubble-sub">
+                        How can I help support you today? Tap the mic to speak or type your question below.
+                      </p>
+                      <div className="companion-holo-reply-footer">
+                        <button
+                          type="button"
+                          className={`companion-msg-listen-btn ${speakingMsgId === 'welcome-greeting' ? 'is-active' : ''}`}
+                          onClick={() => speakText(welcomeSpeakText, 'welcome-greeting', 'en-IN')}
+                          aria-label={speakingMsgId === 'welcome-greeting' ? 'Stop speaking' : 'Read response aloud'}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                          </svg>
+                          <span>{speakingMsgId === 'welcome-greeting' ? 'Stop' : 'Listen'}</span>
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
-              );
-            })}
-
-            {isTyping && (
-              <div className="companion-msg-row is-bot">
-                <div className="companion-msg-avatar" aria-hidden="true">
-                  <span className="companion-msg-avatar-char">M</span>
-                </div>
-                <div className="companion-typing-row" aria-label="Miora is typing">
-                  <span className="companion-typing-dot" />
-                  <span className="companion-typing-dot" />
-                  <span className="companion-typing-dot" />
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Active Sequential EPDS Questionnaire UI */}
-          {screeningActive && currentQuestionIdx < screeningQuestions.length && (
-            <div className="companion-screening-box" data-testid="active-screening-box">
-              <div className="companion-screening-top">
-                <span className="companion-screening-badge">
-                  <span>📋</span> EPDS Clinical Screening
-                </span>
-                <span className="companion-screening-counter">
-                  Question {currentQuestionIdx + 1} of 10
-                </span>
-              </div>
-
-              {selectedLanguage !== 'auto' && selectedLanguage !== 'en' && (
-                <div className="companion-screening-translation-notice" data-testid="translation-provenance-notice">
-                  <span className="companion-provenance-pill">
-                    Validated English Instrument • Conversational assistance in {supportedLanguages[selectedLanguage]?.name || selectedLanguage}
-                  </span>
-                </div>
-              )}
-
-              <div className="companion-screening-progress-track">
-                <div
-                  className="companion-screening-progress-fill"
-                  style={{ width: `${((currentQuestionIdx + 1) / 10) * 100}%` }}
-                />
-              </div>
-
-              <p className="companion-screening-question-text">
-                "{screeningQuestions[currentQuestionIdx].question}"
-              </p>
-
-              <div className="companion-screening-options-list" role="group" aria-label="EPDS response options">
-                {screeningQuestions[currentQuestionIdx].response_options.map((opt, optIdx) => (
-                  <button
-                    key={optIdx}
-                    type="button"
-                    className="companion-screening-opt-btn"
-                    data-testid={`epds-option-${optIdx}`}
-                    onClick={() => handleAnswerQuestion(optIdx)}
-                  >
-                    <span className="companion-screening-opt-index">{optIdx + 1}</span>
-                    <span className="companion-screening-opt-label">{opt.label}</span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="companion-screening-footer-actions">
-                <button
-                  type="button"
-                  className="companion-screening-clarify-btn"
-                  onClick={() => handleSendMessage('Could you explain or repeat this question?')}
-                >
-                  Need clarification or repetition?
-                </button>
-                <button
-                  type="button"
-                  className="companion-screening-cancel-btn"
-                  onClick={cancelScreening}
-                >
-                  Pause screening
-                </button>
               </div>
             </div>
-          )}
 
-          {/* Suggested Prompt Chips */}
-          <div className="companion-chips-row" aria-label="Suggested Prompts">
-            <button
-              type="button"
-              className="companion-prompt-chip"
-              onClick={() => handlePromptClick('Could you share some simple coping strategies?')}
-            >
-              <span className="companion-chip-icon">{Icons.leaf}</span>
-              <span>Coping Strategies</span>
-            </button>
-
-            <button
-              type="button"
-              className="companion-prompt-chip"
-              onClick={() => handlePromptClick('Can you guide me through a calming breathing exercise?')}
-            >
-              <span className="companion-chip-icon">{Icons.lotus}</span>
-              <span>Breathing Exercise</span>
-            </button>
-
-            <button
-              type="button"
-              className="companion-prompt-chip"
-              onClick={() => handlePromptClick('Should I see a doctor about how I am feeling?')}
-            >
-              <span className="companion-chip-icon">{Icons.calendarCheck}</span>
-              <span>Should I See a Doctor?</span>
-            </button>
+            {/* Bottom 3 Feature Pills (SMART · ADAPTIVE · SECURE) */}
+            <div className="companion-holo-pills" aria-label="AI Assistant capabilities">
+              <div className="companion-holo-pill">
+                <span className="companion-holo-pill-icon" aria-hidden="true">{Icons.brain}</span>
+                <span>SMART</span>
+              </div>
+              <div className="companion-holo-pill">
+                <span className="companion-holo-pill-icon" aria-hidden="true">{Icons.adaptive}</span>
+                <span>ADAPTIVE</span>
+              </div>
+              <div className="companion-holo-pill">
+                <span className="companion-holo-pill-icon" aria-hidden="true">{Icons.shieldCheck}</span>
+                <span>SECURE</span>
+              </div>
+            </div>
           </div>
 
-          {/* Voice Listening & Feedback Banner */}
-          {isListening && (
-            <div className="companion-listening-banner" role="status">
-              <span className="companion-listening-pulse" aria-hidden="true" />
-              <span className="companion-listening-text">Listening... speak naturally. Your words will appear below.</span>
+          {/* Circular Concentric Holographic Projector Pedestal */}
+          <div className="companion-holo-pedestal" aria-hidden="true">
+            <div className="companion-holo-beam-cone" />
+            <div className="companion-holo-pedestal-base">
+              <div className="companion-holo-ring companion-holo-ring-outer" />
+              <div className="companion-holo-ring companion-holo-ring-mid" />
+              <div className="companion-holo-ring companion-holo-ring-inner" />
+              <div className="companion-holo-core-glow" />
+            </div>
+          </div>
+
+          {/* Interactive Speak-or-Type Dock right beneath the Hologram Pedestal */}
+          <div className="companion-holo-input-dock">
+            {/* Suggested Quick Question Pills */}
+            <div className="companion-holo-prompt-chips" aria-label="Suggested Prompts">
               <button
                 type="button"
-                className="companion-stop-mic-btn"
-                onClick={handleToggleVoice}
+                className="companion-prompt-chip"
+                onClick={() => handlePromptClick('Could you share some simple coping strategies?')}
               >
-                Stop
+                <span className="companion-chip-icon">{Icons.leaf}</span>
+                <span>Coping Strategies</span>
+              </button>
+
+              <button
+                type="button"
+                className="companion-prompt-chip"
+                onClick={() => handlePromptClick('Can you guide me through a calming breathing exercise?')}
+              >
+                <span className="companion-chip-icon">{Icons.lotus}</span>
+                <span>Breathing Exercise</span>
+              </button>
+
+              <button
+                type="button"
+                className="companion-prompt-chip"
+                onClick={() => handlePromptClick('Should I see a doctor about how I am feeling?')}
+              >
+                <span className="companion-chip-icon">{Icons.calendarCheck}</span>
+                <span>Should I See a Doctor?</span>
+              </button>
+
+              <button
+                type="button"
+                className="companion-prompt-chip is-epds-chip"
+                onClick={() => startEPDSScreening()}
+              >
+                <span>📋 Take EPDS Screening</span>
               </button>
             </div>
-          )}
-          {speechError && (
-            <div className="companion-speech-error-banner" role="alert">
-              <span>{speechError}</span>
+
+            {speechError && (
+              <div className="companion-holo-error-pill" role="alert">
+                <span>{speechError}</span>
+                <button
+                  type="button"
+                  className="companion-dismiss-error-btn"
+                  onClick={() => setSpeechError(null)}
+                  aria-label="Dismiss error"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            {/* Main Speak or Type Capsule */}
+            <form
+              className={`companion-holo-ask-bar ${isListening ? 'is-listening' : ''}`}
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSendMessage();
+              }}
+            >
               <button
                 type="button"
-                className="companion-dismiss-error-btn"
-                onClick={() => setSpeechError(null)}
-                aria-label="Dismiss error"
+                className={`companion-holo-mic-cta ${isListening ? 'is-listening' : ''}`}
+                onClick={handleToggleVoice}
+                aria-label={isListening ? 'Stop listening' : 'Speak to Miora AI'}
+                title={isListening ? 'Listening... click to stop' : 'Tap to speak your question'}
+              >
+                {Icons.mic}
+                <span>{isListening ? 'Listening...' : 'Speak'}</span>
+              </button>
+
+              <input
+                type="file"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  if (e.target.files?.[0]) {
+                    handleSendMessage(`[Attached: ${e.target.files[0].name}]`);
+                  }
+                }}
+              />
+              <button
+                type="button"
+                className="companion-attach-btn"
+                onClick={() => fileInputRef.current?.click()}
+                aria-label="Attach document or note"
+              >
+                {Icons.paperclip}
+              </button>
+
+              <input
+                type="text"
+                className="companion-holo-ask-input"
+                placeholder="Ask me anything about your maternal well-being..."
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                aria-label="Message Miora AI"
+              />
+
+              <button
+                type="submit"
+                className="companion-holo-send-btn"
+                aria-label="Send message"
+                disabled={!inputText.trim() || isTyping}
+              >
+                {Icons.send}
+                <span>Ask</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      {/* Optional Slide-Over Conversation History Drawer (on-demand only) */}
+      {showHistoryDrawer && (
+        <div
+          className="companion-history-backdrop"
+          onClick={() => setShowHistoryDrawer(false)}
+          role="dialog"
+          aria-label="Conversation History"
+        >
+          <div className="companion-history-drawer" onClick={(e) => e.stopPropagation()}>
+            <div className="companion-history-head">
+              <div>
+                <h2 className="companion-history-title">Conversation History</h2>
+                <span className="companion-history-sub">Saved privately with Miora AI</span>
+              </div>
+              <button
+                type="button"
+                className="companion-history-close"
+                onClick={() => setShowHistoryDrawer(false)}
+                aria-label="Close history"
               >
                 ✕
               </button>
             </div>
-          )}
-
-          {/* Message Input Bar */}
-          <form
-            className="companion-input-capsule"
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSendMessage();
-            }}
-          >
-            <input
-              type="file"
-              ref={fileInputRef}
-              style={{ display: 'none' }}
-              onChange={(e) => {
-                if (e.target.files?.[0]) {
-                  handleSendMessage(`[Attached: ${e.target.files[0].name}]`);
-                }
-              }}
-            />
-            <button
-              type="button"
-              className="companion-attach-btn"
-              onClick={() => fileInputRef.current?.click()}
-              aria-label="Attach document or note"
-            >
-              {Icons.paperclip}
-            </button>
-
-            <input
-              type="text"
-              className="companion-text-input"
-              placeholder="Ask me anything about your maternal well-being..."
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              aria-label="Message Miora AI"
-            />
-
-            <button
-              type="button"
-              className={`companion-mic-btn ${isListening ? 'is-listening' : ''}`}
-              onClick={handleToggleVoice}
-              aria-label={isListening ? 'Stop listening' : 'Start voice dictation'}
-              title={isListening ? 'Listening... click to stop' : 'Voice input'}
-            >
-              {Icons.mic}
-            </button>
-
-            <button
-              type="submit"
-              className="companion-send-btn"
-              aria-label="Send message"
-              disabled={!inputText.trim() || isTyping}
-            >
-              {Icons.send}
-            </button>
-          </form>
-        </section>
-
-        {/* Right Column – Information & Resource Panels */}
-        <aside className="companion-info-panels" aria-label="Companion Guidance & Resources">
-          {/* Panel 1: Mood Today */}
-          <section className="patient-card companion-info-card" aria-labelledby="mood-card-title">
-            <div className="companion-card-header">
-              <span className="companion-help-icon" style={{ color: '#d93c75' }} aria-hidden="true">
-                {Icons.barChart}
-              </span>
-              <h3 id="mood-card-title" className="companion-card-title">Your Mood Today</h3>
-            </div>
-
-            <p className="companion-card-desc">How are you feeling right now?</p>
-
-            <div className="companion-mood-row" role="radiogroup" aria-label="Select your mood today">
-              {MoodFaces.map((face) => {
-                const isActive = activeMood === face.id;
+            <div className="companion-history-list">
+              {messages.map((msg) => {
+                const isBot = msg.sender === 'bot';
                 return (
-                  <button
-                    key={face.id}
-                    type="button"
-                    className={`companion-mood-btn ${isActive ? 'is-active' : ''}`}
-                    onClick={() => handleSelectMood(face)}
-                    role="radio"
-                    aria-checked={isActive}
-                    aria-label={face.label}
-                  >
-                    {face.render(22)}
-                  </button>
+                  <div key={msg.id} className={`companion-msg-row ${isBot ? 'is-bot' : 'is-user'}`}>
+                    {isBot && (
+                      <div className="companion-msg-avatar" aria-hidden="true">
+                        <span className="companion-msg-avatar-char">M</span>
+                      </div>
+                    )}
+                    <div className="companion-msg-col">
+                      <div className={`companion-msg-bubble ${msg.isEmergency ? 'is-emergency' : ''}`}>
+                        {msg.text.split('\n\n').map((para, i) => (
+                          <p key={i} style={{ margin: i === 0 ? 0 : '6px 0 0 0' }}>{para}</p>
+                        ))}
+                      </div>
+                      <div className="companion-msg-meta">
+                        <time>{msg.timestamp}</time>
+                        {isBot && (
+                          <button
+                            type="button"
+                            className="companion-msg-listen-btn"
+                            onClick={() => speakText(msg.text, msg.id, msg.voiceLocale)}
+                          >
+                            {speakingMsgId === msg.id ? 'Stop' : 'Listen'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 );
               })}
-            </div>
-
-            <div className="companion-mood-label-row">
-              <span className="companion-mood-pill">
-                Current: {MoodFaces.find((m) => m.id === activeMood)?.label || 'Okay'}
-              </span>
-            </div>
-          </section>
-
-          {/* Panel 2: How I Can Help */}
-          <section className="patient-card companion-info-card" aria-labelledby="help-card-title">
-            <div className="companion-card-header">
-              <span className="companion-sparkle-icon" aria-hidden="true">{Icons.sparkles}</span>
-              <h3 id="help-card-title" className="companion-card-title">How I Can Help</h3>
-            </div>
-            <ul className="companion-help-list">
-              <li
-                className="companion-help-item"
-                onClick={() => handlePromptClick("I'd like to talk about how I've been feeling.")}
-              >
-                <span className="companion-help-icon">{Icons.chatDots}</span>
-                <span>Talk about your feelings</span>
-              </li>
-              <li
-                className="companion-help-item"
-                onClick={() => handlePromptClick("Can you suggest some gentle self-care activities for today?")}
-              >
-                <span className="companion-help-icon">{Icons.lotus}</span>
-                <span>Suggest self-care activities</span>
-              </li>
-              <li
-                className="companion-help-item"
-                onClick={() => handlePromptClick("I have questions about postpartum recovery and maternal feelings.")}
-              >
-                <span className="companion-help-icon">{Icons.book}</span>
-                <span>Answer postpartum questions</span>
-              </li>
-              <li
-                className="companion-help-item"
-                onClick={() => navigate('/patient/connect-doctor')}
-              >
-                <span className="companion-help-icon">{Icons.stethoscope}</span>
-                <span>Connect with your care team</span>
-              </li>
-            </ul>
-          </section>
-
-          {/* Panel 3: Quick Resources */}
-          <section className="patient-card companion-info-card" aria-labelledby="resources-card-title">
-            <div className="companion-card-header">
-              <span className="companion-help-icon" style={{ color: '#d93c75' }} aria-hidden="true">
-                {Icons.book}
-              </span>
-              <h3 id="resources-card-title" className="companion-card-title">Quick Resources</h3>
-            </div>
-
-            <div className="companion-resources-grid">
-              <div
-                className="companion-resource-card"
-                onClick={() => setActiveModal('audio')}
-                role="button"
-                tabIndex={0}
-                aria-label="Open Relaxation Audio"
-              >
-                <span className="companion-resource-icon">{Icons.playCircle}</span>
-                <span className="companion-resource-title">
-                  Relaxation<br />Audio
-                </span>
-              </div>
-
-              <div
-                className="companion-resource-card"
-                onClick={() => setActiveModal('meditation')}
-                role="button"
-                tabIndex={0}
-                aria-label="Open Guided Meditation"
-              >
-                <span className="companion-resource-icon">{Icons.lotus}</span>
-                <span className="companion-resource-title">
-                  Guided<br />Meditation
-                </span>
-              </div>
-
-              <div
-                className="companion-resource-card"
-                onClick={() => setActiveModal('tips')}
-                role="button"
-                tabIndex={0}
-                aria-label="Open Postpartum Tips"
-              >
-                <span className="companion-resource-icon">{Icons.documentHeart}</span>
-                <span className="companion-resource-title">
-                  Postpartum<br />Tips
-                </span>
-              </div>
-            </div>
-          </section>
-        </aside>
-      </div>
-
-      {/* Interactive Resource Modals */}
-      {activeModal && (
-        <div className="companion-modal-backdrop" onClick={() => setActiveModal(null)} role="dialog">
-          <div className="patient-card companion-modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="companion-modal-head">
-              <h4 className="companion-modal-title">
-                {activeModal === 'audio' && 'Relaxation Audio'}
-                {activeModal === 'meditation' && 'Guided Meditation'}
-                {activeModal === 'tips' && 'Postpartum Recovery Tips'}
-              </h4>
-              <button
-                type="button"
-                className="companion-modal-close-btn"
-                onClick={() => setActiveModal(null)}
-                aria-label="Close modal"
-              >
-                &times;
-              </button>
-            </div>
-
-            <div className="companion-modal-body">
-              {activeModal === 'audio' && (
-                <div style={{ textAlign: 'center', padding: '12px 0' }}>
-                  <p style={{ fontSize: '13px', color: '#5b4750', marginBottom: '16px' }}>
-                    Soothing ocean swell and gentle ambient soundscape designed to calm postpartum nervous system arousal.
-                  </p>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', background: 'var(--patient-blush-soft)', border: '1px solid var(--patient-blush-border)', borderRadius: '30px', color: '#d93c75', fontWeight: 600, fontSize: '13px' }}>
-                    <span>▶ Playing: Gentle Ocean Waves (04:12)</span>
-                  </div>
-                </div>
-              )}
-
-              {activeModal === 'meditation' && (
-                <div style={{ textAlign: 'center', padding: '12px 0' }}>
-                  <p style={{ fontSize: '13px', color: '#5b4750', marginBottom: '16px' }}>
-                    A 3-minute mindful pause for mothers: softening body tension and embracing self-compassion.
-                  </p>
-                  <div style={{ width: '84px', height: '84px', borderRadius: '50%', background: 'var(--patient-blush-pill)', border: '3px solid #ea3b75', margin: '0 auto 12px auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d93c75', fontSize: '14px', fontWeight: 700 }}>
-                    Inhale
-                  </div>
-                  <small style={{ color: '#8c747f' }}>Breathe softly with the gentle pulsing rhythm</small>
-                </div>
-              )}
-
-              {activeModal === 'tips' && (
-                <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '13px', color: '#4a353f', lineHeight: 1.6 }}>
-                  <li><strong>Rest when possible:</strong> Even 15 minutes of quiet resting restores neurological energy.</li>
-                  <li><strong>Hydration &amp; Warm Nourishment:</strong> Soups, warm teas, and iron-rich foods aid healing.</li>
-                  <li><strong>Ask for specific help:</strong> Let family or friends hold household tasks so you can bond and recover.</li>
-                  <li><strong>Be gentle with yourself:</strong> Baby blues and mood fluctuations are natural hormonal transitions.</li>
-                </ul>
-              )}
+              <div ref={messagesEndRef} />
             </div>
           </div>
         </div>
