@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { PatientProvider } from './context/PatientContext.jsx';
 import { ClinicalProvider } from '../dashboard/context/ClinicalContext.jsx';
@@ -64,18 +64,15 @@ describe('Miora Patient Portal Visual Refinement & Six Screens', () => {
     expect(nav).toBeInTheDocument();
 
     // Brand logo navigates to landing page
-    const brandLink = screen.getByRole('link', { name: /Miora Home/i });
+    const brandLink = screen.getByRole('link', { name: /AANCHAL Home|Miora Home/i });
     expect(brandLink).toBeInTheDocument();
     expect(brandLink).toHaveAttribute('href', '/');
 
-    // All core navigation links in top navbar
-    expect(screen.getByRole('link', { name: /^Dashboard$/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /^Medical History$/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /^Screening$/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /^AI Assistant$/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /^Connect to a Doctor$/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /^My Reports$/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /^Care Suggestions$/i })).toBeInTheDocument();
+    // Essential simplified navigation links in top navbar (Home, Screening, Support Space, Profile)
+    expect(within(nav).getByRole('link', { name: /^Home$/i })).toBeInTheDocument();
+    expect(within(nav).getByRole('link', { name: /^Screening$/i })).toBeInTheDocument();
+    expect(within(nav).getByRole('link', { name: /^Support Space$/i })).toBeInTheDocument();
+    expect(within(nav).getByRole('link', { name: /^Profile$/i })).toBeInTheDocument();
 
     // Top Navbar Profile & Status
     expect(screen.getByLabelText(/Patient profile menu/i)).toBeInTheDocument();
@@ -117,7 +114,7 @@ describe('Miora Patient Portal Visual Refinement & Six Screens', () => {
     expect(screen.getByRole('heading', { level: 1, name: /AI Screening Session/i })).toBeInTheDocument();
   });
 
-  it('Screen 2 — AI Screening: renders 2-column workspace with video controls, conversation panel, and session controls', () => {
+  it('Screen 2 — Screening Workflow: renders unified 3-tab layout (AI Screening, EPDS, Results & Reports) with no mandatory medical reports upload', async () => {
     renderPatientApp('/patient/screening');
 
     // Progress tracker stages
@@ -126,28 +123,36 @@ describe('Miora Patient Portal Visual Refinement & Six Screens', () => {
     expect(screen.getByText('Analysis')).toBeInTheDocument();
     expect(screen.getByText('Results')).toBeInTheDocument();
 
-    // Video area & badges
-    expect(screen.getByLabelText('Patient Video Feed')).toBeInTheDocument();
-    expect(screen.getByText('You (Live)')).toBeInTheDocument();
+    // Exactly 3 tabs in screening navigation
+    expect(screen.getByRole('tab', { name: /AI Screening/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /EPDS/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Results & Reports/i })).toBeInTheDocument();
 
-    // Conversational panel
-    expect(screen.getByText('Miora AI')).toBeInTheDocument();
-    expect(screen.getByText(/Hey! Hello, welcome to MIORA/i)).toBeInTheDocument();
+    // No obsolete Medical Reports tab or upload requirement
+    expect(screen.queryByRole('tab', { name: /Medical Reports/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Please upload at least one report to continue/i)).not.toBeInTheDocument();
+
+    // Tab 1 (AI Screening) is active by default with compulsory video recording pre-check
+    expect(screen.getByRole('heading', { level: 1, name: /AI Screening Session/i })).toBeInTheDocument();
+    expect(screen.getByText(/Compulsory Video & Audio Recording/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Enable Camera & Start AI Screening/i })).toBeInTheDocument();
+
+    // Switch to EPDS tab
+    const epdsTab = screen.getByRole('tab', { name: /EPDS/i });
+    fireEvent.click(epdsTab);
+
+    // Displays EPDS 10-item assessment with first question
+    expect(screen.getByText(/EDINBURGH POSTNATAL DEPRESSION SCALE/i)).toBeInTheDocument();
+    expect(screen.getByText(/Question 1 of 10/i)).toBeInTheDocument();
     expect(screen.getByText(/I have been able to laugh and see the funny side of things/i)).toBeInTheDocument();
 
-    // Media toggle controls
-    const camBtn = screen.getByRole('button', { name: /Turn camera off/i });
-    expect(camBtn).toBeInTheDocument();
-    fireEvent.click(camBtn);
-    expect(screen.getByText(/Camera is currently turned off/i)).toBeInTheDocument();
+    // Switch to Results & Reports tab
+    const resultsTab = screen.getByRole('tab', { name: /Results & Reports/i });
+    fireEvent.click(resultsTab);
 
-    // End Screening button navigates to results
-    const endBtn = screen.getByRole('button', { name: /End Screening/i });
-    expect(endBtn).toBeInTheDocument();
-    fireEvent.click(endBtn);
-
-    expect(screen.getByRole('heading', { level: 1, name: /Screening Results/i })).toBeInTheDocument();
-    expect(screen.getByText('64%')).toBeInTheDocument();
+    // Displays Results & Reports with pending/awaiting integration states
+    expect(screen.getByRole('heading', { level: 1, name: /Results & Reports/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/Awaiting model integration/i).length).toBeGreaterThan(0);
   });
 
   it('Screen 3 — AI Assistant: renders hero banner, holographic AI assistant stage, prompt chips, and supports chat interactions', async () => {
@@ -157,7 +162,7 @@ describe('Miora Patient Portal Visual Refinement & Six Screens', () => {
     expect(screen.getByRole('heading', { level: 1, name: /Your AI Companion/i })).toBeInTheDocument();
 
     // Holographic AI Assistant stage (replaces legacy mood/help/resources cards)
-    expect(screen.getByLabelText(/Miora AI Assistant Hologram/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/(AANCHAL|Miora) AI Assistant Hologram/i)).toBeInTheDocument();
     expect(screen.getByText('SMART')).toBeInTheDocument();
     expect(screen.getByText('ADAPTIVE')).toBeInTheDocument();
     expect(screen.getByText('SECURE')).toBeInTheDocument();
@@ -258,23 +263,34 @@ describe('Miora Patient Portal Visual Refinement & Six Screens', () => {
     fireEvent.click(completeModalBtn);
   });
 
-  it('Patient Dashboard default route: renders Patient Home at /patient/dashboard while My Reports remains at /patient/reports', () => {
+  it('Patient Dashboard default route: renders the simplified 3-section minimal homepage with static 2D sculpture at /patient/dashboard', () => {
     renderPatientApp('/patient/dashboard');
 
-    // Heading for Patient Home
-    expect(screen.getByRole('heading', { level: 1, name: /Welcome back, Maa/i })).toBeInTheDocument();
-    expect(screen.getByText(/Your personalized companion for postpartum recovery/i)).toBeInTheDocument();
+    // Section 1 – Hero: navbar brand logo, headline, description, CTA
+    expect(screen.getAllByAltText(/^AANCHAL/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole('heading', { level: 1, name: /Beyond motherhood,\s*there is you\./i })).toBeInTheDocument();
+    expect(screen.getByText(/A gentle space to understand your emotional wellbeing, find support and reconnect with yourself\./i)).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Begin Your Journey/i }).length).toBe(2);
 
-    // Dashboard quick action cards
-    expect(screen.getByRole('heading', { level: 2, name: /Postpartum Wellness Index/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: /AI Screening Check-In/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: /AI Assistant Companion/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: /Care Suggestions/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: /Medical History & Records/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: /Connect to a Doctor/i })).toBeInTheDocument();
+    // Static 2D Mother & Baby Sculpture exists
+    expect(screen.getByLabelText(/AANCHAL Mother & Baby Sculpture/i)).toBeInTheDocument();
+    expect(screen.getByAltText(/AANCHAL Mother and Baby Sculpture/i)).toBeInTheDocument();
 
-    // Action button to navigate to My Reports
-    expect(screen.getByRole('button', { name: /View Full Reports & Analytics/i })).toBeInTheDocument();
+    // Section 2 – A Gentle Message
+    expect(screen.getByRole('heading', { level: 2, name: /Motherhood is a journey\. You deserve care along the way\./i })).toBeInTheDocument();
+    expect(screen.getByText(/Take a quiet moment to breathe, reflect, and receive the gentle care you give to others every day\./i)).toBeInTheDocument();
+
+    // Section 3 – Final Call to Action
+    expect(screen.getByRole('heading', { level: 2, name: /You are more than a mother\./i })).toBeInTheDocument();
+    expect(screen.getByText(/Your feelings matter\. Your wellbeing matters\./i)).toBeInTheDocument();
+
+    // STRICT CHECK: Clutter, cards, circular illustrations, and old sections are removed
+    expect(screen.queryByText(/Gentle Care Designed Around You/i)).toBeNull();
+    expect(screen.queryByText(/OUR SUPPORTIVE APPROACH/i)).toBeNull();
+    expect(screen.queryByText(/Empathetic Check-ins/i)).toBeNull();
+    expect(screen.queryByText(/How are you feeling right now\?/i)).toBeNull();
+    expect(screen.queryByRole('heading', { level: 2, name: /^Emotional Screening$/i })).toBeNull();
+    expect(document.querySelector('.patient-editorial-img')).toBeNull();
   });
 });
 

@@ -4,6 +4,7 @@ import { PatientIcon } from '../components/PatientIcons.jsx';
 import { AiScreeningTab } from '../components/screening/AiScreeningTab.jsx';
 import { EpdsTab } from '../components/screening/EpdsTab.jsx';
 import { ResultsReportsTab } from '../components/screening/ResultsReportsTab.jsx';
+import './screening.css';
 import '../components/screening/screeningStyles.css';
 
 export function PatientScreeningPage() {
@@ -34,9 +35,64 @@ export function PatientScreeningPage() {
           <span>Home</span>
         </NavLink>
         <span className="screening-breadcrumb-sep" aria-hidden="true">&rsaquo;</span>
-        <span className="screening-breadcrumb-current">
-          {activeTab === 'ai-screening' ? 'AI Screening' : activeTab === 'epds' ? 'EPDS' : 'Results & Reports'}
-        </span>
+        <span className="screening-breadcrumb-current">AI Screening Session</span>
+      </div>
+
+      {/* Hero Header Box with Page Heading & 4-Stage Progress Tracker */}
+      <div className="patient-hero-box screening-hero-box" style={{ marginBottom: '20px' }}>
+        <div className="patient-hero-box-text">
+          <div className="miora-dash-eyebrow">
+            <span>AI SCREENING</span>
+            <span className="miora-dash-eyebrow-line" aria-hidden="true" />
+          </div>
+          {activeTab === 'results' ? (
+            <h1 className="miora-dash-title patient-page-heading screening-page-title">
+              Results &amp; <em>Reports</em>
+            </h1>
+          ) : (
+            <h1 className="miora-dash-title patient-page-heading screening-page-title">
+              AI Screening <em>Session</em>
+            </h1>
+          )}
+          <p className="miora-dash-subtitle patient-page-subheading screening-page-sub">
+            A private, conversational screening to understand your emotional well-being after childbirth.
+          </p>
+        </div>
+
+        {/* 4-Stage Progress Tracker */}
+        <div className="screening-stages-tracker" aria-label="Screening progress stages">
+          <NavLink to="/patient/medical-history" className="tracker-stage is-completed">
+            <div className="tracker-circle">
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="white" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="2.5 6 4.8 8.5 9.5 3.5" />
+              </svg>
+            </div>
+            <span className="tracker-label">Medical History</span>
+          </NavLink>
+
+          <div className="tracker-line is-active-line" aria-hidden="true" />
+
+          <div className={`tracker-stage ${activeTab === 'ai-screening' ? 'is-active' : 'is-completed'}`}>
+            <div className="tracker-circle">
+              <span className="tracker-inner-dot" />
+            </div>
+            <span className="tracker-label">Screening</span>
+          </div>
+
+          <div className="tracker-line" aria-hidden="true" />
+
+          <div className={`tracker-stage ${activeTab === 'epds' ? 'is-active' : activeTab === 'results' ? 'is-completed' : 'is-upcoming'}`}>
+            <div className="tracker-circle" />
+            <span className="tracker-label">Analysis</span>
+          </div>
+
+          <div className="tracker-line" aria-hidden="true" />
+
+          <div className={`tracker-stage ${activeTab === 'results' ? 'is-active' : 'is-upcoming'}`}>
+            <div className="tracker-circle" />
+            <span className="tracker-label">Results</span>
+          </div>
+        </div>
       </div>
 
       {/* Exactly 3 Unified Screening Tabs */}

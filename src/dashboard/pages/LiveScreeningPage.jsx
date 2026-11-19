@@ -75,7 +75,7 @@ export function LiveScreeningPage() {
               <span className="miora-dash-eyebrow-line" aria-hidden="true" />
             </div>
             <h1 id="live-screening-heading" className="miora-dash-title">
-              Maternal Screening <em>Review</em>
+              Maternal Screening <em>Session</em>
             </h1>
             <p className="miora-dash-subtitle">
               Review completed patient AI Multimodal Screenings, Edinburgh Postnatal Depression Scale (EPDS) assessments, and clinical reports.

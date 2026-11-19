@@ -64,9 +64,9 @@ export function DoctorEpdsTab({ defaultMotherId }) {
             <span>VALIDATED PERINATAL SCREENING INSTRUMENT</span>
             <span className="miora-dash-eyebrow-line" aria-hidden="true" />
           </div>
-          <h1 className="miora-dash-title" style={{ margin: '4px 0 8px 0', fontSize: '22px' }}>
+          <h2 className="miora-dash-title" style={{ margin: '4px 0 8px 0', fontSize: '20px' }}>
             EPDS Assessment — Clinician Oversight (Cox et al. 1987)
-          </h1>
+          </h2>
           <p className="miora-dash-subtitle" style={{ margin: 0, fontSize: '13.5px' }}>
             Inspect validated 10-item self-report questionnaire scores, individual item choices, and safety-critical Question 10 alerts.
             The EPDS is a screening instrument and does not establish a clinical diagnosis.

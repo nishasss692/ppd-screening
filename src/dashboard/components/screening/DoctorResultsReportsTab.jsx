@@ -36,9 +36,9 @@ export function DoctorResultsReportsTab({ defaultMotherId }) {
             <span>UNIFIED CLINICAL ASSESSMENT REPOSITORY</span>
             <span className="miora-dash-eyebrow-line" aria-hidden="true" />
           </div>
-          <h1 className="miora-dash-title" style={{ margin: '4px 0 8px 0', fontSize: '22px' }}>
+          <h2 className="miora-dash-title" style={{ margin: '4px 0 8px 0', fontSize: '20px' }}>
             Results &amp; Reports — Clinician Portfolio
-          </h1>
+          </h2>
           <p className="miora-dash-subtitle" style={{ margin: 0, fontSize: '13.5px' }}>
             Access complete multimodal AI screening states, EPDS score histories, and downloadable clinical summary PDFs.
           </p>

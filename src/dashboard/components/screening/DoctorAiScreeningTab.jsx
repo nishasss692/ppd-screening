@@ -29,9 +29,9 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
             <span>CLINICAL SCREENING OVERSIGHT</span>
             <span className="miora-dash-eyebrow-line" aria-hidden="true" />
           </div>
-          <h1 className="miora-dash-title" style={{ margin: '4px 0 8px 0', fontSize: '22px' }}>
+          <h2 className="miora-dash-title" style={{ margin: '4px 0 8px 0', fontSize: '20px' }}>
             AI Multimodal Screening — Clinician Oversight
-          </h1>
+          </h2>
           <p className="miora-dash-subtitle" style={{ margin: 0, fontSize: '13.5px' }}>
             Review acoustic, linguistic, and facial video dynamics captured during patient screening sessions.
             Model outputs reflect true backend pipeline status with zero fabricated predictions.

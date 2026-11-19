@@ -162,7 +162,7 @@ describe('AANCHAL — Conversational AI Screening with Compulsory Video', () => 
     renderScreeningPage(['/patient/screening?tab=ai-screening']);
 
     // Heading and Description
-    expect(screen.getByRole('heading', { level: 1, name: 'AI Screening' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: /AI Screening/i })).toBeInTheDocument();
 
     // Compulsory Video Notice
     expect(screen.getByText(/Compulsory Video & Audio Recording/i)).toBeInTheDocument();

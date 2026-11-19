@@ -35,7 +35,7 @@ describe('Clinician Screening Oversight & Review (LiveScreeningPage)', () => {
 
     // Check header
     expect(screen.getByText('PATIENT SCREENING REVIEW')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 1, name: /Maternal Screening Review/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: /Maternal Screening/i })).toBeInTheDocument();
 
     // Verify clinician-side live recording controls are completely absent
     expect(screen.queryByText(/Live Session Active/i)).not.toBeInTheDocument();

@@ -562,7 +562,7 @@ export function AiScreeningTab({ onContinueToEpds }) {
               <span>MULTIMODAL AI SCREENING — VIDEO &amp; VOICE SESSION</span>
               <span className="miora-dash-eyebrow-line" aria-hidden="true" />
             </div>
-            <h1 className="miora-dash-title patient-page-heading">AI Screening</h1>
+            <h2 className="miora-dash-title patient-page-heading" style={{ fontSize: '20px' }}>AI Screening Session Setup</h2>
             <p className="miora-dash-subtitle patient-page-subheading">
               A guided conversational screening with the AANCHAL AI Assistant. This session uses acoustic, facial, and linguistic analysis to assess emotional wellbeing.
             </p>

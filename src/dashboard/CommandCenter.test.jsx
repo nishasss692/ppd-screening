@@ -38,7 +38,7 @@ describe('Miora Screen 01: Dashboard', () => {
     renderDashboard();
 
     // Top Navigation
-    expect(screen.getByRole('link', { name: 'Miora Dashboard' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /(AANCHAL|Miora) Dashboard/i })).toBeInTheDocument();
     expect(screen.queryByText('Maternal Emotional')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Dashboard' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Mothers & Cases' })).toBeInTheDocument();
@@ -120,7 +120,7 @@ describe('Miora Screen 01: Dashboard', () => {
     fireEvent.click(screen.getByRole('link', { name: 'Dashboard' }));
     fireEvent.click(screen.getByRole('button', { name: /Start Screening/i }));
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Maternal Screening Session/i);
-    expect(screen.getByRole('button', { name: /Complete Screening/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /AI Screening/i })).toBeInTheDocument();
   });
 
   it('navigates from Landing Page Get Started button to Login', () => {

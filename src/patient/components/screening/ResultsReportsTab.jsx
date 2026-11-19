@@ -36,7 +36,7 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
           <span>MATERNAL ASSESSMENT PORTFOLIO</span>
           <span className="miora-dash-eyebrow-line" aria-hidden="true" />
         </div>
-        <h1 className="patient-page-heading">Results &amp; Reports</h1>
+        <h2 className="patient-page-heading" style={{ fontSize: '20px' }}>Assessment Portfolio Overview</h2>
         <p className="patient-page-subheading">
           Unified overview of your multimodal AI screening, Edinburgh Postnatal Depression Scale (EPDS) score,
           and clinical care summaries.
