@@ -53,6 +53,12 @@ export const PATIENT_NAV_ITEMS = [
     icon: 'reports',
   },
   {
+    to: '/patient/community',
+    matchPaths: ['/patient/community', '/community', '/mothers-circle'],
+    label: "Mother's Circle",
+    icon: 'community',
+  },
+  {
     to: '/patient/care-suggestions',
     matchPaths: ['/patient/care-suggestions', '/care-suggestions', '/patient/suggestions'],
     label: 'Care Suggestions',
