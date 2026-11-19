@@ -22,8 +22,8 @@ if not QUESTIONS_DATA_PATH.exists() and BACKEND_QUESTIONS_PATH.exists():
     os.makedirs(PROJECT_ROOT / "data", exist_ok=True)
     shutil.copyfile(BACKEND_QUESTIONS_PATH, QUESTIONS_DATA_PATH)
 
-# 2. Configure CI database fallback
-if os.getenv("CI") or not os.getenv("DATABASE_URL"):
+# 2. Configure CI & local test database isolation (prevent test pollution of dev PostgreSQL)
+if not os.getenv("USE_REAL_POSTGRES"):
     os.environ["DATABASE_URL"] = "sqlite:///./ci_test_database.db"
 
 

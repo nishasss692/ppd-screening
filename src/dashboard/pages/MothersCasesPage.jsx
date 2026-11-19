@@ -156,12 +156,20 @@ export function MothersCasesPage() {
     (weekRange[0] > 0 || weekRange[1] < 24 ? 1 : 0);
 
   const selectedMother = motherId
-    ? mothers.find((m) => m.id.toLowerCase() === motherId.toLowerCase()) || null
+    ? mothers.find(
+        (m) =>
+          m.id.toLowerCase() === motherId.toLowerCase() ||
+          (m.rawUuid && m.rawUuid.toLowerCase() === motherId.toLowerCase())
+      ) || null
     : null;
 
   const relatedScreenings = useMemo(() => {
     if (!selectedMother) return [];
-    return screenings.filter((s) => s.motherId === selectedMother.id);
+    return screenings.filter(
+      (s) =>
+        s.motherId === selectedMother.id ||
+        (selectedMother.rawUuid && s.motherId === selectedMother.rawUuid)
+    );
   }, [screenings, selectedMother]);
 
   return (
