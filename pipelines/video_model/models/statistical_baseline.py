@@ -16,7 +16,14 @@ do not represent authentic patient observations or diagnostic biomarkers.
 
 from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
-import torch
+
+try:
+    import torch
+    HAS_TORCH = True
+except (ImportError, ModuleNotFoundError):
+    torch = None
+    HAS_TORCH = False
+
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
@@ -103,7 +110,7 @@ class ParticipantStatisticalFeatureExtractor(BaseEstimator):
         else:
             raise ValueError(f"Unknown feature subset: {self.feature_subset}")
 
-    def extract_single(self, tensor: Union[np.ndarray, torch.Tensor]) -> np.ndarray:
+    def extract_single(self, tensor: Union[np.ndarray, Any]) -> np.ndarray:
         """Extract statistical vector from a single (T, 24) sequence.
 
         Args:
@@ -112,7 +119,7 @@ class ParticipantStatisticalFeatureExtractor(BaseEstimator):
         Returns:
             1D float64 NumPy array of shape (220,).
         """
-        if isinstance(tensor, torch.Tensor):
+        if HAS_TORCH and torch is not None and isinstance(tensor, torch.Tensor):
             arr = tensor.detach().cpu().numpy()
         else:
             arr = np.asarray(tensor)

@@ -16,7 +16,14 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
-import torch
+
+try:
+    import torch
+    HAS_TORCH = True
+except (ImportError, ModuleNotFoundError):
+    torch = None
+    HAS_TORCH = False
+
 from sklearn.model_selection import StratifiedKFold
 
 from pipelines.video_model.config import (
@@ -153,8 +160,8 @@ class VideoFeatureNormalizer:
 
     def transform(
         self,
-        tensor: Union[np.ndarray, torch.Tensor],
-    ) -> Union[np.ndarray, torch.Tensor]:
+        tensor: Union[np.ndarray, Any],
+    ) -> Union[np.ndarray, Any]:
         """Apply fitted normalization to a single sequence or 2D/3D batch.
 
         Args:
@@ -166,7 +173,7 @@ class VideoFeatureNormalizer:
         if not self.is_fitted:
             raise ValueError("VideoFeatureNormalizer is not fitted yet. Call fit() before transform().")
 
-        is_torch = isinstance(tensor, torch.Tensor)
+        is_torch = HAS_TORCH and torch is not None and isinstance(tensor, torch.Tensor)
         data = tensor.clone() if is_torch else tensor.copy()
 
         if is_torch:
@@ -250,6 +257,9 @@ def pad_collate_fn(batch: List[Dict[str, Any]]) -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: Collated and padded batch tensors.
     """
+    if not HAS_TORCH or torch is None:
+        raise ImportError("pad_collate_fn requires PyTorch, but PyTorch is not installed in the environment.")
+
     if len(batch) == 0:
         raise ValueError("Cannot collate an empty batch.")
 
@@ -328,10 +338,10 @@ def get_stratified_cv_splits(
 
 
 def masked_temporal_pooling(
-    features: torch.Tensor,
-    mask: torch.Tensor,
+    features: Any,
+    mask: Any,
     method: str = "mean",
-) -> torch.Tensor:
+) -> Any:
     """Pool variable-length temporal sequences ignoring masked or invalid frames.
 
     Args:
@@ -342,6 +352,9 @@ def masked_temporal_pooling(
     Returns:
         Pooled tensor: (B, D) for 'mean' or 'max'; (B, 2*D) for 'mean_max'.
     """
+    if not HAS_TORCH or torch is None:
+        raise ImportError("masked_temporal_pooling requires PyTorch, but PyTorch is not installed in the environment.")
+
     if features.dim() != 3 or mask.dim() != 2:
         raise ValueError(f"Expected features (B, T, D) and mask (B, T), got {features.shape}, {mask.shape}")
 

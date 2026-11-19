@@ -302,25 +302,37 @@ class VideoModalityResult(BaseModel):
 
 
 class FusionModalityResult(BaseModel):
-    """Status placeholder for multimodal late fusion combiner."""
+    """Status and prediction outputs from multimodal late fusion combiner."""
 
     model_config = ConfigDict(extra="ignore")
 
     status: str = Field(
         default="not_available",
-        description="'not_available' pending multimodal fusion model deployment",
+        description="'not_available' pending multimodal fusion model deployment, or 'completed'",
     )
     combined_score: Optional[float] = Field(
         default=None,
-        description="Calibrated multimodal risk probability",
+        description="Uncalibrated multimodal research risk score (0.0 - 1.0)",
     )
     risk_category: Optional[str] = Field(
         default=None,
-        description="Multimodal composite risk tier",
+        description="Multimodal composite research risk tier",
     )
     epds_equivalent: Optional[int] = Field(
         default=None,
-        description="Estimated equivalent EPDS score",
+        description="DEPRECATED: Multimodal AI screening does not estimate EPDS scores and must not be used as clinical diagnostic equivalents.",
+    )
+    uncalibrated_research_score: Optional[float] = Field(
+        default=None,
+        description="Uncalibrated multimodal research risk score (0.0 - 1.0)",
+    )
+    disagreement_flag: Optional[bool] = Field(
+        default=None,
+        description="Cross-modal algorithmic disagreement flag indicating numerical divergence across completed modalities",
+    )
+    disclaimer: str = Field(
+        default="Research prototype score only. Not a medical diagnosis, clinical finding, or calibrated disease probability.",
+        description="Scientific integrity and non-diagnostic research disclaimer",
     )
     modality_contributions: Dict[str, float] = Field(
         default_factory=dict,
@@ -333,6 +345,81 @@ class FusionModalityResult(BaseModel):
     research_benchmarks: Optional[Dict[str, Any]] = Field(
         default=None,
         description="Empirical multimodal benchmark metrics comparing single-modality and fusion architectures",
+    )
+
+
+class ThreeModalityAnalyzeResponse(BaseModel):
+    """Structured response returned by POST /api/screenings/multimodal/analyze."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    screening_id: Optional[str] = Field(
+        default=None,
+        description="Transient screening event identifier (UUID)",
+    )
+    mother_id: Optional[str] = Field(
+        default=None,
+        description="Participant or mother identifier",
+    )
+    status: OverallScreeningStatus = Field(
+        ...,
+        description="'completed', 'partially_completed', or 'failed'",
+    )
+    text_score: Optional[float] = Field(
+        default=None,
+        description="Text baseline model risk score (0.0 - 1.0)",
+    )
+    audio_score: Optional[float] = Field(
+        default=None,
+        description="Audio baseline model risk score (0.0 - 1.0)",
+    )
+    video_score: Optional[float] = Field(
+        default=None,
+        description="Video baseline model risk score (0.0 - 1.0)",
+    )
+    fusion_score: Optional[float] = Field(
+        default=None,
+        description="Uncalibrated multimodal research risk score (0.0 - 1.0)",
+    )
+    fusion_status: str = Field(
+        default="not_available",
+        description="'completed', 'insufficient_data', 'not_available', or 'failed'",
+    )
+    fusion_method: str = Field(
+        default="none",
+        description="Combiner algorithm utilized ('learned_stacking_three_modality', fallback, or 'none')",
+    )
+    modality_status: Dict[str, str] = Field(
+        default_factory=dict,
+        description="Per-modality execution status map",
+    )
+    modalities: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Detailed per-modality prediction dictionaries and metadata",
+    )
+    disagreement_flag: bool = Field(
+        default=False,
+        description="Cross-modal algorithmic divergence indicator",
+    )
+    disagreement_details: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Algorithmic divergence details and pairwise deltas",
+    )
+    model_version: str = Field(
+        default="stage1_three_modality_v1",
+        description="Model release version string",
+    )
+    disclaimer: str = Field(
+        default=(
+            "Research prototype score only. Not a medical diagnosis, clinical finding, or "
+            "calibrated disease probability. Standard clinical EPDS evaluation and clinician "
+            "consultation required."
+        ),
+        description="Mandatory scientific integrity and non-diagnostic research disclaimer",
+    )
+    processed_at: str = Field(
+        ...,
+        description="ISO-8601 UTC timestamp of screening completion",
     )
 
 

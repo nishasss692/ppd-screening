@@ -18,7 +18,10 @@ import joblib
 import numpy as np
 import pandas as pd
 import pytest
-torch = pytest.importorskip("torch", reason="torch is required for video deep learning tests")
+try:
+    import torch
+except (ImportError, ModuleNotFoundError):
+    torch = None
 
 from pipelines.video_model.config import (
     BASELINE_ARTIFACTS_DIR,

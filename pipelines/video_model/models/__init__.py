@@ -8,39 +8,55 @@ Synthetic Video V2 features are abstract numerical simulations. Video features a
 do not represent authentic patient observations or diagnostic biomarkers.
 """
 
-from pipelines.video_model.models.bilstm_model import (
-    VideoBiLSTMEncoder,
-    VideoBiLSTMModel,
-)
-from pipelines.video_model.models.gru_model import (
-    VideoGRUEncoder,
-    VideoGRUModel,
-)
 from pipelines.video_model.models.statistical_baseline import (
     ParticipantStatisticalFeatureExtractor,
     SUPPORTED_FEATURE_SUBSETS,
     VideoLogisticRegressionBaseline,
     VideoRandomForestBaseline,
 )
-from pipelines.video_model.models.temporal_pooling import (
-    MaskedAttentionPooling,
-    MaskedTemporalPooling,
-)
 
-__all__ = [
-    # Temporal Pooling
-    "MaskedAttentionPooling",
-    "MaskedTemporalPooling",
-    # GRU Models
-    "VideoGRUEncoder",
-    "VideoGRUModel",
-    # BiLSTM Models
-    "VideoBiLSTMEncoder",
-    "VideoBiLSTMModel",
-    # Statistical Baselines
-    "ParticipantStatisticalFeatureExtractor",
-    "SUPPORTED_FEATURE_SUBSETS",
-    "VideoLogisticRegressionBaseline",
-    "VideoRandomForestBaseline",
-]
+try:
+    import torch
+    from pipelines.video_model.models.bilstm_model import (
+        VideoBiLSTMEncoder,
+        VideoBiLSTMModel,
+    )
+    from pipelines.video_model.models.gru_model import (
+        VideoGRUEncoder,
+        VideoGRUModel,
+    )
+    from pipelines.video_model.models.temporal_pooling import (
+        MaskedAttentionPooling,
+        MaskedTemporalPooling,
+    )
+    HAS_TORCH = True
+except (ImportError, ModuleNotFoundError):
+    torch = None
+    HAS_TORCH = False
+
+if HAS_TORCH:
+    __all__ = [
+        # Temporal Pooling
+        "MaskedAttentionPooling",
+        "MaskedTemporalPooling",
+        # GRU Models
+        "VideoGRUEncoder",
+        "VideoGRUModel",
+        # BiLSTM Models
+        "VideoBiLSTMEncoder",
+        "VideoBiLSTMModel",
+        # Statistical Baselines
+        "ParticipantStatisticalFeatureExtractor",
+        "SUPPORTED_FEATURE_SUBSETS",
+        "VideoLogisticRegressionBaseline",
+        "VideoRandomForestBaseline",
+    ]
+else:
+    __all__ = [
+        # Statistical Baselines
+        "ParticipantStatisticalFeatureExtractor",
+        "SUPPORTED_FEATURE_SUBSETS",
+        "VideoLogisticRegressionBaseline",
+        "VideoRandomForestBaseline",
+    ]
 

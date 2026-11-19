@@ -24,6 +24,7 @@ from backend.services.community_service import CommunityService
 from backend.services.text_ner_service import text_ner_service
 from backend.services.clinical_service import clinical_service
 from backend.services.audio_service import audio_service
+from backend.services.three_modality_service import three_modality_service
 
 
 @asynccontextmanager
@@ -32,6 +33,7 @@ async def lifespan(_app: FastAPI):
     text_ner_service.startup()
     clinical_service.startup()
     audio_service.startup()
+    three_modality_service.startup()
     try:
         init_db()
         with get_db_context() as db:
@@ -40,6 +42,7 @@ async def lifespan(_app: FastAPI):
     except Exception as exc:
         pass
     yield
+    three_modality_service.shutdown()
     audio_service.shutdown()
     clinical_service.shutdown()
     text_ner_service.shutdown()
