@@ -180,15 +180,16 @@ export function PatientProvider({ children }) {
   const [patient, setPatient] = useState(() => {
     try {
       const authUser = getCurrentUser();
-      if (authUser && authUser.role === 'patient') {
-        const parts = (authUser.name || authUser.fullName || 'Amara').trim().split(/\s+/);
-        const firstName = parts[0] || 'Amara';
+      if (authUser && (authUser.role === 'patient' || authUser.role === 'family')) {
+        const parts = (authUser.name || authUser.fullName || (authUser.role === 'family' ? 'Raj' : 'Amara')).trim().split(/\s+/);
+        const firstName = parts[0] || (authUser.role === 'family' ? 'Raj' : 'Amara');
         return {
           id: authUser.id || 'P-101',
           name: firstName,
-          fullName: authUser.fullName || authUser.name || 'Amara Wilson',
-          email: authUser.email || 'amara@miora.health',
-          avatarInitials: firstName[0]?.toUpperCase() || 'A',
+          fullName: authUser.fullName || authUser.name || (authUser.role === 'family' ? 'Raj K.' : 'Amara Wilson'),
+          email: authUser.email || (authUser.role === 'family' ? 'family@miora.health' : 'amara@miora.health'),
+          role: authUser.role,
+          avatarInitials: firstName[0]?.toUpperCase() || (authUser.role === 'family' ? 'R' : 'A'),
           postpartumWeek: authUser.postpartumWeek || 4,
         };
       }
@@ -218,7 +219,7 @@ export function PatientProvider({ children }) {
   const reloadPatientData = useCallback(async () => {
     const authUser = getCurrentUser();
     const token = getAuthToken();
-    if (!authUser || authUser.role !== 'patient' || !token) return;
+    if (!authUser || (authUser.role !== 'patient' && authUser.role !== 'family') || !token) return;
 
     try {
       setIsLoadingBackendData(true);

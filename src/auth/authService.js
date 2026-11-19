@@ -1,6 +1,7 @@
 /**
  * Miora Authentication Service
- * Manages role-based authentication for Patients and Doctors.
+ * Manages role-based authentication for Patients, Doctors, and Patient's Family.
+ * Backed by PostgreSQL and JWT session tokens.
  */
 
 const STORAGE_USERS_KEY = 'miora_registered_users_v1';
@@ -21,6 +22,13 @@ export const DEMO_ACCOUNTS = {
     role: 'doctor',
     name: 'Dr. Elena Rostova',
     clinic: 'Miora Maternal Care Unit',
+  },
+  family: {
+    email: 'family@miora.health',
+    password: 'password123',
+    role: 'family',
+    name: 'Raj K.',
+    relationship: 'Partner / Family Caregiver',
   },
 };
 
@@ -95,7 +103,8 @@ export function signOutUser() {
 }
 
 /**
- * Validates credentials and verifies that the account role matches the selected role.
+ * Validates credentials against PostgreSQL backend via JWT authentication.
+ * Supports Doctor, Patient, and Patient's Family logins.
  */
 export async function authenticate({ email, password, selectedRole }) {
   // Simulate brief realistic authentication latency
@@ -122,6 +131,13 @@ export async function authenticate({ email, password, selectedRole }) {
     throw new Error('Password must be at least 6 characters.');
   }
 
+  const normSelected =
+    selectedRole === 'family' || selectedRole === 'patients_family'
+      ? 'family'
+      : selectedRole === 'doctor'
+        ? 'doctor'
+        : 'patient';
+
   // Attempt backend PostgreSQL authentication if server is reachable
   let backendUser = null;
   let backendRedirectUrl = null;
@@ -136,7 +152,7 @@ export async function authenticate({ email, password, selectedRole }) {
       body: JSON.stringify({
         email: trimmedEmail,
         password: trimmedPassword,
-        selected_role: selectedRole,
+        selected_role: normSelected,
       }),
     });
 
@@ -144,22 +160,33 @@ export async function authenticate({ email, password, selectedRole }) {
       const data = await response.json();
       if (data.access_token) {
         setAuthToken(data.access_token);
-        const resolvedRole = data.user?.role || data.role || (selectedRole === 'doctor' ? 'doctor' : 'patient');
+        const resolvedRole = data.user?.role || data.role || normSelected;
         backendUser = {
           id: data.user?.id || data.user_id,
           motherId: data.user?.mother_id || data.mother_id,
           email: data.user?.email || data.email || trimmedEmail,
           role: resolvedRole,
-          name: data.user?.name || data.name || (resolvedRole === 'doctor' ? DEMO_ACCOUNTS.doctor.name : DEMO_ACCOUNTS.patient.name),
+          name:
+            data.user?.name ||
+            data.name ||
+            (resolvedRole === 'doctor'
+              ? DEMO_ACCOUNTS.doctor.name
+              : resolvedRole === 'family'
+                ? DEMO_ACCOUNTS.family.name
+                : DEMO_ACCOUNTS.patient.name),
           fullName: data.user?.fullName || data.fullName,
           token: data.access_token,
           authenticatedAt: new Date().toISOString(),
         };
-        backendRedirectUrl = data.redirect_url || (resolvedRole === 'doctor' || selectedRole === 'doctor' ? '/dashboard' : '/patient/dashboard');
+        backendRedirectUrl =
+          data.redirect_url || (resolvedRole === 'doctor' ? '/dashboard' : '/patient/dashboard');
       }
     } else if (response.status === 401 || response.status === 403) {
       const err = await response.json().catch(() => ({}));
-      const isDemoAccount = trimmedEmail === DEMO_ACCOUNTS.doctor.email || trimmedEmail === DEMO_ACCOUNTS.patient.email;
+      const isDemoAccount =
+        trimmedEmail === DEMO_ACCOUNTS.doctor.email ||
+        trimmedEmail === DEMO_ACCOUNTS.patient.email ||
+        trimmedEmail === DEMO_ACCOUNTS.family.email;
       if (!isDemoAccount) {
         throw new Error(err.detail || 'Invalid email or password.');
       }
@@ -172,29 +199,39 @@ export async function authenticate({ email, password, selectedRole }) {
   }
 
   if (backendUser) {
-    if (selectedRole === 'doctor' && backendUser.role === 'patient') {
+    if (normSelected === 'doctor' && backendUser.role !== 'doctor') {
       setAuthToken(null);
+      const userType = backendUser.role === 'family' ? "Patient's Family" : 'Patient';
       throw new Error(
-        "Access denied: This account is registered as a Patient. You cannot access the Doctor portal with patient credentials."
+        `Access denied: This account is registered as a ${userType}. You cannot access the Doctor portal with ${userType.toLowerCase()} credentials.`
       );
     }
-    if (selectedRole === 'patient' && backendUser.role === 'doctor') {
+    if (normSelected === 'patient' && backendUser.role !== 'patient') {
       setAuthToken(null);
+      const userType = backendUser.role === 'doctor' ? 'Healthcare Professional (Doctor)' : "Patient's Family";
       throw new Error(
-        "Access denied: This account is registered as a Healthcare Professional (Doctor). Please select Doctor to sign in."
+        `Access denied: This account is registered as a ${userType}. Please select ${userType} to sign in.`
+      );
+    }
+    if (normSelected === 'family' && backendUser.role !== 'family') {
+      setAuthToken(null);
+      const userType = backendUser.role === 'doctor' ? 'Healthcare Professional (Doctor)' : 'Patient';
+      throw new Error(
+        `Access denied: This account is registered as a ${userType}. Please select ${userType} to sign in.`
       );
     }
     setCurrentUser(backendUser);
-    const targetRedirect = (backendUser.role === 'doctor' || selectedRole === 'doctor' || backendRedirectUrl === '/dashboard')
-      ? '/dashboard'
-      : '/patient/dashboard';
+    const targetRedirect =
+      backendUser.role === 'doctor' || backendRedirectUrl === '/dashboard'
+        ? '/dashboard'
+        : '/patient/dashboard';
     return {
       user: backendUser,
       redirectUrl: targetRedirect,
     };
   }
 
-  // Determine actual account role from existing registered users or predefined accounts
+  // Determine actual account role from existing registered users or predefined accounts (fallback)
   const registeredUsers = getRegisteredUsers();
   const existingUser = registeredUsers.find((u) => u.email.toLowerCase() === trimmedEmail);
 
@@ -213,6 +250,14 @@ export async function authenticate({ email, password, selectedRole }) {
     accountRole = 'doctor';
     accountName = DEMO_ACCOUNTS.doctor.name;
   } else if (
+    trimmedEmail === DEMO_ACCOUNTS.family.email ||
+    trimmedEmail === 'raj@miora.health' ||
+    trimmedEmail.includes('family') ||
+    trimmedEmail.includes('partner')
+  ) {
+    accountRole = 'family';
+    accountName = DEMO_ACCOUNTS.family.name;
+  } else if (
     trimmedEmail === DEMO_ACCOUNTS.patient.email ||
     trimmedEmail === 'mother@miora.health' ||
     trimmedEmail === 'amara@miora.health' ||
@@ -221,30 +266,42 @@ export async function authenticate({ email, password, selectedRole }) {
     accountRole = 'patient';
     accountName = DEMO_ACCOUNTS.patient.name;
   } else {
-    // Default account role for new or external accounts based on selectedRole
-    accountRole = selectedRole || (trimmedEmail.includes('clinician') || trimmedEmail.includes('hospital') ? 'doctor' : 'patient');
+    accountRole = normSelected || 'patient';
     accountName = trimmedEmail.split('@')[0];
   }
 
-  // Strict role verification:
-  // Do not allow access to Doctor portal simply by selecting Doctor card if registered as Patient.
-  // Respect authenticated account role and display clear mismatch error.
-  if (selectedRole === 'doctor' && accountRole === 'patient') {
+  // Strict role verification for fallback
+  if (normSelected === 'doctor' && accountRole !== 'doctor') {
+    const userType = accountRole === 'family' ? "Patient's Family" : 'Patient';
     throw new Error(
-      "Access denied: This account is registered as a Patient. You cannot access the Doctor portal with patient credentials."
+      `Access denied: This account is registered as a ${userType}. You cannot access the Doctor portal with ${userType.toLowerCase()} credentials.`
     );
   }
 
-  if (selectedRole === 'patient' && accountRole === 'doctor') {
+  if (normSelected === 'patient' && accountRole !== 'patient') {
+    const userType = accountRole === 'doctor' ? 'Healthcare Professional (Doctor)' : "Patient's Family";
     throw new Error(
-      "Access denied: This account is registered as a Healthcare Professional (Doctor). Please select Doctor to sign in."
+      `Access denied: This account is registered as a ${userType}. Please select ${userType} to sign in.`
+    );
+  }
+
+  if (normSelected === 'family' && accountRole !== 'family') {
+    const userType = accountRole === 'doctor' ? 'Healthcare Professional (Doctor)' : 'Patient';
+    throw new Error(
+      `Access denied: This account is registered as a ${userType}. Please select ${userType} to sign in.`
     );
   }
 
   const authenticatedUser = {
     email: trimmedEmail,
     role: accountRole,
-    name: accountName || (accountRole === 'doctor' ? 'Dr. Elena Rostova' : 'Amara K.'),
+    name:
+      accountName ||
+      (accountRole === 'doctor'
+        ? 'Dr. Elena Rostova'
+        : accountRole === 'family'
+          ? 'Raj K.'
+          : 'Amara K.'),
     authenticatedAt: new Date().toISOString(),
   };
 
@@ -252,7 +309,7 @@ export async function authenticate({ email, password, selectedRole }) {
 
   return {
     user: authenticatedUser,
-    redirectUrl: accountRole === 'doctor' || selectedRole === 'doctor' ? '/dashboard' : '/patient/dashboard',
+    redirectUrl: accountRole === 'doctor' ? '/dashboard' : '/patient/dashboard',
   };
 }
 
@@ -262,12 +319,28 @@ export async function authenticate({ email, password, selectedRole }) {
 export async function authenticateWithGoogle(selectedRole) {
   await new Promise((resolve) => setTimeout(resolve, 450));
 
-  const isDoctor = selectedRole === 'doctor';
+  const norm =
+    selectedRole === 'family' || selectedRole === 'patients_family'
+      ? 'family'
+      : selectedRole === 'doctor'
+        ? 'doctor'
+        : 'patient';
+
   const user = {
-    email: isDoctor ? DEMO_ACCOUNTS.doctor.email : DEMO_ACCOUNTS.patient.email,
-    role: isDoctor ? 'doctor' : 'patient',
-    name: isDoctor ? DEMO_ACCOUNTS.doctor.name : DEMO_ACCOUNTS.patient.name,
-    avatar: isDoctor ? null : '/assets/hero-mother.png',
+    email:
+      norm === 'doctor'
+        ? DEMO_ACCOUNTS.doctor.email
+        : norm === 'family'
+          ? DEMO_ACCOUNTS.family.email
+          : DEMO_ACCOUNTS.patient.email,
+    role: norm,
+    name:
+      norm === 'doctor'
+        ? DEMO_ACCOUNTS.doctor.name
+        : norm === 'family'
+          ? DEMO_ACCOUNTS.family.name
+          : DEMO_ACCOUNTS.patient.name,
+    avatar: norm === 'patient' ? '/assets/hero-mother.png' : null,
     provider: 'google',
     authenticatedAt: new Date().toISOString(),
   };
@@ -276,14 +349,14 @@ export async function authenticateWithGoogle(selectedRole) {
 
   return {
     user,
-    redirectUrl: isDoctor ? '/dashboard' : '/patient/dashboard',
+    redirectUrl: norm === 'doctor' ? '/dashboard' : '/patient/dashboard',
   };
 }
 
 /**
- * Account registration
+ * Account registration supporting Doctor, Patient, and Patient's Family.
  */
-export async function registerAccount({ name, email, password, role }) {
+export async function registerAccount({ name, email, password, role, patientEmail }) {
   await new Promise((resolve) => setTimeout(resolve, 450));
 
   const trimmedEmail = (email || '').trim().toLowerCase();
@@ -299,58 +372,72 @@ export async function registerAccount({ name, email, password, role }) {
     throw new Error('Password must be at least 6 characters.');
   }
 
-  // Attempt backend PostgreSQL patient registration if role is patient
-  let backendRegistered = null;
-  if (!role || role === 'patient') {
-    try {
-      const apiBase = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : '';
-      const response = await fetch(`${apiBase}/api/patients/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({
-          email: trimmedEmail,
-          password: trimmedPassword,
-          name: trimmedName,
-          full_name: trimmedName,
-        }),
-      });
+  const normRole =
+    role === 'family' || role === 'patients_family'
+      ? 'family'
+      : role === 'doctor'
+        ? 'doctor'
+        : 'patient';
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.access_token) {
-          setAuthToken(data.access_token);
-          backendRegistered = {
-            id: data.user_id,
-            motherId: data.mother_id,
-            name: data.name || trimmedName,
-            email: data.email || trimmedEmail,
-            role: data.role || 'patient',
-            token: data.access_token,
-            registeredAt: new Date().toISOString(),
-          };
-        }
-      } else {
-        const err = await response.json().catch(() => ({}));
-        if (response.status === 400 && err.detail && err.detail.toLowerCase().includes('already registered')) {
-          throw new Error(err.detail);
-        }
+  // Attempt backend PostgreSQL registration (supporting all 3 roles)
+  let backendRegistered = null;
+  try {
+    const apiBase = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : '';
+    const response = await fetch(`${apiBase}/api/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        email: trimmedEmail,
+        password: trimmedPassword,
+        name: trimmedName,
+        full_name: trimmedName,
+        role: normRole,
+        patient_email: patientEmail || null,
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.access_token) {
+        setAuthToken(data.access_token);
+        backendRegistered = {
+          id: data.user?.id || data.user_id,
+          motherId: data.user?.mother_id || data.mother_id,
+          name: data.user?.name || data.name || trimmedName,
+          email: data.user?.email || data.email || trimmedEmail,
+          role: data.user?.role || normRole,
+          token: data.access_token,
+          registeredAt: new Date().toISOString(),
+        };
       }
-    } catch (err) {
-      if (err.message && err.message.toLowerCase().includes('already registered')) {
-        throw err;
+    } else {
+      const err = await response.json().catch(() => ({}));
+      if (
+        response.status === 400 &&
+        err.detail &&
+        (err.detail.toLowerCase().includes('already exists') || err.detail.toLowerCase().includes('already registered'))
+      ) {
+        throw new Error(err.detail);
       }
-      // Offline/sandboxed fallback
     }
+  } catch (err) {
+    if (
+      err.message &&
+      (err.message.toLowerCase().includes('already exists') || err.message.toLowerCase().includes('already registered'))
+    ) {
+      throw err;
+    }
+    // Offline/sandboxed fallback
   }
 
   const newUser = backendRegistered || {
     id: `usr-${Date.now()}`,
     name: trimmedName,
     email: trimmedEmail,
-    role: role || 'patient',
+    role: normRole,
     registeredAt: new Date().toISOString(),
   };
 
@@ -359,7 +446,6 @@ export async function registerAccount({ name, email, password, role }) {
 
   return {
     user: newUser,
-    redirectUrl: (newUser.role === 'doctor' || role === 'doctor') ? '/dashboard' : '/patient/dashboard',
+    redirectUrl: normRole === 'doctor' ? '/dashboard' : '/patient/dashboard',
   };
 }
-

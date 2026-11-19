@@ -300,16 +300,23 @@
 
 .login-role-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .login-role-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
 }
 
 .login-role-card {
   position: relative;
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 12px 14px;
+  gap: 8px;
+  padding: 10px 10px;
   border-radius: 14px;
   background: #ffffff;
   border: 1px solid #e7dae1;
@@ -346,23 +353,26 @@
 .login-role-content {
   flex: 1;
   min-width: 0;
-  padding-right: 20px;
+  padding-right: 14px;
 }
 
 .login-role-title {
   display: block;
-  font-size: 14.5px;
+  font-size: 13px;
   font-weight: 700;
   color: #271218;
   line-height: 1.2;
-  margin-bottom: 3px;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .login-role-desc {
   display: block;
-  font-size: 11.5px;
+  font-size: 10.5px;
   color: #6f6168;
-  line-height: 1.34;
+  line-height: 1.3;
 }
 
 /* Radio Indicator */

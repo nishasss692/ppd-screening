@@ -48,14 +48,17 @@ describe('Separate Authentication Screens (Login & Create Account)', () => {
     expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Welcome Back');
     expect(screen.getByText('Sign in to continue your Miora journey.')).toBeInTheDocument();
 
-    // Role selection & Demo buttons
-    const patientRadio = screen.getByRole('radio', { name: /Patient/i });
-    const doctorRadio = screen.getByRole('radio', { name: /Doctor/i });
+    // Role selection & Demo buttons (Doctor, Patient, Patient's Family)
+    const patientRadio = screen.getByRole('radio', { name: 'Patient' });
+    const doctorRadio = screen.getByRole('radio', { name: 'Doctor' });
+    const familyRadio = screen.getByRole('radio', { name: "Patient's Family" });
     expect(patientRadio).toHaveAttribute('aria-checked', 'true');
     expect(doctorRadio).toHaveAttribute('aria-checked', 'false');
+    expect(familyRadio).toHaveAttribute('aria-checked', 'false');
     expect(screen.getByText('Try Demo:')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Patient \(Amara\)/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Doctor \(Dr. Elena\)/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Patient's Family \(Raj\)/i })).toBeInTheDocument();
 
     // Fields
     expect(screen.queryByLabelText(/Full Name/i)).not.toBeInTheDocument();
@@ -107,7 +110,7 @@ describe('Separate Authentication Screens (Login & Create Account)', () => {
     const doctorDemoBtn = screen.getByRole('button', { name: /Doctor \(Dr. Elena\)/i });
     fireEvent.click(doctorDemoBtn);
 
-    const doctorRadio = screen.getByRole('radio', { name: /Doctor/i });
+    const doctorRadio = screen.getByRole('radio', { name: 'Doctor' });
     expect(doctorRadio).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByLabelText(/^Email Address/i)).toHaveValue(DEMO_ACCOUNTS.doctor.email);
     expect(screen.getByLabelText(/^Password/i)).toHaveValue(DEMO_ACCOUNTS.doctor.password);
@@ -115,10 +118,18 @@ describe('Separate Authentication Screens (Login & Create Account)', () => {
     const patientDemoBtn = screen.getByRole('button', { name: /Patient \(Amara\)/i });
     fireEvent.click(patientDemoBtn);
 
-    const patientRadio = screen.getByRole('radio', { name: /Patient/i });
+    const patientRadio = screen.getByRole('radio', { name: 'Patient' });
     expect(patientRadio).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByLabelText(/^Email Address/i)).toHaveValue(DEMO_ACCOUNTS.patient.email);
     expect(screen.getByLabelText(/^Password/i)).toHaveValue(DEMO_ACCOUNTS.patient.password);
+
+    const familyDemoBtn = screen.getByRole('button', { name: /Patient's Family \(Raj\)/i });
+    fireEvent.click(familyDemoBtn);
+
+    const familyRadio = screen.getByRole('radio', { name: "Patient's Family" });
+    expect(familyRadio).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByLabelText(/^Email Address/i)).toHaveValue(DEMO_ACCOUNTS.family.email);
+    expect(screen.getByLabelText(/^Password/i)).toHaveValue(DEMO_ACCOUNTS.family.password);
   });
 
   it('validates required fields and password matching in Create Account mode', async () => {
@@ -209,6 +220,43 @@ describe('Separate Authentication Screens (Login & Create Account)', () => {
     await waitFor(
       () => {
         expect(screen.getByText('Doctor Dashboard')).toBeInTheDocument();
+      },
+      { timeout: 2000 }
+    );
+  });
+
+  it("successfully signs in demo patient's family and redirects to patient dashboard", async () => {
+    renderComponent(['/login']);
+
+    fireEvent.click(screen.getByRole('button', { name: /Patient's Family \(Raj\)/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Sign In$/i }));
+
+    await waitFor(
+      () => {
+        expect(screen.getByText('Patient Dashboard')).toBeInTheDocument();
+      },
+      { timeout: 2000 }
+    );
+  });
+
+  it("successfully creates patient's family account and redirects to patient dashboard", async () => {
+    renderComponent(['/create-account']);
+
+    // Select family role
+    fireEvent.click(screen.getByRole('radio', { name: /Patient's Family/i }));
+
+    fireEvent.change(screen.getByLabelText(/^Full Name/i), { target: { value: 'Karan Sharma' } });
+    fireEvent.change(screen.getByLabelText(/^Email Address/i), { target: { value: 'karan@example.com' } });
+    fireEvent.change(screen.getByLabelText(/^Password/i), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByLabelText(/^Confirm Password/i), { target: { value: 'password123' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /^Create Account$/i }));
+
+    expect(await screen.findByText(/Account created successfully/i)).toBeInTheDocument();
+
+    await waitFor(
+      () => {
+        expect(screen.getByText('Patient Dashboard')).toBeInTheDocument();
       },
       { timeout: 2000 }
     );

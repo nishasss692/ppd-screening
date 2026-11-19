@@ -7,10 +7,11 @@ import './patientHome.css';
 
 export function PatientHomePage() {
   const navigate = useNavigate();
-  const { screening } = usePatient();
+  const { patient, screening } = usePatient();
 
   const riskScore = screening?.riskScore ?? 64;
   const riskLabel = screening?.riskLabel || screening?.riskLevel || 'Moderate Attention';
+  const isFamily = patient?.role === 'family';
 
   // Gauge calculations for 54px circle (radius 22, circumference ~138.23)
   const radius = 22;
@@ -23,14 +24,16 @@ export function PatientHomePage() {
       <section className="miora-dash-header" aria-labelledby="patient-home-heading">
         <div className="miora-dash-header-copy">
           <div className="miora-dash-eyebrow">
-            <span>DASHBOARD</span>
+            <span>{isFamily ? "FAMILY COMPANION" : "DASHBOARD"}</span>
             <span className="miora-dash-eyebrow-line" aria-hidden="true" />
           </div>
           <h1 id="patient-home-heading" className="miora-dash-title">
-            Welcome back, <em>Maa</em>
+            Welcome back, <em>{isFamily ? (patient?.name || 'Raj') : 'Maa'}</em>
           </h1>
           <p className="miora-dash-subtitle">
-            Your personalized companion for postpartum recovery, emotional care, and gentle guidance.
+            {isFamily
+              ? "Supporting your loved one's postpartum recovery, emotional care, and gentle guidance."
+              : "Your personalized companion for postpartum recovery, emotional care, and gentle guidance."}
           </p>
         </div>
 
