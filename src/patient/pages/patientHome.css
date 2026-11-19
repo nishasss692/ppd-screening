@@ -1,259 +1,337 @@
 /* ==========================================================================
-   Miora Patient Portal — Patient Home Dashboard Page Styles
-   Warm, polished, editorial design matching Clinician Dashboard
+   AANCHAL — Minimal Maternal Wellbeing Homepage
+   Spacious editorial layout, clean typography, seamless 3D sculpture
    ========================================================================== */
 
-.patient-home-container {
-  width: 100%;
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+.aanchal-home-root {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 1.5rem 2rem 5rem;
+  font-family: var(--patient-font-sans, 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif);
+  color: var(--patient-ink, #271218);
+  animation: aanchalHomeFadeIn 0.35s ease-out;
 }
 
-/* Hero Welcome Banner */
-.patient-home-hero-card {
+@keyframes aanchalHomeFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================================================
+   Section 1 – Hero
+   Spacious 2-column layout with 3D sculpture on the right
+   ========================================================================== */
+.aanchal-hero-section {
+  min-height: 85vh;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 28px;
-  padding: 32px 36px;
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(135deg, #ffffff 0%, #fff7fa 50%, #fcf3f7 100%);
-  border: 1px solid var(--patient-blush-border);
-  border-radius: var(--patient-radius-lg);
-  box-shadow: 0 4px 20px rgba(197, 35, 97, 0.05);
+  padding: 2rem 0 4rem;
 }
 
-.patient-home-hero-text {
-  flex: 1;
-  max-width: 640px;
+.aanchal-hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  align-items: center;
+  gap: 3.5rem;
+  width: 100%;
 }
 
-.patient-home-greeting-badge {
+.aanchal-hero-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 580px;
+}
+
+.aanchal-hero-brand-logo {
+  margin-bottom: 2.25rem;
+  display: flex;
+  align-items: center;
+}
+
+.aanchal-hero-logo-img {
+  height: 64px;
+  width: auto;
+  max-width: 250px;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 2px 8px rgba(186, 30, 83, 0.08));
+}
+
+.aanchal-hero-headline {
+  font-family: var(--patient-font-serif, 'Playfair Display', Georgia, serif);
+  font-size: clamp(2.35rem, 4.2vw, 3.75rem);
+  line-height: 1.14;
+  font-weight: 700;
+  color: var(--patient-ink, #271218);
+  letter-spacing: -0.018em;
+  margin: 0 0 1.5rem 0;
+}
+
+.aanchal-hero-headline em {
+  font-style: italic;
+  font-weight: 600;
+  color: var(--patient-brand-rose-deep, #ca2261);
+}
+
+.aanchal-hero-description {
+  font-size: 1.12rem;
+  line-height: 1.68;
+  color: #4d3c42;
+  margin: 0 0 2.25rem 0;
+  max-width: 500px;
+}
+
+.aanchal-hero-action {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.aanchal-primary-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
+  gap: 0.75rem;
+  background: var(--patient-primary-gradient, linear-gradient(90deg, #db366f 0%, #ba1e53 100%));
+  color: #ffffff;
+  border: none;
   border-radius: 9999px;
-  font-size: 12px;
+  padding: 1.05rem 2.6rem;
+  font-size: 1.05rem;
   font-weight: 600;
-  color: var(--patient-brand-rose-deep);
-  background: var(--patient-brand-rose-subtle);
-  border: 1px solid rgba(234, 58, 122, 0.2);
-  margin-bottom: 12px;
-  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: 0 6px 22px rgba(186, 30, 83, 0.22);
+  transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+  text-decoration: none;
 }
 
-.patient-home-title {
-  font-family: var(--patient-font-serif);
-  font-size: 32px;
-  font-weight: 500;
-  line-height: 1.25;
-  color: var(--patient-ink);
-  margin: 0 0 10px 0;
-  letter-spacing: -0.01em;
-}
-
-.patient-home-subtitle {
-  font-size: 14.5px;
-  line-height: 1.55;
-  color: var(--patient-ink-secondary);
-  margin: 0 0 22px 0;
-}
-
-.patient-home-hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-}
-
-.patient-home-hero-illu-wrap {
-  width: 200px;
-  height: 135px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.patient-home-hero-illustration {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  image-rendering: -webkit-optimize-contrast;
-  filter: drop-shadow(0 8px 16px rgba(197, 35, 97, 0.08));
-}
-
-/* Dashboard Cards Grid */
-.patient-home-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-}
-
-.patient-home-card {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 18px 20px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid #eed9dd;
-  box-shadow: 0 4px 14px rgba(130, 52, 74, 0.035);
-  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
-}
-
-.patient-home-card:hover {
+.aanchal-primary-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 22px rgba(130, 52, 74, 0.07);
-  border-color: #e4bcc6;
+  box-shadow: 0 8px 26px rgba(186, 30, 83, 0.32);
+  background: var(--patient-primary-gradient-hover, linear-gradient(90deg, #e3457d 0%, #c92257 100%));
 }
 
-.patient-home-card-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-.patient-home-card-icon-wrap {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
+.aanchal-secondary-btn {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  background: #fdeef1;
-  border: 1px solid #f7d9e0;
-  color: #c73566;
-  flex-shrink: 0;
-}
-
-.patient-home-status-tag {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 3px 8px;
+  gap: 0.65rem;
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--patient-brand-rose-deep, #ca2261);
+  border: 1.5px solid rgba(186, 30, 83, 0.28);
   border-radius: 9999px;
-  background: #fde7ec;
-  color: #271218;
-  border: 1px solid rgba(217, 60, 117, 0.14);
+  padding: 1.05rem 2.2rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(186, 30, 83, 0.08);
+  transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+  text-decoration: none;
+  backdrop-filter: blur(8px);
 }
 
-.patient-home-card-title {
-  font-family: var(--serif, 'Playfair Display', Georgia, serif);
-  font-size: 20px;
-  font-weight: 500;
-  letter-spacing: -0.015em;
-  color: var(--ink, #271218);
-  margin: 0 0 6px 0;
-  line-height: 1.3;
+.aanchal-secondary-btn:hover {
+  transform: translateY(-2px);
+  border-color: rgba(186, 30, 83, 0.6);
+  background: #ffffff;
+  color: #a81546;
+  box-shadow: 0 6px 20px rgba(186, 30, 83, 0.16);
 }
 
-.patient-home-card-desc {
-  font-size: 13px;
-  line-height: 1.5;
-  color: #54464b;
-  margin: 0 0 16px 0;
-}
-
-/* Metric Gauge Preview */
-.patient-home-gauge-row {
+.aanchal-hero-visual {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 12px;
-  background: var(--patient-surface-subtle);
-  border: 1px solid var(--patient-blush-border);
-  border-radius: 10px;
-  margin-bottom: 16px;
-}
-
-.patient-home-gauge-svg {
-  width: 54px;
-  height: 54px;
-  flex-shrink: 0;
-  transform: rotate(-90deg);
-}
-
-.patient-home-gauge-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.patient-home-gauge-val {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--patient-brand-rose-deep);
-  line-height: 1;
-}
-
-.patient-home-gauge-sub {
-  font-size: 11.5px;
-  color: var(--patient-ink-secondary);
-}
-
-/* Chip list */
-.patient-home-chips-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 16px;
-}
-
-.patient-home-chip-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12.5px;
-  color: var(--patient-ink-secondary);
-  background: var(--patient-surface-subtle);
-  padding: 6px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--patient-blush-border);
-}
-
-.patient-home-chip-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--patient-brand-rose);
-  flex-shrink: 0;
-}
-
-/* Action button at card footer */
-.patient-home-card-btn {
-  width: 100%;
   justify-content: center;
-  font-size: 13px;
-  padding: 9px 16px;
-  margin-top: auto;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 560px;
 }
 
-@media (max-width: 992px) {
-  .patient-home-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+.aanchal-hero-sculpture {
+  display: block;
+  width: 100%;
+  max-width: 680px;
+  max-height: 720px;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 24px 48px rgba(186, 30, 83, 0.085));
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 0.3s ease-out;
 }
 
-@media (max-width: 680px) {
-  .patient-home-hero-card {
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 24px;
+.aanchal-hero-sculpture:hover {
+  transform: scale(1.015);
+}
+
+/* ==========================================================================
+   Section 2 – A Gentle Message
+   Clean, spacious editorial breathing room without cards or grids
+   ========================================================================== */
+.aanchal-message-section {
+  padding: 8.5rem 1.5rem;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.aanchal-message-inner {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.aanchal-message-headline {
+  font-family: var(--patient-font-serif, 'Playfair Display', Georgia, serif);
+  font-size: clamp(1.9rem, 3.4vw, 2.75rem);
+  line-height: 1.32;
+  font-weight: 600;
+  color: var(--patient-ink, #271218);
+  margin: 0 0 1.35rem 0;
+  letter-spacing: -0.012em;
+}
+
+.aanchal-message-sentence {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: #5e4d53;
+  margin: 0 auto;
+  max-width: 600px;
+}
+
+/* ==========================================================================
+   Section 3 – Final Call to Action
+   Minimal, reassuring closing section
+   ========================================================================== */
+.aanchal-cta-section {
+  padding: 6.5rem 1.5rem 5rem;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.aanchal-cta-inner {
+  max-width: 660px;
+  margin: 0 auto;
+}
+
+.aanchal-cta-headline {
+  font-family: var(--patient-font-serif, 'Playfair Display', Georgia, serif);
+  font-size: clamp(2.1rem, 3.6vw, 3.1rem);
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--patient-ink, #271218);
+  margin: 0 0 0.95rem 0;
+  letter-spacing: -0.015em;
+}
+
+.aanchal-cta-line {
+  font-size: 1.12rem;
+  line-height: 1.6;
+  color: #5e4d53;
+  margin: 0 0 2.25rem 0;
+}
+
+.aanchal-cta-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ==========================================================================
+   Responsive Adaptations
+   ========================================================================== */
+@media (max-width: 900px) {
+  .aanchal-hero-section {
+    min-height: auto;
+    padding: 2rem 0;
   }
-  .patient-home-hero-illu-wrap {
-    display: none;
-  }
-  .patient-home-grid {
+
+  .aanchal-hero-grid {
     grid-template-columns: 1fr;
+    text-align: center;
+    gap: 2.5rem;
+  }
+
+  .aanchal-hero-copy {
+    max-width: 100%;
+    align-items: center;
+  }
+
+  .aanchal-hero-brand-logo {
+    justify-content: center;
+    margin-bottom: 1.75rem;
+  }
+
+  .aanchal-hero-logo-img {
+    height: 52px;
+    max-width: 210px;
+  }
+
+  .aanchal-hero-headline {
+    margin: 0 auto 1.25rem auto;
+  }
+
+  .aanchal-hero-description {
+    margin: 0 auto 2rem auto;
+  }
+
+  .aanchal-hero-action {
+    justify-content: center;
+  }
+
+  .aanchal-hero-visual {
+    min-height: auto;
+  }
+
+  .aanchal-hero-sculpture {
+    max-width: 480px;
+    max-height: 520px;
+    margin: 0 auto;
+  }
+
+  .aanchal-message-section {
+    padding: 5.5rem 1rem;
+  }
+
+  .aanchal-cta-section {
+    padding: 4.5rem 1rem 3.5rem;
   }
 }
 
+@media (max-width: 580px) {
+  .aanchal-home-root {
+    padding: 1rem 1.25rem 4rem;
+  }
+
+  .aanchal-hero-brand-logo {
+    margin-bottom: 1.5rem;
+  }
+
+  .aanchal-hero-logo-img {
+    height: 46px;
+    max-width: 190px;
+  }
+
+  .aanchal-primary-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .aanchal-hero-visual {
+    min-height: auto;
+  }
+
+  .aanchal-hero-sculpture {
+    max-width: 320px;
+    max-height: 360px;
+  }
+}

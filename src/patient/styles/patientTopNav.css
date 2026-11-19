@@ -18,20 +18,20 @@
 }
 
 .patient-topnav-inner {
-  max-width: 1260px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 10px 24px;
+  padding: 14px 28px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
+  gap: 20px;
 }
 
 /* Brand Group */
 .patient-brand-group {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   flex: 0 0 auto;
 }
 
@@ -39,12 +39,21 @@
   display: inline-flex;
   align-items: center;
   text-decoration: none;
+  padding: 2px 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-.patient-brand-link .brand-wordmark {
-  font-size: 29px;
-  color: #d93c75;
-  padding-bottom: 0.14em;
+.patient-brand-link:hover {
+  opacity: 0.96;
+  transform: translateY(-1px);
+}
+
+.patient-brand-link .aanchal-official-logo {
+  height: 54px;
+  width: auto;
+  max-height: 58px;
+  object-fit: contain;
+  display: block;
 }
 
 /* Desktop Nav Links */
@@ -502,5 +511,22 @@
   }
   .patient-brand-badge {
     display: none;
+  }
+  .patient-topnav-inner {
+    padding: 12px 18px;
+  }
+  .patient-brand-link .aanchal-official-logo {
+    height: 46px;
+    max-height: 48px;
+  }
+}
+
+@media (max-width: 580px) {
+  .patient-topnav-inner {
+    padding: 10px 14px;
+  }
+  .patient-brand-link .aanchal-official-logo {
+    height: 40px;
+    max-height: 42px;
   }
 }
