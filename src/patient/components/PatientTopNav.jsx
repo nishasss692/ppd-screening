@@ -11,14 +11,9 @@ export const PATIENT_NAV_ITEMS = [
   {
     to: '/patient/dashboard',
     matchPaths: ['/patient/dashboard', '/patient/home', '/patient'],
-    label: 'Dashboard',
+    label: 'Home',
+    key: 'nav.home',
     icon: 'home',
-  },
-  {
-    to: '/patient/medical-history',
-    matchPaths: ['/patient/medical-history', '/medical-history'],
-    label: 'Medical History',
-    icon: 'medical-history',
   },
   {
     to: '/patient/screening',
@@ -30,39 +25,44 @@ export const PATIENT_NAV_ITEMS = [
       '/patient/ai-screening',
       '/screening-results',
       '/patient/screening/results',
+      '/patient/medical-history',
+      '/medical-history',
+      '/patient/reports',
+      '/reports',
+      '/patient/my-reports',
+      '/my-reports',
     ],
     label: 'Screening',
+    key: 'nav.screening',
     icon: 'ai-screening',
   },
   {
     to: '/patient/ai-assistant',
     matchPaths: ['/patient/ai-assistant', '/ai-assistant', '/assistant', '/voice-assistant'],
     label: 'AI Assistant',
+    key: 'nav.aiAssistant',
     icon: 'ai-assistant',
   },
   {
-    to: '/patient/connect-doctor',
-    matchPaths: ['/patient/connect-doctor', '/connect-doctor'],
-    label: 'Connect to a Doctor',
-    icon: 'connect-doctor',
-  },
-  {
-    to: '/patient/reports',
-    matchPaths: ['/patient/reports', '/patient/my-reports', '/reports', '/my-reports'],
-    label: 'My Reports',
-    icon: 'reports',
-  },
-  {
-    to: '/patient/community',
-    matchPaths: ['/patient/community', '/community', '/mothers-circle'],
-    label: "Mother's Circle",
+    to: '/patient/support-space',
+    matchPaths: [
+      '/patient/support-space',
+      '/support-space',
+      '/patient/community',
+      '/community',
+      '/mothers-circle',
+      '/patient/mothers-circle',
+    ],
+    label: 'Support Space',
+    key: 'nav.supportSpace',
     icon: 'community',
   },
   {
-    to: '/patient/care-suggestions',
-    matchPaths: ['/patient/care-suggestions', '/care-suggestions', '/patient/suggestions'],
-    label: 'Care Suggestions',
-    icon: 'care-suggestions',
+    to: '/patient/profile',
+    matchPaths: ['/patient/profile', '/profile', '/patient/settings', '/settings'],
+    label: 'Profile',
+    key: 'nav.profile',
+    icon: 'profile',
   },
 ];
 
@@ -141,7 +141,7 @@ export function PatientTopNav() {
           <Link
             to="/"
             className="dash-brand-link patient-brand-link"
-            aria-label="Miora Home"
+            aria-label="AANCHAL Home"
             onClick={() => setOpenMenu(null)}
           >
             <BrandWordmark />
@@ -175,8 +175,8 @@ export function PatientTopNav() {
             <Link
               to="/patient/ai-assistant"
               className="dash-icon-btn patient-icon-btn"
-              aria-label="Patient AI Assistant"
-              title="Miora AI Assistant"
+              aria-label="AANCHAL AI Assistant"
+              title="AANCHAL AI Assistant"
             >
               <DashboardIcon name="sparkle" size={17} strokeWidth={1.8} />
             </Link>
@@ -222,7 +222,7 @@ export function PatientTopNav() {
 
                 <div className="patient-notif-list">
                   {notifications.length === 0 ? (
-                    <div className="patient-notif-empty">No notifications at this time</div>
+                    <div className="patient-notif-empty">No new notifications</div>
                   ) : (
                     notifications.slice(0, 5).map((n) => (
                       <div
@@ -250,7 +250,7 @@ export function PatientTopNav() {
               aria-label="Patient profile menu"
               aria-expanded={openMenu === 'profile'}
               onClick={() => setOpenMenu((prev) => (prev === 'profile' ? null : 'profile'))}
-              title={`${patientName} (Profile)`}
+              title={`${patientName} (Profile & Settings)`}
             >
               {patientInitials}
             </button>
@@ -364,14 +364,6 @@ export function PatientTopNav() {
             );
           })}
           <div className="patient-mobile-divider" />
-          <NavLink
-            to="/patient/profile"
-            className="patient-mobile-link"
-            onClick={() => setOpenMenu(null)}
-          >
-            <PatientIcon name="profile" size={17} className="patient-mobile-icon" />
-            <span>Profile</span>
-          </NavLink>
           <NavLink
             to="/patient/settings"
             className="patient-mobile-link"
