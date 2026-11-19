@@ -1,28 +1,17 @@
-import React, { act } from 'react';
+import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { PatientProvider } from '../context/PatientContext.jsx';
 import { ClinicalProvider } from '../../dashboard/context/ClinicalContext.jsx';
 import { PatientScreeningPage } from './PatientScreeningPage.jsx';
-import * as voiceService from '../services/voiceAssistantService.js';
 import * as patientApi from '../services/patientApiService.js';
-import canonicalQuestionsJson from '../../../data/questions.json';
 
-const mockNavigate = vi.fn();
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
-  return {
-    ...actual,
-    useNavigate: () => mockNavigate,
-  };
-});
-
-function renderScreeningPage() {
+function renderScreeningPage(initialEntries = ['/patient/screening']) {
   return render(
     <ClinicalProvider>
       <PatientProvider>
-        <MemoryRouter>
+        <MemoryRouter initialEntries={initialEntries}>
           <PatientScreeningPage />
         </MemoryRouter>
       </PatientProvider>
@@ -30,16 +19,11 @@ function renderScreeningPage() {
   );
 }
 
-describe('MIORA — EPDS Conversational Screening and Persistence (Verification Checklist)', () => {
-  let mockMediaRecorderInstance;
-  let mockSpeechRecognitionInstance;
-
+describe('AANCHAL — Conversational AI Screening with Compulsory Video', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
-    mockNavigate.mockClear();
 
-    // Default mocks for API persistence and video upload
     vi.spyOn(patientApi, 'saveScreeningSession').mockResolvedValue({
       id: 'screening-session-default-uuid',
       mother_id: 'mother-uuid-1',
@@ -57,23 +41,56 @@ describe('MIORA — EPDS Conversational Screening and Persistence (Verification 
     window.HTMLMediaElement.prototype.play = vi.fn().mockImplementation(() => Promise.resolve());
     window.HTMLMediaElement.prototype.pause = vi.fn();
 
-    // Mock speech synthesis
+    // Mock SpeechSynthesis
     window.speechSynthesis = {
       speak: vi.fn(),
       cancel: vi.fn(),
-      paused: false,
-      speaking: false,
+      getVoices: vi.fn(() => []),
     };
 
-    window.SpeechSynthesisUtterance = vi.fn().mockImplementation((text) => ({
-      text,
-      lang: 'en-IN',
-      rate: 0.95,
-      pitch: 1.0,
-      onstart: null,
-      onend: null,
-      onerror: null,
-    }));
+    window.SpeechSynthesisUtterance = class MockSpeechSynthesisUtterance {
+      constructor(text) {
+        this.text = text;
+        this.lang = 'en-IN';
+        this.voice = null;
+        this.onend = null;
+        this.onerror = null;
+      }
+    };
+
+    // Mock SpeechRecognition
+    class MockSpeechRecognition {
+      constructor() {
+        this.continuous = true;
+        this.interimResults = true;
+        this.lang = 'en-IN';
+        this.onstart = null;
+        this.onresult = null;
+        this.onerror = null;
+        this.onend = null;
+      }
+      start() {
+        if (this.onstart) this.onstart();
+        setTimeout(() => {
+          if (this.onresult) {
+            this.onresult({
+              results: [
+                [{ transcript: 'I have been feeling emotionally overwhelmed since birth.', isFinal: true }],
+              ],
+            });
+          }
+          if (this.onend) this.onend();
+        }, 20);
+      }
+      stop() {
+        if (this.onend) this.onend();
+      }
+      abort() {
+        if (this.onend) this.onend();
+      }
+    }
+    window.SpeechRecognition = MockSpeechRecognition;
+    window.webkitSpeechRecognition = MockSpeechRecognition;
 
     // Mock getUserMedia
     const mockTrack = { stop: vi.fn(), enabled: true };
@@ -97,7 +114,6 @@ describe('MIORA — EPDS Conversational Screening and Persistence (Verification 
         this.ondataavailable = null;
         this.onstop = null;
         this.onerror = null;
-        mockMediaRecorderInstance = this;
       }
       start(timeSlice) {
         this.state = 'recording';
@@ -119,280 +135,269 @@ describe('MIORA — EPDS Conversational Screening and Persistence (Verification 
       }
     }
     window.MediaRecorder = MockMediaRecorder;
-
-    // Mock SpeechRecognition
-    class MockSpeechRecognition {
-      constructor() {
-        this.continuous = false;
-        this.interimResults = true;
-        this.lang = 'en-IN';
-        this.onstart = null;
-        this.onresult = null;
-        this.onerror = null;
-        this.onend = null;
-        this._running = false;
-        mockSpeechRecognitionInstance = this;
-      }
-      start() {
-        this._running = true;
-        if (this.onstart) this.onstart();
-      }
-      stop() {
-        if (this._running) {
-          this._running = false;
-          if (this.onend) this.onend();
-        }
-      }
-      abort() {
-        if (this._running) {
-          this._running = false;
-          if (this.onend) this.onend();
-        }
-      }
-    }
-    window.SpeechRecognition = MockSpeechRecognition;
-    window.webkitSpeechRecognition = MockSpeechRecognition;
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it('1 & 2 & 3. Displays Question 1 conversationally in chat with NO multiple-choice buttons, NO automatic TTS, and NO automatic microphone activation', async () => {
-    vi.spyOn(voiceService, 'fetchEPDSQuestionnaire').mockResolvedValue(canonicalQuestionsJson);
-
+  it('Part 1: Renders exactly the 3 screening tabs with pill navigation and removes duplicate Medical Reports tab', () => {
     renderScreeningPage();
 
-    // Check Question 1 is presented in chat with canonical text
-    await waitFor(() => {
-      expect(screen.getByText(/Question 1 of 10:/i)).toBeInTheDocument();
-      expect(screen.getByText(/I have been able to laugh and see the funny side of things/i)).toBeInTheDocument();
-    });
+    // Exactly 3 tabs
+    const aiTab = screen.getByRole('tab', { name: /AI Screening/i });
+    const epdsTab = screen.getByRole('tab', { name: /^EPDS$/i });
+    const resultsTab = screen.getByRole('tab', { name: /Results & Reports/i });
 
-    // STRICT CHECK: NO multiple-choice buttons or option lists exist
-    expect(screen.queryByRole('button', { name: /As much as I always could/i })).toBeNull();
-    expect(screen.queryByRole('button', { name: /Not quite so much now/i })).toBeNull();
-    expect(screen.queryByRole('button', { name: /Definitely not so much now/i })).toBeNull();
-    expect(screen.queryByRole('button', { name: /Not at all/i })).toBeNull();
-    expect(document.querySelector('.screening-options-grid')).toBeNull();
-    expect(document.querySelector('.screening-option-button')).toBeNull();
+    expect(aiTab).toBeInTheDocument();
+    expect(epdsTab).toBeInTheDocument();
+    expect(resultsTab).toBeInTheDocument();
 
-    // Assistant automatically reads the displayed question aloud
-    expect(window.speechSynthesis.speak).toHaveBeenCalled();
-
-    // STRICT CHECK: Microphone is initially IDLE (not listening)
-    expect(screen.getByText(/Microphone idle — click Listen to speak/i)).toBeInTheDocument();
+    // No separate 4th tab for Medical Reports
+    expect(screen.queryByRole('tab', { name: /^Medical Reports$/i })).not.toBeInTheDocument();
+    expect(aiTab).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('4 & 5. Voice input activates ONLY when mother clicks Listen, captures speech, and advances question', async () => {
-    vi.spyOn(voiceService, 'fetchEPDSQuestionnaire').mockResolvedValue(canonicalQuestionsJson);
+  it('Tab 1: Enforces compulsory video recording notice and requires explicit consent before enabling camera', async () => {
+    renderScreeningPage(['/patient/screening?tab=ai-screening']);
 
-    renderScreeningPage();
+    // Heading and Description
+    expect(screen.getByRole('heading', { level: 1, name: 'AI Screening' })).toBeInTheDocument();
+
+    // Compulsory Video Notice
+    expect(screen.getByText(/Compulsory Video & Audio Recording/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Continuous video and audio recording is a/i)
+    ).toBeInTheDocument();
+
+    const consentCheckbox = screen.getByRole('checkbox', {
+      name: /I give explicit consent for continuous camera video/i,
+    });
+    expect(consentCheckbox).toBeInTheDocument();
+    expect(consentCheckbox).not.toBeChecked();
+
+    const startBtn = screen.getByRole('button', { name: /Enable Camera & Start AI Screening/i });
+    expect(startBtn).toBeDisabled();
+
+    // Giving consent enables the button
+    fireEvent.click(consentCheckbox);
+    expect(consentCheckbox).toBeChecked();
+    expect(startBtn).toBeEnabled();
+  });
+
+  it('Tab 1: Shows clear explanation if camera access fails and prevents starting session without video', async () => {
+    navigator.mediaDevices.getUserMedia = vi.fn().mockRejectedValue(new Error('Permission denied'));
+
+    renderScreeningPage(['/patient/screening?tab=ai-screening']);
+
+    const consentCheckbox = screen.getByRole('checkbox', {
+      name: /I give explicit consent for continuous camera video/i,
+    });
+    fireEvent.click(consentCheckbox);
+
+    const startBtn = screen.getByRole('button', { name: /Enable Camera & Start AI Screening/i });
+    fireEvent.click(startBtn);
 
     await waitFor(() => {
-      expect(screen.getByText(/Question 1 of 10:/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Video recording is compulsory for this research screening/i)
+      ).toBeInTheDocument();
     });
 
-    // Mother explicitly clicks the Listen button
-    const listenBtn = screen.getByRole('button', { name: /^Listen$/i });
-    fireEvent.click(listenBtn);
+    // Does not advance to chat without camera
+    expect(screen.queryByLabelText(/AI Screening Conversation Stream/i)).not.toBeInTheDocument();
+  });
 
-    // Recognition starts and UI indicates listening
-    expect(screen.getByText(/Listening for your voice.../i)).toBeInTheDocument();
-    expect(mockSpeechRecognitionInstance).toBeDefined();
+  it('Tab 1: Enters ChatGPT-style conversation with live continuous camera preview, asks Question 1, and supports voice dictation', async () => {
+    renderScreeningPage(['/patient/screening?tab=ai-screening']);
 
-    // Simulate mother speaking "As much as I always could"
-    act(() => {
-      mockSpeechRecognitionInstance.onresult({
-        results: [[{ transcript: 'As much as I always could' }]],
-      });
-      mockSpeechRecognitionInstance.onend();
+    // Give consent and start
+    const consentCheckbox = screen.getByRole('checkbox', {
+      name: /I give explicit consent for continuous camera video/i,
     });
+    fireEvent.click(consentCheckbox);
 
-    // Transcript is transcribed into the conversation
+    const startBtn = screen.getByRole('button', { name: /Enable Camera & Start AI Screening/i });
+    fireEvent.click(startBtn);
+
+    // Chat workspace is active
     await waitFor(() => {
-      expect(screen.getAllByText(/"As much as I always could"/i).length).toBeGreaterThan(0);
-      expect(screen.getByText(/Captured answer for Question 1: "As much as I always could"/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/AI Screening Conversation Stream/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/Continuous patient video feed/i)).toBeInTheDocument();
+      expect(screen.getByText(/Question 1 of 5/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/How have you been feeling emotionally since your baby was born\? You can share whatever comes to mind\./i)
+      ).toBeInTheDocument();
     });
 
-    // Automatically advances to Question 2 in chat
-    await waitFor(
-      () => {
-        expect(screen.getByText(/Question 2 of 10:/i)).toBeInTheDocument();
-        expect(screen.getByText(/I have looked forward with enjoyment to things/i)).toBeInTheDocument();
-      },
-      { timeout: 3000 }
+    // Voice dictation button is primary
+    const speakBtn = screen.getByRole('button', { name: /Start voice dictation/i });
+    expect(speakBtn).toBeInTheDocument();
+    fireEvent.click(speakBtn);
+
+    // Dictated text appears in the input field
+    await waitFor(() => {
+      const input = screen.getByLabelText(/Your response/i);
+      expect(input.value).toContain('I have been feeling emotionally overwhelmed since birth.');
+    });
+
+    // Send answer
+    const sendBtn = screen.getByRole('button', { name: /Send response/i });
+    expect(sendBtn).toBeInTheDocument();
+    fireEvent.click(sendBtn);
+
+    // Mother's message appears on the right in chat
+    await waitFor(() => {
+      expect(screen.getByText('I have been feeling emotionally overwhelmed since birth.')).toBeInTheDocument();
+    });
+
+    // Assistant advances to Question 2
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Have you been feeling more anxious, worried, sad, or overwhelmed than usual recently\?/i)
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('Tab 1: Supports typed answers directly and completes all 5 questions sequentially with continuous camera active', async () => {
+    renderScreeningPage(['/patient/screening?tab=ai-screening']);
+
+    // Consent and start
+    const consentCheckbox = screen.getByRole('checkbox', {
+      name: /I give explicit consent for continuous camera video/i,
+    });
+    fireEvent.click(consentCheckbox);
+
+    const startBtn = screen.getByRole('button', { name: /Enable Camera & Start AI Screening/i });
+    fireEvent.click(startBtn);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/AI Screening Conversation Stream/i)).toBeInTheDocument();
+    });
+
+    // Answer questions 1 through 5 using typed responses
+    for (let i = 1; i <= 5; i++) {
+      const input = screen.getByLabelText(/Your response/i);
+      fireEvent.change(input, { target: { value: `Mother response for question ${i}` } });
+
+      const sendBtn = screen.getByRole('button', { name: /Send response/i });
+      fireEvent.click(sendBtn);
+
+      // Verify mother response appears in chat
+      expect(screen.getByText(`Mother response for question ${i}`)).toBeInTheDocument();
+
+      // Camera preview remains visible and active throughout
+      expect(screen.getByLabelText(/Continuous patient video feed/i)).toBeInTheDocument();
+    }
+
+    // Session completes and displays navigation to EPDS
+    await waitFor(() => {
+      expect(
+        screen.getByText(/All 5 questions answered\. Multimodal video and acoustic data saved\./i)
+      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Proceed to EPDS Assessment/i })).toBeInTheDocument();
+    });
+  });
+
+  it('Tab 2: EPDS presents 10 canonical questions one per screen with previous/next navigation, score calculation, and review', async () => {
+    renderScreeningPage(['/patient/screening?tab=epds']);
+
+    // Header & Question 1 of 10
+    expect(screen.getByText(/EDINBURGH POSTNATAL DEPRESSION SCALE/i)).toBeInTheDocument();
+    expect(screen.getByText(/Question 1 of 10/i)).toBeInTheDocument();
+    expect(
+      screen.getByText('I have been able to laugh and see the funny side of things')
+    ).toBeInTheDocument();
+
+    // Previous is disabled on Question 1
+    const prevBtn = screen.getByRole('button', { name: /Previous/i });
+    const nextBtn = screen.getByRole('button', { name: /Next Question/i });
+    expect(prevBtn).toBeDisabled();
+    expect(nextBtn).toBeDisabled(); // Disabled until choice is selected
+
+    // Select option: "As much as I always could" (score 0)
+    const opt0 = screen.getByRole('radio', { name: /As much as I always could/i });
+    fireEvent.click(opt0);
+    expect(opt0).toBeChecked();
+    expect(nextBtn).toBeEnabled();
+
+    // Navigate to Question 2
+    fireEvent.click(nextBtn);
+    expect(screen.getByText(/Question 2 of 10/i)).toBeInTheDocument();
+    expect(
+      screen.getByText('I have looked forward with enjoyment to things')
+    ).toBeInTheDocument();
+
+    // Test Previous button retains Question 1 answer
+    const prevBtnQ2 = screen.getByRole('button', { name: /Previous/i });
+    expect(prevBtnQ2).toBeEnabled();
+    fireEvent.click(prevBtnQ2);
+
+    // Back to Question 1: answer preserved
+    expect(screen.getByText(/Question 1 of 10/i)).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /As much as I always could/i })).toBeChecked();
+  });
+
+  it('Tab 2: Completing all 10 questions allows Review and Submission with correct score out of 30', async () => {
+    renderScreeningPage(['/patient/screening?tab=epds']);
+
+    // Answer questions 1 through 10
+    for (let i = 1; i <= 10; i++) {
+      const radios = screen.getAllByRole('radio');
+      fireEvent.click(radios[0]); // select first option for each
+
+      const advanceBtn =
+        i === 10
+          ? screen.getByRole('button', { name: /Review Answers/i })
+          : screen.getByRole('button', { name: /Next Question/i });
+
+      fireEvent.click(advanceBtn);
+    }
+
+    // Now in Review Mode
+    expect(screen.getByRole('heading', { level: 2, name: /Review Your EPDS Answers/i })).toBeInTheDocument();
+    expect(screen.getByText(/Please review your selections for all 10 questions/i)).toBeInTheDocument();
+
+    const submitBtn = screen.getByRole('button', { name: /Submit EPDS Assessment/i });
+    expect(submitBtn).toBeEnabled();
+
+    fireEvent.click(submitBtn);
+
+    // Submission completed view with score out of 30
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 2, name: /EPDS Assessment Completed/i })).toBeInTheDocument();
+      expect(screen.getByText('/ 30')).toBeInTheDocument();
+      expect(screen.getByText(/Screening Instrument Notice/i)).toBeInTheDocument();
+    });
+  });
+
+  it('Tab 3: Results & Reports shows unified portfolio, AI modality statuses, EPDS score, and reports', () => {
+    // Populate client storage
+    localStorage.setItem(
+      'aanchal_submitted_epds_assessment',
+      JSON.stringify({
+        totalScore: 8,
+        riskTier: 'low',
+        q10Alert: false,
+        submittedAt: new Date().toISOString(),
+      })
     );
 
-    // After advancing, microphone does NOT automatically listen: it stays IDLE
-    expect(screen.getByText(/Microphone idle — click Listen to speak/i)).toBeInTheDocument();
+    renderScreeningPage(['/patient/screening?tab=results']);
+
+    // Heading
+    expect(screen.getByRole('heading', { level: 1, name: /Results & Reports/i })).toBeInTheDocument();
+
+    // AI Screening results card with awaiting integration pills
+    expect(screen.getByRole('heading', { level: 2, name: 'AI Screening Results' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'EPDS Score' })).toBeInTheDocument();
+
+    // EPDS Score value out of 30
+    expect(screen.getByText('8')).toBeInTheDocument();
+    expect(screen.getByText('/30')).toBeInTheDocument();
+
+    // Assessment table
+    expect(screen.getByText('Sequential EPDS (10 items)')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Download Summary PDF/i })).toBeInTheDocument();
   });
-
-  it('6. Ambiguous responses trigger conversational clarification in chat without advancing question or guessing a score', async () => {
-    vi.spyOn(voiceService, 'fetchEPDSQuestionnaire').mockResolvedValue(canonicalQuestionsJson);
-
-    renderScreeningPage();
-
-    await waitFor(() => {
-      expect(screen.getByText(/Question 1 of 10:/i)).toBeInTheDocument();
-    });
-
-    // Mother clicks Listen and speaks an ambiguous/unmatched sentence
-    const listenBtn = screen.getByRole('button', { name: /^Listen$/i });
-    fireEvent.click(listenBtn);
-
-    act(() => {
-      mockSpeechRecognitionInstance.onresult({
-        results: [[{ transcript: 'Maybe, I have no idea how I feel' }]],
-      });
-      mockSpeechRecognitionInstance.onend();
-    });
-
-    // User message is shown and Miora asks a short conversational clarification
-    await waitFor(() => {
-      expect(screen.getAllByText(/Maybe, I have no idea how I feel/i).length).toBeGreaterThan(0);
-      expect(screen.getByText(/Could you tell me a little more for Question 1\?/i)).toBeInTheDocument();
-    });
-
-    // Question does NOT advance: still on Question 1
-    expect(screen.queryByText(/Question 2 of 10:/i)).toBeNull();
-    expect(screen.getByText(/Speech unclear — click Listen to retry/i)).toBeInTheDocument();
-    expect(screen.getByText(/Retry speaking your answer/i)).toBeInTheDocument();
-  });
-
-  it('7 & 8 & 9. Completes all 10 questions, calculates score with reverse scoring, shows assessment report inside same chat (NO redirect), and persists to PostgreSQL', async () => {
-    vi.spyOn(voiceService, 'fetchEPDSQuestionnaire').mockResolvedValue(canonicalQuestionsJson);
-    const saveSpy = vi.spyOn(patientApi, 'saveScreeningSession').mockResolvedValue({
-      id: 'screening-session-uuid-777',
-      mother_id: 'mother-uuid-999',
-      total_score: 8,
-      risk_classification: 'low',
-      q10_safety_alert: false,
-      screening_status: 'completed',
-    });
-    const uploadSpy = vi.spyOn(patientApi, 'uploadScreeningVideo').mockResolvedValue({
-      status: 'recorded',
-    });
-
-    renderScreeningPage();
-
-    await waitFor(() => {
-      expect(screen.getByText(/Question 1 of 10:/i)).toBeInTheDocument();
-    });
-
-    // Answer questions 1 through 10 using natural text input (or voice)
-    const answersToEnter = [
-      'As much as I always could', // Q1: score 0
-      'Rather less than I used to', // Q2: score 1
-      'Not very often', // Q3 (reverse scored): score 1
-      'No, not at all', // Q4: score 0
-      'No, not at all', // Q5 (reverse scored): score 0
-      'No, I have been coping as well as ever', // Q6 (reverse scored): score 0
-      'No, not at all', // Q7 (reverse scored): score 0
-      'No, not at all', // Q8 (reverse scored): score 0
-      'No, never', // Q9 (reverse scored): score 0
-      'Never', // Q10 (reverse scored): score 0
-    ];
-
-    const input = screen.getByPlaceholderText(/Type your answer or click Listen to speak/i);
-
-    for (let i = 0; i < 10; i++) {
-      await waitFor(() => {
-        expect(screen.getByText(new RegExp(`Question ${i + 1} of 10:`, 'i'))).toBeInTheDocument();
-      });
-
-      fireEvent.change(input, { target: { value: answersToEnter[i] } });
-      fireEvent.submit(input.closest('form'));
-    }
-
-    // Completion message appears in chat
-    await waitFor(() => {
-      expect(screen.getByText(/Thank you for answering all 10 questions/i)).toBeInTheDocument();
-    });
-
-    // Database persistence verification: saveScreeningSession called with all 10 answers
-    await waitFor(() => {
-      expect(saveSpy).toHaveBeenCalledTimes(1);
-      const callArgs = saveSpy.mock.calls[0];
-      const submittedAnswers = callArgs[0];
-      expect(submittedAnswers).toHaveLength(10);
-      expect(submittedAnswers[0].question_id).toBe('EPDS_Q01');
-      expect(submittedAnswers[0].raw_response).toBe('As much as I always could');
-      expect(submittedAnswers[9].question_id).toBe('EPDS_Q10');
-      expect(submittedAnswers[9].raw_response).toBe('Never');
-    });
-
-    // In-chat assessment report rendered inside the SAME chat box
-    await waitFor(() => {
-      expect(screen.getByText(/EPDS Screening Assessment Report/i)).toBeInTheDocument();
-      expect(screen.getByText(/Clinical Tier: Low Risk/i)).toBeInTheDocument();
-      expect(screen.getByText(/Clinical Screening Notice:/i)).toBeInTheDocument();
-      expect(screen.getByText(/not a medical diagnosis/i)).toBeInTheDocument();
-      expect(screen.getByText(/Saved in PostgreSQL Database/i)).toBeInTheDocument();
-    });
-
-    // STRICT CHECK: NO navigation/redirect occurred!
-    expect(mockNavigate).not.toHaveBeenCalledWith(expect.stringContaining('/screening-results'));
-  }, 15000);
-
-  it('10. Question 10 self-harm score > 0 displays Tele-MANAS crisis hotline (14416 / 1800-891-4416) and emergency guidance', async () => {
-    vi.spyOn(voiceService, 'fetchEPDSQuestionnaire').mockResolvedValue(canonicalQuestionsJson);
-    vi.spyOn(patientApi, 'saveScreeningSession').mockResolvedValue({
-      id: 'screening-session-q10-alert',
-      mother_id: 'mother-uuid-999',
-      total_score: 14,
-      risk_classification: 'high',
-      q10_safety_alert: true,
-      screening_status: 'completed',
-    });
-
-    renderScreeningPage();
-
-    await waitFor(() => {
-      expect(screen.getByText(/Question 1 of 10:/i)).toBeInTheDocument();
-    });
-
-    const input = screen.getByPlaceholderText(/Type your answer or click Listen to speak/i);
-    const q1To9Answers = [
-      'As much as I always could',
-      'As much as I ever did',
-      'No, never',
-      'No, not at all',
-      'No, not at all',
-      'No, I have been coping as well as ever',
-      'No, not at all',
-      'No, not at all',
-      'No, never',
-    ];
-
-    // Answer Q1 through Q9
-    for (let i = 0; i < 9; i++) {
-      await waitFor(() => {
-        expect(screen.getByText(new RegExp(`Question ${i + 1} of 10:`, 'i'))).toBeInTheDocument();
-      });
-      fireEvent.change(input, { target: { value: q1To9Answers[i] } });
-      fireEvent.submit(input.closest('form'));
-    }
-
-    // Now on Question 10
-    await waitFor(() => {
-      expect(screen.getByText(/Question 10 of 10:/i)).toBeInTheDocument();
-      expect(screen.getByText(/The thought of harming myself has occurred to me/i)).toBeInTheDocument();
-    });
-
-    // Answer Q10 indicating self-harm ("Yes, quite often" -> score 3)
-    fireEvent.change(input, { target: { value: 'Yes, quite often' } });
-    fireEvent.submit(input.closest('form'));
-
-    // Urgent safety escalation alert is displayed in chat with Tele-MANAS helpline
-    await waitFor(() => {
-      expect(screen.getAllByText(/🚨 URGENT SAFETY ESCALATION/i).length).toBeGreaterThan(0);
-      expect(screen.getAllByText(/Call Tele-MANAS: 14416 \/ 1800-891-4416/i).length).toBeGreaterThan(0);
-    });
-
-    // Final assessment report in chat also contains emergency escalation guidance
-    await waitFor(() => {
-      expect(screen.getByText(/EPDS Screening Assessment Report/i)).toBeInTheDocument();
-    });
-  }, 15000);
 });

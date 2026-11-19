@@ -1,12 +1,10 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ClinicalProvider } from './context/ClinicalContext.jsx';
 import { DashboardLayout } from './DashboardLayout.jsx';
 import { LiveScreeningPage } from './pages/LiveScreeningPage.jsx';
-import { UploadAnalyzePage } from './pages/UploadAnalyzePage.jsx';
-import { ResultsPage } from './pages/ResultsPage.jsx';
 
 function renderLiveScreening(initialEntry = '/live-screening') {
   return render(
@@ -15,8 +13,6 @@ function renderLiveScreening(initialEntry = '/live-screening') {
         <Routes>
           <Route element={<DashboardLayout />}>
             <Route path="/live-screening" element={<LiveScreeningPage />} />
-            <Route path="/upload-analyze" element={<UploadAnalyzePage />} />
-            <Route path="/results/:motherId" element={<ResultsPage />} />
             <Route path="/dashboard" element={<div>Dashboard View</div>} />
           </Route>
         </Routes>
@@ -25,108 +21,89 @@ function renderLiveScreening(initialEntry = '/live-screening') {
   );
 }
 
-describe('Miora Screen 03: Live Screening', () => {
+describe('Clinician Screening Oversight & Review (LiveScreeningPage)', () => {
   beforeEach(() => {
     window.localStorage.clear();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
-    vi.useRealTimers();
   });
 
-  it('renders header, live elapsed timer, mode switch, patient strip, 3-column workspace, and preliminary empty state', () => {
-    vi.useFakeTimers();
+  it('renders Maternal Screening Review page header and removes all live recording controls', () => {
     renderLiveScreening();
 
-    expect(screen.getByRole('link', { name: 'Screening' })).toHaveAttribute(
-      'aria-current',
-      'page'
-    );
-    expect(screen.getByText('LIVE SCREENING')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-      'Maternal Screening Session'
-    );
-    expect(screen.getByText('Live Session Active')).toBeInTheDocument();
-    expect(screen.getByLabelText('Elapsed session time')).toHaveTextContent('00:00');
+    // Check header
+    expect(screen.getByText('PATIENT SCREENING REVIEW')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: /Maternal Screening Review/i })).toBeInTheDocument();
 
-    act(() => {
-      vi.advanceTimersByTime(3000);
-    });
-    expect(screen.getByLabelText('Elapsed session time')).toHaveTextContent('00:03');
-
-    // Patient Strip defaults to M-108
-    expect(screen.getByLabelText('Select mother for screening')).toHaveValue('M-108');
-    expect(screen.getByText('N. R.')).toBeInTheDocument();
-    expect(screen.getByText('Week 2')).toBeInTheDocument();
-    expect(screen.getByText('Multimodal (Text · Voice · Video)')).toBeInTheDocument();
-
-    // Workspace panels & pending preliminary state (no fake scores)
-    expect(screen.getByRole('heading', { name: 'Live Session' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Conversation' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Real-time Signals' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Session Progress' })).toBeInTheDocument();
-    expect(screen.getByText('0 / 3 Modalities')).toBeInTheDocument();
-    expect(screen.getByText('Awaiting session completion')).toBeInTheDocument();
+    // Verify clinician-side live recording controls are completely absent
+    expect(screen.queryByText(/Live Session Active/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Elapsed session time/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Live Session' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Conversation' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Real-time Signals' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Session Progress' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Complete Screening/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Consent & Start Media/i })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Mother response text/i)).not.toBeInTheDocument();
   });
 
-  it('switches to Upload & Analyze screen as a separate workflow', () => {
+  it('renders exactly the 3 standard screening tabs: AI Screening, EPDS, and Results & Reports', () => {
     renderLiveScreening();
-    fireEvent.click(screen.getByRole('tab', { name: /Upload & Analyze/i }));
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-      'Upload & Analyze'
-    );
+
+    const tabList = screen.getByRole('tablist', { name: 'Screening sections' });
+    expect(tabList).toBeInTheDocument();
+
+    const tabs = screen.getAllByRole('tab');
+    expect(tabs.length).toBe(3);
+    expect(tabs[0]).toHaveTextContent('AI Screening');
+    expect(tabs[1]).toHaveTextContent('EPDS');
+    expect(tabs[2]).toHaveTextContent('Results & Reports');
+    expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('requires media consent, handles permission denial gracefully, and supports guided conversation & completion', async () => {
-    const getUserMediaMock = vi.fn().mockRejectedValue(
-      Object.assign(new Error('Permission denied'), { name: 'NotAllowedError' })
-    );
-    Object.defineProperty(window.navigator, 'mediaDevices', {
-      configurable: true,
-      value: { getUserMedia: getUserMediaMock },
-    });
-
+  it('displays patient cohort table and inspects AI Screening modalities awaiting model integration', () => {
     renderLiveScreening();
 
-    // Try completing with zero captured modalities -> blocked with validation alert
-    fireEvent.click(screen.getByRole('button', { name: /Complete Screening/i }));
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      /Please record at least one conversation response or media capture/i
-    );
+    // AI Screening tab is active by default
+    expect(screen.getByLabelText('Clinician AI Screening Overview')).toBeInTheDocument();
+    expect(screen.getByText('Authorized Patient Screening Cohort')).toBeInTheDocument();
 
-    // Attempt to enable media with consent -> permission error displayed clearly
-    fireEvent.click(screen.getByRole('button', { name: /Consent & Start Media/i }));
-    await waitFor(() => {
-      expect(getUserMediaMock).toHaveBeenCalledTimes(1);
-    });
-    expect(screen.getByText(/permission was denied/i)).toBeInTheDocument();
+    // Verify table headers
+    expect(screen.getByText('Audio Model')).toBeInTheDocument();
+    expect(screen.getByText('Video Model')).toBeInTheDocument();
+    expect(screen.getByText('Text Model')).toBeInTheDocument();
+    expect(screen.getByText('Multimodal Fusion')).toBeInTheDocument();
 
-    // Continue screening via Conversation
-    const input = screen.getByLabelText('Mother response text');
-    fireEvent.change(input, { target: { value: 'Feeling tired but supported today.' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Send response' }));
+    // Verify awaiting integration indicators (no fake predictions)
+    const awaitingBadges = screen.getAllByText(/Awaiting (model )?integration/i);
+    expect(awaitingBadges.length).toBeGreaterThan(0);
+  });
 
-    expect(screen.getByText('Feeling tired but supported today.')).toBeInTheDocument();
-    expect(screen.getByText('1 / 3 Modalities')).toBeInTheDocument();
-    expect(screen.getByText('Captured (1)')).toBeInTheDocument();
+  it('allows switching to EPDS tab to inspect itemized responses and Q10 safety alerts', () => {
+    renderLiveScreening();
 
-    // Save Draft
-    fireEvent.click(screen.getByRole('button', { name: 'Save Draft' }));
-    expect(screen.getByRole('status')).toHaveTextContent(/Draft saved at/i);
+    const epdsTab = screen.getByRole('tab', { name: /EPDS/i });
+    fireEvent.click(epdsTab);
 
-    // Cancel Screening asks for confirmation when session has progress
-    fireEvent.click(screen.getByRole('button', { name: /Cancel Screening/i }));
-    expect(
-      screen.getByRole('dialog', { name: /Discard Screening Session/i })
-    ).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Keep Session' }));
+    expect(screen.getByLabelText('Clinician EPDS Overview')).toBeInTheDocument();
+    expect(screen.getByText('Authorized Patient EPDS Cohort')).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: /Total EPDS Score/i })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: /Question 10 Alert/i })).toBeInTheDocument();
 
-    // Complete Screening navigates to Results for M-108
-    fireEvent.click(screen.getByRole('button', { name: /Complete Screening/i }));
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-      'Maternal Screening Results'
-    );
+    // Verify itemized questions section
+    expect(screen.getByText('Itemized Responses (Questions 1 through 10)')).toBeInTheDocument();
+  });
+
+  it('allows switching to Results & Reports tab to inspect clinical portfolio and export report', () => {
+    renderLiveScreening();
+
+    const resultsTab = screen.getByRole('tab', { name: /Results & Reports/i });
+    fireEvent.click(resultsTab);
+
+    expect(screen.getByLabelText('Clinician Results & Reports Overview')).toBeInTheDocument();
+    expect(screen.getByText('Authorized Patient Assessment History')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Export Clinical Report/i })).toBeInTheDocument();
   });
 });
-
