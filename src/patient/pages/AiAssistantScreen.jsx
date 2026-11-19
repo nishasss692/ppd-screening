@@ -1278,8 +1278,8 @@ export function AiAssistantScreen() {
                   <div className="companion-holo-sonar-ring ring-2" aria-hidden="true" />
 
                   <img
-                    src="/assets/miora-ai-holo-avatar.jpg"
-                    alt="Miora AI Assistant"
+                    src="/assets/indian-mother-ai-holo-avatar.jpg"
+                    alt="Miora AI Assistant - Compassionate Maternal Guide"
                     className="companion-holo-avatar-img"
                   />
 

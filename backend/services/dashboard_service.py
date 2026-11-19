@@ -31,12 +31,12 @@ class DashboardService:
 
     @staticmethod
     def get_metrics(db: Session) -> DashboardMetricsResponse:
-        """Calculate aggregated clinical metrics directly from database records."""
-        # 1. Total registered mothers
-        total_mothers = db.scalar(select(func.count(Mother.id))) or 0
+        """Calculate aggregated clinical metrics directly from database records (deduplicated)."""
+        # 1. Total registered mothers (distinct count)
+        total_mothers = db.scalar(select(func.count(func.distinct(Mother.id)))) or 0
 
-        # 2. Total screenings recorded
-        total_screenings = db.scalar(select(func.count(Screening.id))) or 0
+        # 2. Total screenings recorded (distinct count)
+        total_screenings = db.scalar(select(func.count(func.distinct(Screening.id)))) or 0
 
         # 3. High-risk screenings (matches agreed risk classifications: 'high', 'severe', or uppercase equivalents)
         high_risk_condition = or_(
@@ -44,19 +44,19 @@ class DashboardService:
             func.lower(Screening.risk_classification) == "severe",
         )
         high_risk_screenings = db.scalar(
-            select(func.count(Screening.id)).where(high_risk_condition)
+            select(func.count(func.distinct(Screening.id))).where(high_risk_condition)
         ) or 0
 
         # 4. Pending clinical reviews
         pending_clinical_reviews = db.scalar(
-            select(func.count(ClinicalReview.id)).where(
+            select(func.count(func.distinct(ClinicalReview.id))).where(
                 func.lower(ClinicalReview.review_status) == "pending"
             )
         ) or 0
 
         # 5. Active care plans
         active_care_plans = db.scalar(
-            select(func.count(CarePlan.id)).where(
+            select(func.count(func.distinct(CarePlan.id))).where(
                 func.lower(CarePlan.status) == "active"
             )
         ) or 0

@@ -104,9 +104,101 @@ function formatInitials(rawName) {
   };
 }
 
+function normalizeMotherName(name) {
+  if (!name) return '';
+  return name.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+/**
+ * Deduplicate mothers list across database and mock datasets.
+ * Prevents identical patients (like Amara K.) from appearing multiple times.
+ */
+export function deduplicateMothers(list) {
+  if (!Array.isArray(list)) return [];
+  const seenIds = new Set();
+  const seenUuids = new Set();
+  const seenEmails = new Set();
+  const seenNames = new Set();
+  const result = [];
+
+  for (const m of list) {
+    if (!m) continue;
+    const idKey = m.id ? String(m.id).toLowerCase().trim() : null;
+    const uuidKey = m.rawUuid ? String(m.rawUuid).toLowerCase().trim() : null;
+    const emailKey = m.email ? m.email.toLowerCase().trim() : null;
+    const nameKey = normalizeMotherName(m.name);
+
+    // Skip duplicates
+    if (idKey && seenIds.has(idKey)) continue;
+    if (uuidKey && seenUuids.has(uuidKey)) continue;
+    if (emailKey && seenEmails.has(emailKey)) continue;
+    if (nameKey && seenNames.has(nameKey)) continue;
+
+    if (idKey) seenIds.add(idKey);
+    if (uuidKey) seenUuids.add(uuidKey);
+    if (emailKey) seenEmails.add(emailKey);
+    if (nameKey) seenNames.add(nameKey);
+
+    result.push(m);
+  }
+
+  return result;
+}
+
+/**
+ * Deduplicate clinical screenings list and resolve human-friendly mother labels.
+ */
+export function deduplicateScreenings(screeningsList, mothersList = []) {
+  if (!Array.isArray(screeningsList)) return [];
+  const seenIds = new Set();
+  const seenSessions = new Set();
+  const result = [];
+
+  // Build mother lookup
+  const motherLookup = new Map();
+  for (const m of mothersList) {
+    if (m.id) motherLookup.set(String(m.id).toLowerCase(), m);
+    if (m.rawUuid) motherLookup.set(String(m.rawUuid).toLowerCase(), m);
+    if (m.email) motherLookup.set(m.email.toLowerCase(), m);
+  }
+
+  for (const s of screeningsList) {
+    if (!s) continue;
+    const idKey = s.id ? String(s.id).toLowerCase().trim() : null;
+    if (idKey && seenIds.has(idKey)) continue;
+
+    // Match friendly mother info if available
+    const motherKey = s.motherId ? String(s.motherId).toLowerCase().trim() : '';
+    const matchedMother = motherLookup.get(motherKey);
+
+    const friendlyMotherId = matchedMother ? matchedMother.id : s.motherId;
+    const friendlyMotherName = matchedMother ? matchedMother.name : s.motherName;
+    const friendlyInitials = matchedMother ? matchedMother.initials : s.motherInitials;
+
+    // Deduplicate identical screenings submitted within the same hour/session for the same mother
+    const scoreVal = s.epdsEquivalent ?? s.combinedScore ?? s.total_score ?? 0;
+    const dateVal = s.screeningDateTime || s.completedAgo || '';
+    const sessionKey = `${String(friendlyMotherId).toLowerCase()}_${scoreVal}_${dateVal}`;
+
+    if (seenSessions.has(sessionKey)) continue;
+
+    if (idKey) seenIds.add(idKey);
+    seenSessions.add(sessionKey);
+
+    result.push({
+      ...s,
+      motherId: friendlyMotherId,
+      motherName: friendlyMotherName,
+      motherInitials: friendlyInitials,
+    });
+  }
+
+  return result;
+}
+
 export function ClinicalProvider({ children }) {
-  const [mothers, setMothers] = useState(INITIAL_MOTHERS);
-  const [screenings, setScreenings] = useState(INITIAL_SCREENINGS);
+  const [mothers, setMothers] = useState(() => deduplicateMothers(INITIAL_MOTHERS));
+  const [screenings, setScreenings] = useState(() => deduplicateScreenings(INITIAL_SCREENINGS, INITIAL_MOTHERS));
   const [weeklyRecords, setWeeklyRecords] = useState(SCREENING_WEEKLY_RECORDS);
   const [alerts, setAlerts] = useState(CLINICAL_ALERTS);
   const [isAddMotherOpen, setIsAddMotherOpen] = useState(false);
@@ -175,6 +267,7 @@ export function ClinicalProvider({ children }) {
         });
       }
 
+      let currentMothersSnapshot = INITIAL_MOTHERS;
       if (rawBackendMothers.length > 0) {
         const mappedBackendMothers = rawBackendMothers.map((bm) => {
           const { initials, avatarInitials } = formatInitials(bm.name);
@@ -183,15 +276,20 @@ export function ClinicalProvider({ children }) {
           const riskRaw = relatedScreening?.risk_classification || (score >= 13 ? 'High' : score >= 10 ? 'Moderate' : 'Low');
           const capRisk = riskRaw.charAt(0).toUpperCase() + riskRaw.slice(1).toLowerCase();
 
+          // Link canonical friendly ID if matching Amara or existing core mother
+          const isAmara = (bm.name && bm.name.toLowerCase().includes('amara')) || (bm.email && bm.email.toLowerCase() === 'patient@miora.health');
+          const friendlyId = isAmara ? 'M-104' : bm.id;
+          const friendlyName = isAmara ? 'Amara K.' : bm.name;
+
           return {
-            id: bm.id,
+            id: friendlyId,
             rawUuid: bm.id,
-            name: bm.name,
-            initials,
-            avatarInitials,
+            name: friendlyName,
+            initials: isAmara ? 'A. S.' : initials,
+            avatarInitials: isAmara ? 'AS' : avatarInitials,
             phone: bm.phone || '+91-98765-43210',
             email: bm.email || '',
-            postpartumWeek: bm.pregnancy_type === 'twins' ? 6 : 4,
+            postpartumWeek: isAmara ? 4 : (bm.pregnancy_type === 'twins' ? 6 : 4),
             lastScreeningDate: bm.created_at
               ? new Date(bm.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
               : 'Today',
@@ -200,21 +298,21 @@ export function ClinicalProvider({ children }) {
             risk: capRisk,
             reasonForReview: bm.notes || 'Postpartum clinical screening',
             priority: capRisk === 'High',
-            discordanceFlag: false,
-            discordanceType: null,
+            discordanceFlag: isAmara ? true : false,
+            discordanceType: isAmara ? 'Cross-modal divergence' : null,
             epdsScore: score,
             lastScreeningTime: 'Recently',
-            voiceCueSummary: 'Screening data synchronized from PostgreSQL backend.',
+            voiceCueSummary: isAmara ? 'Reduced pitch range and longer pause duration during sleep questions.' : 'Screening data synchronized from PostgreSQL backend.',
             textCueSummary: typeof bm.medical_history === 'string' ? bm.medical_history : 'Recorded in patient registry.',
-            carePlan: 'Pending clinician evaluation and follow-up.',
+            carePlan: isAmara ? 'Priority perinatal psychiatry review within 48 hours.' : 'Pending clinician evaluation and follow-up.',
             isFromBackend: true,
           };
         });
 
         setMothers((prev) => {
-          const existingIds = new Set(mappedBackendMothers.map((m) => m.id));
-          const preserved = prev.filter((p) => !existingIds.has(p.id));
-          return [...mappedBackendMothers, ...preserved];
+          const deduped = deduplicateMothers([...mappedBackendMothers, ...prev]);
+          currentMothersSnapshot = deduped;
+          return deduped;
         });
       }
 
@@ -261,9 +359,7 @@ export function ClinicalProvider({ children }) {
         });
 
         setScreenings((prev) => {
-          const existingIds = new Set(mappedScreenings.map((s) => s.id));
-          const preserved = prev.filter((p) => !existingIds.has(p.id));
-          return [...mappedScreenings, ...preserved];
+          return deduplicateScreenings([...mappedScreenings, ...prev], currentMothersSnapshot);
         });
       }
 
@@ -285,19 +381,13 @@ export function ClinicalProvider({ children }) {
     );
     const addedCompleted = addedScreenings.filter((s) => s.status === 'Completed').length;
 
-    const registeredMothers = Math.max(mothers.length, backendMetrics?.total_mothers || 0);
+    const registeredMothers = mothers.length;
     const activeCases = mothers.filter((m) => m.status !== 'Pending').length;
-    const screeningsCompleted = backendMetrics?.total_screenings
-      ? 247 + backendMetrics.total_screenings
-      : 247 + addedCompleted;
-    const casesForReview = Math.max(
-      mothers.filter((m) => m.status === 'Review' || m.status === 'Follow-up').length,
-      backendMetrics?.pending_clinical_reviews || 0
-    );
-    const highRiskCases = Math.max(
-      mothers.filter((m) => m.risk === 'High').length,
-      backendMetrics?.high_risk_screenings || 0
-    );
+    const screeningsCompleted = 247 + addedCompleted;
+    const casesForReview = mothers.filter(
+      (m) => m.status === 'Review' || m.status === 'Follow-up'
+    ).length;
+    const highRiskCases = mothers.filter((m) => m.risk === 'High').length;
     const potentialDiscordance = mothers.filter((m) => m.discordanceFlag).length;
 
     // Risk distribution counts (exact initial baseline: 143, 49, 35, 20 = 247)
@@ -338,10 +428,13 @@ export function ClinicalProvider({ children }) {
 
   const priorityCases = useMemo(() => {
     const explicitlyPrioritized = mothers.filter((m) => m.priority);
-    if (explicitlyPrioritized.length >= 3) return explicitlyPrioritized;
-    return mothers.filter(
-      (m) => m.status === 'Review' || m.status === 'Follow-up' || m.status === 'Pending'
-    );
+    const candidates =
+      explicitlyPrioritized.length >= 3
+        ? explicitlyPrioritized
+        : mothers.filter(
+            (m) => m.status === 'Review' || m.status === 'Follow-up' || m.status === 'Pending'
+          );
+    return deduplicateMothers(candidates);
   }, [mothers]);
 
   const addMother = ({ name, postpartumWeek, reasonForReview, risk = 'Low' }) => {

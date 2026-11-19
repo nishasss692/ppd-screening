@@ -797,3 +797,63 @@ class CommunityService:
             status=new_status,
             message=f"Content status updated to '{new_status}' with recorded justification.",
         )
+
+    @staticmethod
+    def seed_demo_posts(db: Session, default_user: Optional[User] = None) -> None:
+        """Seed initial warm and supportive community reflections if the table is currently empty."""
+        post_count = db.scalar(select(func.count(CommunityPost.id))) or 0
+        if post_count > 0:
+            return
+
+        user_stmt = select(User).where(User.role == "patient")
+        author = default_user or db.scalar(user_stmt)
+        if not author:
+            return
+
+        demo_posts = [
+            {
+                "content": "To any mom who cried in the bathroom today: you are not failing. You are keeping a tiny human alive through extreme sleep deprivation and hormonal shifts. Give yourself grace today.",
+                "category": "Emotional Support",
+                "mood": "Overwhelmed",
+                "display_author": "Anonymous Mother",
+                "likes_count": 8,
+            },
+            {
+                "content": "Today my baby smiled during morning sunlight, and for the first time in 4 weeks, I felt a spark of pure joy return. Small steps, but celebrating this quiet win.",
+                "category": "Small Wins",
+                "mood": "Hopeful",
+                "display_author": "A Mother in Her Journey",
+                "likes_count": 12,
+            },
+            {
+                "content": "Did anyone else feel guilty asking their partner to take over the night feed? I had to remind myself that resting is healthcare for both me and my baby.",
+                "category": "Questions & Advice",
+                "mood": "Healing",
+                "display_author": "Anonymous Mother",
+                "likes_count": 5,
+            },
+            {
+                "content": "Week 6 check-in: the overwhelming fog is slowly lifting with therapy and gentle daily walks. There is light on the other side of postpartum anxiety.",
+                "category": "My Postpartum Journey",
+                "mood": "Grateful",
+                "display_author": "Anonymous Member",
+                "likes_count": 9,
+            },
+        ]
+
+        for p_data in demo_posts:
+            post = CommunityPost(
+                author_user_id=author.id,
+                content=p_data["content"],
+                category=p_data["category"],
+                mood=p_data["mood"],
+                display_author=p_data["display_author"],
+                is_anonymous=True,
+                status="approved",
+                likes_count=p_data["likes_count"],
+                comments_count=0,
+            )
+            db.add(post)
+
+        db.commit()
+        logger.info("Seeded %d warm demo posts for Mother's Circle community sanctuary.", len(demo_posts))
