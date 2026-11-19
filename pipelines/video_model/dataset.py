@@ -12,8 +12,18 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 import numpy as np
 import pandas as pd
-import torch
-from torch.utils.data import Dataset
+
+try:
+    import torch
+    from torch.utils.data import Dataset as _BaseDataset
+    HAS_TORCH = True
+except (ImportError, ModuleNotFoundError):
+    torch = None
+    HAS_TORCH = False
+
+    class _BaseDataset:  # type: ignore[no-redef]
+        """Lightweight fallback base class when PyTorch is not installed."""
+        pass
 
 from pipelines.video_model.config import (
     CONFIDENCE_THRESHOLD,
@@ -32,8 +42,8 @@ from pipelines.video_model.config import (
 from pipelines.video_model.preprocessing import VideoFeatureNormalizer
 
 
-class PPDVideoDataset(Dataset):
-    """PyTorch Dataset for loading and validating video feature sequence tensors."""
+class PPDVideoDataset(_BaseDataset):
+    """Dataset for loading and validating video feature sequence tensors (PyTorch or NumPy)."""
 
     def __init__(
         self,
@@ -42,7 +52,7 @@ class PPDVideoDataset(Dataset):
         split_manifest_path: Union[str, Path] = SPLIT_MANIFEST_PATH,
         partition: str = "train",
         normalizer: Optional[VideoFeatureNormalizer] = None,
-        return_as_torch: bool = True,
+        return_as_torch: Optional[bool] = None,
         confidence_threshold: float = CONFIDENCE_THRESHOLD,
         validate_on_init: bool = True,
     ) -> None:
@@ -55,6 +65,7 @@ class PPDVideoDataset(Dataset):
             partition: Split partition to load ('train', 'test', or 'all').
             normalizer: Optional fitted VideoFeatureNormalizer.
             return_as_torch: Whether to return torch.Tensor instances in __getitem__.
+                Defaults to True if PyTorch is installed, False otherwise.
             confidence_threshold: Minimum tracking confidence to consider frame valid.
             validate_on_init: Whether to verify all feature files exist during initialization.
         """
@@ -63,7 +74,10 @@ class PPDVideoDataset(Dataset):
         self.split_manifest_path = Path(split_manifest_path)
         self.partition = partition.lower()
         self.normalizer = normalizer
-        self.return_as_torch = return_as_torch
+        if return_as_torch is None:
+            self.return_as_torch = HAS_TORCH
+        else:
+            self.return_as_torch = bool(return_as_torch)
         self.confidence_threshold = confidence_threshold
 
         if self.partition not in VALID_SPLIT_PARTITIONS:
@@ -219,6 +233,11 @@ class PPDVideoDataset(Dataset):
         features = self.normalizer.transform(arr) if self.normalizer is not None else arr.copy()
 
         if self.return_as_torch:
+            if not HAS_TORCH or torch is None:
+                raise ImportError(
+                    "return_as_torch=True requires PyTorch, but PyTorch is not installed in the environment. "
+                    "Initialize PPDVideoDataset(return_as_torch=False) or install PyTorch."
+                )
             features = torch.from_numpy(features).float()
             tracking_mask = torch.from_numpy(tracking_mask).bool()
             tracking_conf = torch.from_numpy(tracking_conf).float()

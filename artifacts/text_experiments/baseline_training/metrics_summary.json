@@ -1,0 +1,240 @@
+{
+  "metadata": {
+    "timestamp": "2026-11-19T12:33:58.937932+00:00",
+    "random_seed": 42,
+    "cv_folds": 5,
+    "decision_threshold": 0.5,
+    "tfidf_config": {
+      "ngram_range": [
+        1,
+        2
+      ],
+      "min_df": 3,
+      "max_features": 1000,
+      "sublinear_tf": true
+    },
+    "logistic_config": {
+      "C": 0.5,
+      "penalty": "l2",
+      "solver": "lbfgs",
+      "class_weight": "balanced",
+      "random_state": 42,
+      "max_iter": 1000
+    },
+    "train_samples": 640,
+    "test_samples": 160,
+    "provenance_notice": "SYNTHETIC_FICTIONAL_NARRATIVE: Narrative text generated from non-target survey covariates; labels derived from authentic clinical EPDS responses."
+  },
+  "cross_validation": {
+    "summary_across_folds": {
+      "roc_auc": {
+        "mean": 0.6402,
+        "std": 0.0219
+      },
+      "pr_auc": {
+        "mean": 0.5735,
+        "std": 0.0371
+      },
+      "accuracy": {
+        "mean": 0.6016,
+        "std": 0.0257
+      },
+      "balanced_accuracy": {
+        "mean": 0.5983,
+        "std": 0.0249
+      },
+      "sensitivity": {
+        "mean": 0.5728,
+        "std": 0.0449
+      },
+      "specificity": {
+        "mean": 0.6239,
+        "std": 0.0477
+      },
+      "precision": {
+        "mean": 0.5449,
+        "std": 0.0276
+      },
+      "f1": {
+        "mean": 0.5575,
+        "std": 0.0294
+      },
+      "brier_score": {
+        "mean": 0.2361,
+        "std": 0.0037
+      }
+    },
+    "overall_oof_metrics": {
+      "roc_auc": 0.6386,
+      "pr_auc": 0.56,
+      "accuracy": 0.6016,
+      "balanced_accuracy": 0.5985,
+      "sensitivity": 0.573,
+      "specificity": 0.624,
+      "precision": 0.5439,
+      "f1": 0.5581,
+      "brier_score": 0.2361,
+      "confusion_matrix": {
+        "tn": 224,
+        "fp": 135,
+        "fn": 120,
+        "tp": 161
+      },
+      "sample_count": 640,
+      "positive_count": 281,
+      "negative_count": 359,
+      "decision_threshold": 0.5
+    },
+    "fold_details": [
+      {
+        "roc_auc": 0.6674,
+        "pr_auc": 0.6273,
+        "accuracy": 0.6094,
+        "balanced_accuracy": 0.6098,
+        "sensitivity": 0.614,
+        "specificity": 0.6056,
+        "precision": 0.5556,
+        "f1": 0.5833,
+        "brier_score": 0.2321,
+        "confusion_matrix": {
+          "tn": 43,
+          "fp": 28,
+          "fn": 22,
+          "tp": 35
+        },
+        "sample_count": 128,
+        "positive_count": 57,
+        "negative_count": 71,
+        "decision_threshold": 0.5,
+        "fold": 1
+      },
+      {
+        "roc_auc": 0.6012,
+        "pr_auc": 0.5363,
+        "accuracy": 0.5547,
+        "balanced_accuracy": 0.5565,
+        "sensitivity": 0.5714,
+        "specificity": 0.5417,
+        "precision": 0.4923,
+        "f1": 0.5289,
+        "brier_score": 0.2426,
+        "confusion_matrix": {
+          "tn": 39,
+          "fp": 33,
+          "fn": 24,
+          "tp": 32
+        },
+        "sample_count": 128,
+        "positive_count": 56,
+        "negative_count": 72,
+        "decision_threshold": 0.5,
+        "fold": 2
+      },
+      {
+        "roc_auc": 0.6513,
+        "pr_auc": 0.6046,
+        "accuracy": 0.6016,
+        "balanced_accuracy": 0.5903,
+        "sensitivity": 0.5,
+        "specificity": 0.6806,
+        "precision": 0.549,
+        "f1": 0.5234,
+        "brier_score": 0.2336,
+        "confusion_matrix": {
+          "tn": 49,
+          "fp": 23,
+          "fn": 28,
+          "tp": 28
+        },
+        "sample_count": 128,
+        "positive_count": 56,
+        "negative_count": 72,
+        "decision_threshold": 0.5,
+        "fold": 3
+      },
+      {
+        "roc_auc": 0.6438,
+        "pr_auc": 0.5651,
+        "accuracy": 0.6094,
+        "balanced_accuracy": 0.6032,
+        "sensitivity": 0.5536,
+        "specificity": 0.6528,
+        "precision": 0.5536,
+        "f1": 0.5536,
+        "brier_score": 0.2346,
+        "confusion_matrix": {
+          "tn": 47,
+          "fp": 25,
+          "fn": 25,
+          "tp": 31
+        },
+        "sample_count": 128,
+        "positive_count": 56,
+        "negative_count": 72,
+        "decision_threshold": 0.5,
+        "fold": 4
+      },
+      {
+        "roc_auc": 0.6372,
+        "pr_auc": 0.534,
+        "accuracy": 0.6328,
+        "balanced_accuracy": 0.6319,
+        "sensitivity": 0.625,
+        "specificity": 0.6389,
+        "precision": 0.5738,
+        "f1": 0.5983,
+        "brier_score": 0.2377,
+        "confusion_matrix": {
+          "tn": 46,
+          "fp": 26,
+          "fn": 21,
+          "tp": 35
+        },
+        "sample_count": 128,
+        "positive_count": 56,
+        "negative_count": 72,
+        "decision_threshold": 0.5,
+        "fold": 5
+      }
+    ]
+  },
+  "holdout_test": {
+    "roc_auc": 0.676,
+    "pr_auc": 0.6233,
+    "accuracy": 0.625,
+    "balanced_accuracy": 0.6254,
+    "sensitivity": 0.6286,
+    "specificity": 0.6222,
+    "precision": 0.5641,
+    "f1": 0.5946,
+    "brier_score": 0.2295,
+    "confusion_matrix": {
+      "tn": 56,
+      "fp": 34,
+      "fn": 26,
+      "tp": 44
+    },
+    "sample_count": 160,
+    "positive_count": 70,
+    "negative_count": 90,
+    "decision_threshold": 0.5,
+    "confidence_intervals_95": {
+      "roc_auc": {
+        "ci_lower": 0.587,
+        "ci_upper": 0.7572
+      },
+      "pr_auc": {
+        "ci_lower": 0.512,
+        "ci_upper": 0.7431
+      },
+      "f1": {
+        "ci_lower": 0.4933,
+        "ci_upper": 0.6839
+      },
+      "balanced_accuracy": {
+        "ci_lower": 0.5454,
+        "ci_upper": 0.6998
+      }
+    }
+  }
+}

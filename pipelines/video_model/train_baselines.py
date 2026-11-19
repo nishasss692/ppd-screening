@@ -52,6 +52,7 @@ def run_cross_validation(
     dataset: Optional[PPDVideoDataset] = None,
     n_splits: int = CV_FOLDS,
     seed: int = DEFAULT_RANDOM_SEED,
+    precomputed_features: Optional[np.ndarray] = None,
 ) -> Dict[str, Any]:
     """Execute stratified 5-fold cross-validation on the 640 training participants.
 
@@ -61,6 +62,7 @@ def run_cross_validation(
         dataset: PPDVideoDataset instance for partition 'train'.
         n_splits: Number of cross-validation folds (default: 5).
         seed: Random seed for deterministic reproducibility.
+        precomputed_features: Optional pre-extracted (N, 220) feature matrix to avoid redundant I/O.
 
     Returns:
         Dict[str, Any] containing out-of-fold DataFrame, fold metrics, and overall metrics.
@@ -80,13 +82,23 @@ def run_cross_validation(
 
     participant_ids = dataset.get_participant_ids()
     y = dataset.get_targets()
-    raw_tensors = dataset.get_all_raw_tensors()
 
     # Pre-extract participant-level statistical features (participant-isolated, no leakage)
-    extractor = ParticipantStatisticalFeatureExtractor(
-        feature_subset=feature_subset
-    )
-    X_stat = extractor.transform(raw_tensors)
+    if precomputed_features is not None:
+        if feature_subset == "all":
+            X_stat = precomputed_features
+        elif feature_subset == "facial_motion":
+            X_stat = precomputed_features[:, : 22 * 9]
+        elif feature_subset == "tracking_only":
+            X_stat = precomputed_features[:, 22 * 9 :]
+        else:
+            raise ValueError(f"Unknown feature subset: {feature_subset}")
+    else:
+        raw_tensors = dataset.get_all_raw_tensors()
+        extractor = ParticipantStatisticalFeatureExtractor(
+            feature_subset=feature_subset
+        )
+        X_stat = extractor.transform(raw_tensors)
 
     # 5-fold stratified cross-validation splits
     splits = get_stratified_cv_splits(dataset, n_splits=n_splits, seed=seed)
@@ -175,6 +187,8 @@ def train_and_evaluate_holdout(
     train_dataset: Optional[PPDVideoDataset] = None,
     test_dataset: Optional[PPDVideoDataset] = None,
     seed: int = DEFAULT_RANDOM_SEED,
+    precomputed_train_features: Optional[np.ndarray] = None,
+    precomputed_test_features: Optional[np.ndarray] = None,
 ) -> Dict[str, Any]:
     """Train final model on all 640 training participants and evaluate once on 160 holdout test participants.
 
@@ -184,6 +198,8 @@ def train_and_evaluate_holdout(
         train_dataset: PPDVideoDataset instance for partition 'train'.
         test_dataset: PPDVideoDataset instance for partition 'test'.
         seed: Random seed for deterministic reproducibility.
+        precomputed_train_features: Optional pre-extracted (640, 220) train feature matrix.
+        precomputed_test_features: Optional pre-extracted (160, 220) test feature matrix.
 
     Returns:
         Dict[str, Any] containing fitted model, holdout DataFrame, and holdout metrics with CIs.
@@ -199,11 +215,32 @@ def train_and_evaluate_holdout(
         raise ValueError(f"Expected {EXPECTED_TEST_PARTICIPANTS} test participants, got {len(test_dataset)}")
 
     # Extract features
-    extractor = ParticipantStatisticalFeatureExtractor(feature_subset=feature_subset)
-    X_train = extractor.transform(train_dataset.get_all_raw_tensors())
+    if precomputed_train_features is not None:
+        if feature_subset == "all":
+            X_train = precomputed_train_features
+        elif feature_subset == "facial_motion":
+            X_train = precomputed_train_features[:, : 22 * 9]
+        elif feature_subset == "tracking_only":
+            X_train = precomputed_train_features[:, 22 * 9 :]
+        else:
+            raise ValueError(f"Unknown feature subset: {feature_subset}")
+    else:
+        extractor = ParticipantStatisticalFeatureExtractor(feature_subset=feature_subset)
+        X_train = extractor.transform(train_dataset.get_all_raw_tensors())
     y_train = train_dataset.get_targets()
 
-    X_test = extractor.transform(test_dataset.get_all_raw_tensors())
+    if precomputed_test_features is not None:
+        if feature_subset == "all":
+            X_test = precomputed_test_features
+        elif feature_subset == "facial_motion":
+            X_test = precomputed_test_features[:, : 22 * 9]
+        elif feature_subset == "tracking_only":
+            X_test = precomputed_test_features[:, 22 * 9 :]
+        else:
+            raise ValueError(f"Unknown feature subset: {feature_subset}")
+    else:
+        extractor = ParticipantStatisticalFeatureExtractor(feature_subset=feature_subset)
+        X_test = extractor.transform(test_dataset.get_all_raw_tensors())
     y_test = test_dataset.get_targets()
     test_pids = test_dataset.get_participant_ids()
 
@@ -275,6 +312,12 @@ def run_baseline_experiment(
     train_ds = PPDVideoDataset(partition="train", validate_on_init=False)
     test_ds = PPDVideoDataset(partition="test", validate_on_init=False)
 
+    print("Pre-loading raw tensors and extracting 220 statistical features in memory (once)...")
+    extractor_all = ParticipantStatisticalFeatureExtractor(feature_subset="all")
+    X_train_all = extractor_all.transform(train_ds.get_all_raw_tensors())
+    X_test_all = extractor_all.transform(test_ds.get_all_raw_tensors())
+    print(f"Extracted features in memory: Train {X_train_all.shape}, Test {X_test_all.shape}")
+
     configurations: List[Tuple[str, str]] = [
         ("logistic_regression", "all"),
         ("random_forest", "all"),
@@ -299,6 +342,7 @@ def run_baseline_experiment(
             feature_subset=subset,
             dataset=train_ds,
             seed=seed,
+            precomputed_features=X_train_all,
         )
         cv_results[config_key] = {
             "model_name": model_name,
@@ -322,6 +366,8 @@ def run_baseline_experiment(
             train_dataset=train_ds,
             test_dataset=test_ds,
             seed=seed,
+            precomputed_train_features=X_train_all,
+            precomputed_test_features=X_test_all,
         )
         holdout_results[config_key] = {
             "model_name": model_name,
