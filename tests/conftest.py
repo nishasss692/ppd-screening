@@ -23,8 +23,8 @@ if not QUESTIONS_DATA_PATH.exists() and BACKEND_QUESTIONS_PATH.exists():
     shutil.copyfile(BACKEND_QUESTIONS_PATH, QUESTIONS_DATA_PATH)
 
 # 2. Configure CI database fallback
-if not os.getenv("DATABASE_URL") or os.getenv("CI"):
-    os.environ.setdefault("DATABASE_URL", "sqlite:///./ci_test_database.db")
+if os.getenv("CI") or not os.getenv("DATABASE_URL"):
+    os.environ["DATABASE_URL"] = "sqlite:///./ci_test_database.db"
 
 
 def pytest_collection_modifyitems(config, items):

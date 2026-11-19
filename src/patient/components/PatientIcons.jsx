@@ -15,6 +15,55 @@ export function PatientIcon({ name, size = 18, color = 'currentColor', className
   };
 
   switch (name) {
+    case 'community':
+    case 'mothers-circle':
+    case 'users':
+      return (
+        <svg {...props}>
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+      );
+    case 'anonymous-mother':
+    case 'anonymous-user':
+      return (
+        <svg {...props}>
+          <path d="M12 2a5 5 0 0 1 5 5v1a5 5 0 0 1-10 0V7a5 5 0 0 1 5-5z" />
+          <path d="M3 21v-2a7 7 0 0 1 14 0v2" />
+          <circle cx="12" cy="7.5" r="1.5" fill={color} />
+        </svg>
+      );
+    case 'shield-check':
+    case 'shield':
+      return (
+        <svg {...props}>
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          <polyline points="9 12 11 14 15 10" />
+        </svg>
+      );
+    case 'lock':
+      return (
+        <svg {...props}>
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </svg>
+      );
+    case 'sparkles':
+      return (
+        <svg {...props}>
+          <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z" />
+        </svg>
+      );
+    case 'more-vertical':
+      return (
+        <svg {...props}>
+          <circle cx="12" cy="12" r="1.2" fill={color} />
+          <circle cx="12" cy="5" r="1.2" fill={color} />
+          <circle cx="12" cy="19" r="1.2" fill={color} />
+        </svg>
+      );
     case 'home':
       return (
         <svg {...props}>

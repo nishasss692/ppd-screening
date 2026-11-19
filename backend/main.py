@@ -17,7 +17,8 @@ from backend.routers.voice_assistant import router as voice_assistant_router
 from backend.routers.doctor_assistant import router as doctor_assistant_router
 from backend.routers.auth import router as auth_router
 from backend.routers.patients import router as patients_router
-from backend.database.connection import get_db_context
+from backend.routers.community import router as community_router
+from backend.database.connection import get_db_context, init_db
 from backend.services.auth_service import seed_default_users
 from backend.services.text_ner_service import text_ner_service
 from backend.services.clinical_service import clinical_service
@@ -31,6 +32,7 @@ async def lifespan(_app: FastAPI):
     clinical_service.startup()
     audio_service.startup()
     try:
+        init_db()
         with get_db_context() as db:
             seed_default_users(db)
     except Exception as exc:
@@ -79,6 +81,7 @@ app.include_router(voice_assistant_router)
 app.include_router(doctor_assistant_router)
 app.include_router(auth_router)
 app.include_router(patients_router)
+app.include_router(community_router)
 
 
 @app.get("/", tags=["Health Check"])

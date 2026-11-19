@@ -12,6 +12,7 @@ import { ConnectDoctorPage } from './patient/pages/ConnectDoctorPage.jsx';
 import { PatientHomePage } from './patient/pages/PatientHomePage.jsx';
 import { PatientReportsPage } from './patient/pages/PatientReportsPage.jsx';
 import { CareSuggestionsPage } from './patient/pages/CareSuggestionsPage.jsx';
+import { CommunityPage } from './patient/pages/CommunityPage.jsx';
 import { PatientProfilePage } from './patient/pages/PatientProfilePage.jsx';
 import { PatientSettingsPage } from './patient/pages/PatientSettingsPage.jsx';
 import { PatientProvider } from './patient/context/PatientContext.jsx';
@@ -75,6 +76,12 @@ export function App() {
               <Route path="/screening/results" element={<ScreeningResultsPage />} />
               <Route path="/patient/screening/results" element={<ScreeningResultsPage />} />
               <Route path="/patient/results" element={<ScreeningResultsPage />} />
+
+              {/* Anonymous Mother's Community (Mother's Circle) */}
+              <Route path="/patient/community" element={<CommunityPage />} />
+              <Route path="/community" element={<CommunityPage />} />
+              <Route path="/mothers-circle" element={<Navigate to="/patient/community" replace />} />
+              <Route path="/patient/mothers-circle" element={<Navigate to="/patient/community" replace />} />
 
               {/* Care Suggestions & Doctor Consultations */}
               <Route path="/patient/care-suggestions" element={<CareSuggestionsPage />} />
