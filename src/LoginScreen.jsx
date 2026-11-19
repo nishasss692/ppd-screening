@@ -51,6 +51,14 @@ const Icons = {
       <path d="M5 12h14M12 5l7 7-7 7" />
     </svg>
   ),
+  family: (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  ),
   check: (
     <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M2 6.5 4.8 9.2 10 3" />
@@ -94,6 +102,9 @@ export function LoginScreen() {
     if (role === 'patient') {
       setEmail(DEMO_ACCOUNTS.patient.email);
       setPassword(DEMO_ACCOUNTS.patient.password);
+    } else if (role === 'family') {
+      setEmail(DEMO_ACCOUNTS.family.email);
+      setPassword(DEMO_ACCOUNTS.family.password);
     } else {
       setEmail(DEMO_ACCOUNTS.doctor.email);
       setPassword(DEMO_ACCOUNTS.doctor.password);
@@ -370,6 +381,7 @@ export function LoginScreen() {
                   <button
                     type="button"
                     role="radio"
+                    aria-label="Patient"
                     aria-checked={selectedRole === 'patient'}
                     tabIndex={0}
                     className={`login-role-card ${selectedRole === 'patient' ? 'is-selected' : ''}`}
@@ -402,6 +414,7 @@ export function LoginScreen() {
                   <button
                     type="button"
                     role="radio"
+                    aria-label="Doctor"
                     aria-checked={selectedRole === 'doctor'}
                     tabIndex={0}
                     className={`login-role-card ${selectedRole === 'doctor' ? 'is-selected' : ''}`}
@@ -423,6 +436,39 @@ export function LoginScreen() {
                     </span>
                     <span className="login-role-indicator">
                       {selectedRole === 'doctor' ? (
+                        <span className="login-indicator-checked">{Icons.check}</span>
+                      ) : (
+                        <span className="login-indicator-empty" />
+                      )}
+                    </span>
+                  </button>
+
+                  {/* Patient's Family Card */}
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-label="Patient's Family"
+                    aria-checked={selectedRole === 'family'}
+                    tabIndex={0}
+                    className={`login-role-card ${selectedRole === 'family' ? 'is-selected' : ''}`}
+                    onClick={() => {
+                      setSelectedRole('family');
+                      setErrorMessage('');
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === ' ' || e.key === 'Enter') {
+                        e.preventDefault();
+                        setSelectedRole('family');
+                      }
+                    }}
+                  >
+                    <span className="login-role-icon">{Icons.family}</span>
+                    <span className="login-role-content">
+                      <strong className="login-role-title">Patient's Family</strong>
+                      <span className="login-role-desc">For partners, family & caregivers</span>
+                    </span>
+                    <span className="login-role-indicator">
+                      {selectedRole === 'family' ? (
                         <span className="login-indicator-checked">{Icons.check}</span>
                       ) : (
                         <span className="login-indicator-empty" />
@@ -465,6 +511,22 @@ export function LoginScreen() {
                     }}
                   >
                     Doctor (Dr. Elena)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectDemo('family')}
+                    style={{
+                      fontSize: '12px',
+                      padding: '4px 12px',
+                      background: selectedRole === 'family' ? '#fdeaf0' : '#f5f5f7',
+                      color: selectedRole === 'family' ? '#c73566' : '#555',
+                      border: '1px solid ' + (selectedRole === 'family' ? '#f4a6c0' : '#dcdce0'),
+                      borderRadius: '16px',
+                      cursor: 'pointer',
+                      fontWeight: selectedRole === 'family' ? '600' : '500',
+                    }}
+                  >
+                    Patient's Family (Raj)
                   </button>
                 </div>
               </div>

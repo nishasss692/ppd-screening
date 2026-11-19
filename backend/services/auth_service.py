@@ -148,12 +148,44 @@ def get_optional_current_user(
         return None
 
 
+def normalize_role(role: Optional[str]) -> str:
+    """Normalize role string to 'doctor', 'patient', or 'family'."""
+    if not role:
+        return "patient"
+    r = role.strip().lower()
+    if r in ("doctor", "clinician", "physician", "admin"):
+        return "doctor"
+    if r in ("family", "patients_family", "patient_family", "partner", "caregiver", "relative"):
+        return "family"
+    return "patient"
+
+
 def require_patient(user: User = Depends(get_current_user)) -> User:
-    """Authorize only patients."""
-    if user.role != "patient":
+    """Authorize patients or linked family members."""
+    if user.role not in ("patient", "family"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access forbidden: Patient account required.",
+            detail="Access forbidden: Patient or family account required.",
+        )
+    return user
+
+
+def require_family(user: User = Depends(get_current_user)) -> User:
+    """Authorize only patient's family accounts."""
+    if user.role != "family":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access forbidden: Patient's family authorization required.",
+        )
+    return user
+
+
+def require_patient_or_family(user: User = Depends(get_current_user)) -> User:
+    """Authorize patient or family member."""
+    if user.role not in ("patient", "family"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access forbidden: Patient or family account required.",
         )
     return user
 
@@ -169,7 +201,7 @@ def require_doctor(user: User = Depends(get_current_user)) -> User:
 
 
 def seed_default_users(db: Session) -> None:
-    """Seed demo accounts (patient and doctor) if they do not already exist."""
+    """Seed demo accounts (doctor, patient, and patient's family) if they do not already exist."""
     # 1. Seed demo doctor
     doctor_email = "doctor@miora.health"
     stmt = select(User).where(User.email == doctor_email)
@@ -189,23 +221,22 @@ def seed_default_users(db: Session) -> None:
     patient_email = "patient@miora.health"
     stmt = select(User).where(User.email == patient_email)
     existing_patient = db.scalar(stmt)
-    if not existing_patient:
-        # Check or create Mother record for Amara
-        mother_stmt = select(Mother).where(Mother.email == patient_email)
-        existing_mother = db.scalar(mother_stmt)
-        if not existing_mother:
-            existing_mother = Mother(
-                name="Amara K.",
-                email=patient_email,
-                phone="+91-98765-43210",
-                age=28,
-                pregnancy_type="singleton",
-                medical_history='{"prior_ppd_diagnosis": "yes", "notes": "Baseline postpartum checkup", "uploaded_files": [{"id": "default-ppd-report", "name": "PPD_Diagnosis_Report.pdf", "size": "1.2 MB", "type": "application/pdf"}]}',
-                notes="Primary demo patient record.",
-            )
-            db.add(existing_mother)
-            db.flush()
+    mother_stmt = select(Mother).where(Mother.email == patient_email)
+    existing_mother = db.scalar(mother_stmt)
+    if not existing_mother:
+        existing_mother = Mother(
+            name="Amara K.",
+            email=patient_email,
+            phone="+91-98765-43210",
+            age=28,
+            pregnancy_type="singleton",
+            medical_history='{"prior_ppd_diagnosis": "yes", "notes": "Baseline postpartum checkup", "uploaded_files": [{"id": "default-ppd-report", "name": "PPD_Diagnosis_Report.pdf", "size": "1.2 MB", "type": "application/pdf"}]}',
+            notes="Primary demo patient record.",
+        )
+        db.add(existing_mother)
+        db.flush()
 
+    if not existing_patient:
         patient_user = User(
             email=patient_email,
             hashed_password=hash_password("password123"),
@@ -216,6 +247,22 @@ def seed_default_users(db: Session) -> None:
         )
         db.add(patient_user)
         logger.info("Seeded default patient account: %s (Mother ID: %s)", patient_email, existing_mother.id)
+
+    # 3. Seed demo patient's family member linked to the same Mother
+    family_email = "family@miora.health"
+    stmt = select(User).where(User.email == family_email)
+    existing_family = db.scalar(stmt)
+    if not existing_family:
+        family_user = User(
+            email=family_email,
+            hashed_password=hash_password("password123"),
+            full_name="Raj K.",
+            role="family",
+            mother_id=existing_mother.id,
+            is_active=True,
+        )
+        db.add(family_user)
+        logger.info("Seeded default patient's family account: %s (Linked Mother ID: %s)", family_email, existing_mother.id)
 
     db.commit()
 

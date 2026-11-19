@@ -50,6 +50,14 @@ const Icons = {
       <path d="M5 12h14M12 5l7 7-7 7" />
     </svg>
   ),
+  family: (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  ),
   check: (
     <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M2 6.5 4.8 9.2 10 3" />
@@ -66,6 +74,7 @@ export function CreateAccountScreen() {
   // Form fields
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [patientEmail, setPatientEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
@@ -132,13 +141,6 @@ export function CreateAccountScreen() {
       // Role-based registration behavior
       if (selectedRole === 'doctor') {
         const trimmedEmail = email.trim().toLowerCase();
-        // Check if professional doctor email or authorized clinical domain
-        const isPreAuthorized =
-          trimmedEmail === DEMO_ACCOUNTS.doctor.email ||
-          trimmedEmail.includes('doctor') ||
-          trimmedEmail.startsWith('dr.') ||
-          trimmedEmail.endsWith('@mioraclinical.org');
-
         await registerAccount({
           name: fullName.trim(),
           email: trimmedEmail,
@@ -149,6 +151,20 @@ export function CreateAccountScreen() {
         setSuccessMessage('Doctor credentials verified. Routing to clinical dashboard...');
         setTimeout(() => {
           navigate('/dashboard');
+        }, 600);
+      } else if (selectedRole === 'family') {
+        // Patient's Family registration
+        await registerAccount({
+          name: fullName.trim(),
+          email: email.trim(),
+          password,
+          role: 'family',
+          patientEmail: patientEmail.trim() || undefined,
+        });
+
+        setSuccessMessage("Account created successfully! Welcome to Patient's Family Support. Redirecting...");
+        setTimeout(() => {
+          navigate('/patient/dashboard');
         }, 600);
       } else {
         // Patient registration
@@ -350,6 +366,7 @@ export function CreateAccountScreen() {
                     type="button"
                     id="role-patient"
                     role="radio"
+                    aria-label="Patient"
                     aria-checked={selectedRole === 'patient'}
                     tabIndex={0}
                     className={`login-role-card ${selectedRole === 'patient' ? 'is-selected' : ''}`}
@@ -383,6 +400,7 @@ export function CreateAccountScreen() {
                     type="button"
                     id="role-doctor"
                     role="radio"
+                    aria-label="Doctor"
                     aria-checked={selectedRole === 'doctor'}
                     tabIndex={0}
                     className={`login-role-card ${selectedRole === 'doctor' ? 'is-selected' : ''}`}
@@ -410,8 +428,62 @@ export function CreateAccountScreen() {
                       )}
                     </span>
                   </button>
+
+                  {/* Patient's Family Card */}
+                  <button
+                    type="button"
+                    id="role-family"
+                    role="radio"
+                    aria-label="Patient's Family"
+                    aria-checked={selectedRole === 'family'}
+                    tabIndex={0}
+                    className={`login-role-card ${selectedRole === 'family' ? 'is-selected' : ''}`}
+                    onClick={() => {
+                      setSelectedRole('family');
+                      setErrorMessage('');
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === ' ' || e.key === 'Enter') {
+                        e.preventDefault();
+                        setSelectedRole('family');
+                      }
+                    }}
+                  >
+                    <span className="login-role-icon">{Icons.family}</span>
+                    <span className="login-role-content">
+                      <strong className="login-role-title">Patient's Family</strong>
+                      <span className="login-role-desc">For partners, family & caregivers</span>
+                    </span>
+                    <span className="login-role-indicator">
+                      {selectedRole === 'family' ? (
+                        <span className="login-indicator-checked">{Icons.check}</span>
+                      ) : (
+                        <span className="login-indicator-empty" />
+                      )}
+                    </span>
+                  </button>
                 </div>
               </div>
+
+              {/* Optional Linked Mother Email when registering as Family */}
+              {selectedRole === 'family' && (
+                <div className="login-form-group">
+                  <label className="login-field-label" htmlFor="reg-patient-email">
+                    Linked Mother's Email <span style={{ fontSize: '12px', color: '#888', fontWeight: 'normal' }}>(optional)</span>
+                  </label>
+                  <div className="login-input-wrap">
+                    <span className="login-input-icon">{Icons.mail}</span>
+                    <input
+                      id="reg-patient-email"
+                      type="email"
+                      className="login-input-field"
+                      placeholder="e.g. patient@miora.health"
+                      value={patientEmail}
+                      onChange={(e) => setPatientEmail(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Full Name Field */}
               <div className="login-form-group">

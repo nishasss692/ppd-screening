@@ -34,7 +34,31 @@ class AuthLoginRequest(BaseModel):
 
     email: str = Field(..., description="Email address")
     password: str = Field(..., description="Password")
-    selected_role: Optional[str] = Field(None, description="Selected portal role: 'patient' or 'doctor'")
+    selected_role: Optional[str] = Field(None, description="Selected portal role: 'patient', 'doctor', or 'family'")
+
+
+class UserRegisterRequest(BaseModel):
+    """Universal registration request supporting patient, doctor, and patient's family."""
+
+    name: Optional[str] = Field(None, min_length=2, max_length=200, description="Full name")
+    full_name: Optional[str] = Field(None, min_length=2, max_length=200, description="Full name alias")
+    email: str = Field(..., min_length=5, max_length=128, description="Email address for authentication")
+    password: str = Field(..., min_length=6, max_length=128, description="Account password")
+    role: Optional[str] = Field("patient", description="Portal role: 'patient', 'doctor', or 'family'")
+    patient_email: Optional[str] = Field(None, description="Linked mother email (for family accounts)")
+    age: Optional[int] = Field(None, ge=14, le=65, description="Age in years")
+    phone: Optional[str] = Field(None, max_length=32, description="Contact phone number")
+    delivery_date: Optional[date] = Field(None, description="Recent delivery date")
+    pregnancy_type: Optional[str] = Field(None, max_length=64, description="Singleton, twins, etc.")
+    postpartum_week: Optional[int] = Field(4, ge=0, le=104, description="Postpartum weeks elapsed")
+
+    @model_validator(mode="after")
+    def resolve_name(self) -> "UserRegisterRequest":
+        if not self.name and self.full_name:
+            self.name = self.full_name
+        if not self.name:
+            raise ValueError("Full name is required.")
+        return self
 
 
 class AuthTokenResponse(BaseModel):

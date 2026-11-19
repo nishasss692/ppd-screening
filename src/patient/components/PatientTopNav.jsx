@@ -265,7 +265,9 @@ export function PatientTopNav() {
                   <div className="patient-avatar-circle-lg">{patientInitials}</div>
                   <div>
                     <div className="patient-profile-popover-name">{patientName}</div>
-                    <div className="patient-profile-popover-role">Maternal Emotional Care</div>
+                    <div className="patient-profile-popover-role">
+                      {patient?.role === 'family' ? "Patient's Family Support" : 'Maternal Emotional Care'}
+                    </div>
                   </div>
                 </div>
 
