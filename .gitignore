@@ -65,8 +65,24 @@ models/*
 !models/text_ner/
 !models/text_ner/**
 models/text_ner/**/*.joblib
+
+# Specific multimodal model artifacts
+!models/text_model/
+models/text_model/*
+!models/text_model/text_pipeline.joblib
+
+!models/audio_model/
+models/audio_model/*
+!models/audio_model/scaler.joblib
+!models/audio_model/logistic_regression.joblib
+
 *.joblib
 !models/clinical_numerical/*.joblib
+!models/text_model/text_pipeline.joblib
+!models/audio_model/scaler.joblib
+!models/audio_model/logistic_regression.joblib
+!artifacts/video_experiments/baseline_training_optimized/fitted_model_logistic_regression_all.joblib
+!artifacts/three_modality_fusion/meta_classifier_three_modality_learned.joblib
 *.pt
 *.pth
 *.bin
