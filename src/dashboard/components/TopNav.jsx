@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useClinicalData } from '../context/ClinicalContext.jsx';
+import { getCurrentUser } from '../../auth/authService.js';
 import { CLINICIAN_PROFILE } from '../data/mockClinicalData.js';
 import { BrandWordmark } from './BrandWordmark.jsx';
 import { DashboardIcon } from './DashboardIcon.jsx';
@@ -238,70 +239,93 @@ export function TopNav() {
           </div>
 
           <div className="dash-utility-wrap">
-            <button
-              type="button"
-              className="dash-avatar-btn"
-              aria-label="Clinician profile menu"
-              aria-expanded={openMenu === 'profile'}
-              onClick={() => setOpenMenu((prev) => (prev === 'profile' ? null : 'profile'))}
-            >
-              {CLINICIAN_PROFILE.initials}
-            </button>
+            {(() => {
+              const authUser = getCurrentUser();
+              const clinicianName = authUser?.fullName || authUser?.name || CLINICIAN_PROFILE.name;
+              const clinicianRole = authUser?.role
+                ? authUser.role.charAt(0).toUpperCase() + authUser.role.slice(1)
+                : CLINICIAN_PROFILE.role;
+              const clinicianClinic = authUser?.clinic || CLINICIAN_PROFILE.clinic;
+              const clinicianInitials =
+                authUser?.avatarInitials ||
+                (authUser?.name
+                  ? authUser.name
+                      .split(' ')
+                      .map((n) => n[0])
+                      .join('')
+                      .slice(0, 2)
+                      .toUpperCase()
+                  : CLINICIAN_PROFILE.initials);
 
-            {openMenu === 'profile' && (
-              <div className="dash-popover dash-profile-popover" role="dialog" aria-label="Clinician profile">
-                <div className="dash-profile-meta">
-                  <strong>{CLINICIAN_PROFILE.name}</strong>
-                  <span>{CLINICIAN_PROFILE.role}</span>
-                  <small>{CLINICIAN_PROFILE.clinic}</small>
-                  {isLiveSynced && (
-                    <span style={{ fontSize: '11px', color: '#16a34a', fontWeight: '600', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#16a34a', display: 'inline-block' }} />
-                      PostgreSQL Backend Connected
-                    </span>
+              return (
+                <>
+                  <button
+                    type="button"
+                    className="dash-avatar-btn"
+                    aria-label="Clinician profile menu"
+                    aria-expanded={openMenu === 'profile'}
+                    onClick={() => setOpenMenu((prev) => (prev === 'profile' ? null : 'profile'))}
+                  >
+                    {clinicianInitials}
+                  </button>
+
+                  {openMenu === 'profile' && (
+                    <div className="dash-popover dash-profile-popover" role="dialog" aria-label="Clinician profile">
+                      <div className="dash-profile-meta">
+                        <strong>{clinicianName}</strong>
+                        <span>{clinicianRole}</span>
+                        <small>{clinicianClinic}</small>
+                        {isLiveSynced && (
+                          <span style={{ fontSize: '11px', color: '#16a34a', fontWeight: '600', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#16a34a', display: 'inline-block' }} />
+                            PostgreSQL Backend Connected
+                          </span>
+                        )}
+                      </div>
+                      <div className="dash-profile-actions">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpenMenu(null);
+                            navigate('/insights');
+                          }}
+                        >
+                          Care &amp; Practice Insights
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpenMenu(null);
+                            navigate('/patient/dashboard');
+                          }}
+                        >
+                          Switch to Patient Portal
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpenMenu(null);
+                            navigate('/');
+                          }}
+                        >
+                          View Miora Landing Page
+                        </button>
+                        <button
+                          type="button"
+                          style={{ color: '#c73566', fontWeight: '500' }}
+                          onClick={() => {
+                            setOpenMenu(null);
+                            navigate('/login');
+                          }}
+                        >
+                          Sign Out
+                        </button>
+                      </div>
+                    </div>
                   )}
-                </div>
-                <div className="dash-profile-actions">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOpenMenu(null);
-                      navigate('/insights');
-                    }}
-                  >
-                    Care &amp; Practice Insights
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOpenMenu(null);
-                      navigate('/patient/dashboard');
-                    }}
-                  >
-                    Switch to Patient Portal
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOpenMenu(null);
-                      navigate('/');
-                    }}
-                  >
-                    View Miora Landing Page
-                  </button>
-                  <button
-                    type="button"
-                    style={{ color: '#c73566', fontWeight: '500' }}
-                    onClick={() => {
-                      setOpenMenu(null);
-                      navigate('/login');
-                    }}
-                  >
-                    Sign Out
-                  </button>
-                </div>
-              </div>
-            )}
+                </>
+              );
+            })()}
           </div>
 
           <button

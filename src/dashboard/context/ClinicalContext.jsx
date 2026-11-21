@@ -363,8 +363,10 @@ export function ClinicalProvider({ children }) {
         });
       }
 
-      setIsLiveSynced(true);
+      const hasBackendSuccess = mList.status === 'fulfilled' || sList.status === 'fulfilled' || dMetrics.status === 'fulfilled';
+      setIsLiveSynced(hasBackendSuccess);
     } catch (err) {
+      setIsLiveSynced(false);
       console.warn('Backend doctor dashboard synchronization info:', err);
     } finally {
       setBackendLoading(false);

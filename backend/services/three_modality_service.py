@@ -226,6 +226,42 @@ class ThreeModalityInferenceService:
         self._load_errors[key] = f"Artifact missing at {path}"
         return None
 
+    def get_pipeline_status(self) -> Dict[str, Any]:
+        """Return readiness and metadata for all individual modalities and late fusion."""
+        if not self._startup_attempted:
+            self.startup()
+        return {
+            "is_loaded": self._is_loaded,
+            "text": {
+                "status": "ready" if self._text_pipeline is not None else "unavailable",
+                "model_name": "TF-IDF + Logistic Regression",
+                "model_version": "text_sgd_logistic_v1",
+                "features": "Linguistic & Affective N-grams",
+                "error": self._load_errors.get("text"),
+            },
+            "audio": {
+                "status": "ready" if (self._audio_scaler is not None and self._audio_model is not None) else "unavailable",
+                "model_name": "StandardScaler + Logistic Regression",
+                "model_version": "audio_logistic_regression_v1",
+                "features": "7 Physiological Acoustic Features (F0, Jitter, Shimmer, HNR, Speech Rate, Pause Ratio)",
+                "error": self._load_errors.get("audio"),
+            },
+            "video": {
+                "status": "ready" if self._video_model is not None else "unavailable",
+                "model_name": "Facial Affect & Gaze Dynamics Baseline",
+                "model_version": "video_baseline_lr_all",
+                "features": "220 Temporal Summary Statistics (Action Units & Landmarks)",
+                "error": self._load_errors.get("video"),
+            },
+            "fusion": {
+                "status": "ready" if self._fusion_3mod is not None else "unavailable",
+                "model_name": "Stacking Meta-Classifier",
+                "model_version": "meta_classifier_three_modality_v1",
+                "method": "Stacking Meta-Logistic Regression",
+                "error": self._load_errors.get("fusion_3mod"),
+            },
+        }
+
     # -------------------------------------------------------------------------
     # Modality Predictors
     # -------------------------------------------------------------------------
