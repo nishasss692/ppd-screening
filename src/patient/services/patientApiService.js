@@ -441,3 +441,51 @@ export async function savePatientAiConversations(messages, currentMood = null) {
 
   return response.json();
 }
+
+/**
+ * Retrieve status and readiness of multimodal screening model pipelines.
+ */
+export async function fetchMultimodalStatus() {
+  const url = `${getApiBase()}/api/screenings/multimodal/status`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${response.status}: Failed to fetch multimodal pipeline status`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Submit multimodal screening inputs (text, audio, video) to POST /api/screenings/multimodal/analyze.
+ */
+export async function submitMultimodalScreening(formData) {
+  const url = `${getApiBase()}/api/screenings/multimodal/analyze`;
+  const token = getAuthToken();
+  const headers = {
+    Accept: 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${response.status}: Multimodal screening analysis failed`);
+  }
+
+  return response.json();
+}
+

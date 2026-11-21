@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useClinicalData } from '../context/ClinicalContext.jsx';
-import { INITIAL_SCREENINGS } from '../data/mockClinicalData.js';
 import { DashboardIcon } from '../components/DashboardIcon.jsx';
 import { RiskBadge } from '../components/Badges.jsx';
 import {
@@ -37,9 +36,6 @@ export function ResultsPage() {
         screenings.find((s) => s.motherId.toLowerCase() === motherId.toLowerCase()) ||
         null
       );
-    }
-    if (screenings.length > INITIAL_SCREENINGS.length) {
-      return screenings[0];
     }
     return screenings.find((s) => s.motherId === 'M-108') || screenings[0] || null;
   }, [screenings, motherId]);
@@ -153,6 +149,17 @@ export function ResultsPage() {
           </div>
         </section>
 
+        {/* Empty State when no screening is available */}
+        {!activeScreening && (
+          <section className="miora-card" style={{ padding: '48px 24px', textAlign: 'center', marginTop: '16px' }}>
+            <DashboardIcon name="layers" size={36} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
+            <h3 style={{ margin: '0 0 8px', fontSize: '18px' }}>No Screening Results Available</h3>
+            <p style={{ margin: 0, color: 'var(--miora-muted)', fontSize: '14px' }}>
+              Complete a screening session in Live Screening or Upload &amp; Analyze to review detailed multimodal clinical results.
+            </p>
+          </section>
+        )}
+
         {/* Patient Information Strip */}
         {activeScreening && (
           <section className="miora-card miora-patient-strip" aria-label="Screening session summary">
@@ -222,9 +229,8 @@ export function ResultsPage() {
 
             <div className="miora-results-status-wrap">
               <span
-                className={`miora-results-status-pill ${
-                  isCompleted ? 'is-completed' : 'is-pending'
-                }`}
+                className={`miora-results-status-pill ${isCompleted ? 'is-completed' : 'is-pending'
+                  }`}
               >
                 <DashboardIcon
                   name={isCompleted ? 'checkCircle' : 'clock'}

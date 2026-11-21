@@ -124,6 +124,18 @@ async def analyze_screening(
     )
 
 
+@router.get(
+    "/multimodal/status",
+    summary="Get readiness and operational status of all multimodal model pipelines",
+    description="Returns availability, checkpoint provenance, and descriptions for Text, Audio, Video, and Fusion pipelines.",
+)
+async def get_multimodal_pipeline_status(
+    service: ThreeModalityInferenceService = Depends(lambda: three_modality_service),
+) -> Dict[str, Any]:
+    """Retrieve operational status and readiness of all Stage 1 multimodal models."""
+    return service.get_pipeline_status()
+
+
 @router.post(
     "/multimodal/analyze",
     response_model=ThreeModalityAnalyzeResponse,
