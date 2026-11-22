@@ -22,6 +22,23 @@ export function TopNav() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const authUser = getCurrentUser();
+  const clinicianName = authUser?.fullName || authUser?.name || CLINICIAN_PROFILE.name;
+  const clinicianRole = authUser?.role
+    ? authUser.role.charAt(0).toUpperCase() + authUser.role.slice(1)
+    : CLINICIAN_PROFILE.role;
+  const clinicianClinic = authUser?.clinic || CLINICIAN_PROFILE.clinic;
+  const clinicianInitials =
+    authUser?.avatarInitials ||
+    (authUser?.name
+      ? authUser.name
+          .split(' ')
+          .map((n) => n[0])
+          .join('')
+          .slice(0, 2)
+          .toUpperCase()
+      : CLINICIAN_PROFILE.initials);
+
   const [openMenu, setOpenMenu] = useState(null); // 'search' | 'alerts' | 'profile' | 'mobile' | 'assistant'
   const [searchQuery, setSearchQuery] = useState('');
   const navRef = useRef(null);
@@ -238,34 +255,38 @@ export function TopNav() {
           </div>
 
           <div className="dash-utility-wrap">
-            {(() => {
-              const authUser = getCurrentUser();
-              const clinicianName = authUser?.fullName || authUser?.name || CLINICIAN_PROFILE.name;
-              const clinicianRole = authUser?.role
-                ? authUser.role.charAt(0).toUpperCase() + authUser.role.slice(1)
-                : CLINICIAN_PROFILE.role;
-              const clinicianClinic = authUser?.clinic || CLINICIAN_PROFILE.clinic;
-              const clinicianInitials =
-                authUser?.avatarInitials ||
-                (authUser?.name
-                  ? authUser.name
-                      .split(' ')
-                      .map((n) => n[0])
-                      .join('')
-                      .slice(0, 2)
-                      .toUpperCase()
-                  : CLINICIAN_PROFILE.initials);
+            <button
+              type="button"
+              className="dash-avatar-btn"
+              aria-label="Clinician profile menu"
+              aria-expanded={openMenu === 'profile'}
+              onClick={() => setOpenMenu((prev) => (prev === 'profile' ? null : 'profile'))}
+            >
+              {clinicianInitials}
+            </button>
 
-              return (
-                <>
+            {openMenu === 'profile' && (
+              <div className="dash-popover dash-profile-popover" role="dialog" aria-label="Clinician profile">
+                <div className="dash-profile-meta">
+                  <strong>{clinicianName}</strong>
+                  <span>{clinicianRole}</span>
+                  <small>{clinicianClinic}</small>
+                  {isLiveSynced && (
+                    <span style={{ fontSize: '11px', color: '#16a34a', fontWeight: '600', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#16a34a', display: 'inline-block' }} />
+                      PostgreSQL Backend Connected
+                    </span>
+                  )}
+                </div>
+                <div className="dash-profile-actions">
                   <button
                     type="button"
-                    className="dash-avatar-btn"
-                    aria-label="Clinician profile menu"
-                    aria-expanded={openMenu === 'profile'}
-                    onClick={() => setOpenMenu((prev) => (prev === 'profile' ? null : 'profile'))}
+                    onClick={() => {
+                      setOpenMenu(null);
+                      navigate('/insights');
+                    }}
                   >
-                    {clinicianInitials}
+                    Care &amp; Practice Insights
                   </button>
                   <button
                     type="button"
