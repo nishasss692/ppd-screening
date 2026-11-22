@@ -118,7 +118,7 @@ describe('Miora Patient Portal Visual Refinement & Six Screens', () => {
     renderPatientApp('/patient/screening');
 
     // Progress tracker stages
-    expect(screen.getAllByText('Medical History').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Patient Details').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Screening').length).toBeGreaterThan(0);
     expect(screen.getByText('Analysis')).toBeInTheDocument();
     expect(screen.getByText('Results')).toBeInTheDocument();
@@ -153,6 +153,11 @@ describe('Miora Patient Portal Visual Refinement & Six Screens', () => {
     // Displays Results & Reports with pending/awaiting integration states
     expect(screen.getByRole('heading', { level: 1, name: /Results & Reports/i })).toBeInTheDocument();
     expect(screen.getAllByText(/Awaiting model integration/i).length).toBeGreaterThan(0);
+
+    // Consultation card is permanently accessible immediately below assessment cards
+    const consultCard = screen.getByTestId('results-consultation-card');
+    expect(consultCard).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /(Find a Doctor|Consult a Doctor)/i })).toBeInTheDocument();
   });
 
   it('Screen 3 — AI Assistant: renders hero banner, holographic AI assistant stage, prompt chips, and supports chat interactions', async () => {

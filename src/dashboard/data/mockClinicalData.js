@@ -7,7 +7,7 @@ export const CLINICIAN_PROFILE = {
   name: 'Dr. Elena Rostova',
   initials: 'DR',
   role: 'Lead Perinatal Psychiatrist',
-  clinic: 'MIORA Maternal Care Center',
+  clinic: 'AANCHAL Maternal Care Center',
 };
 
 export const KPI_TRENDS = {

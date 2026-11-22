@@ -180,7 +180,7 @@ const INITIAL_MESSAGES = [
   {
     id: 'msg-1',
     sender: 'bot',
-    text: `Hi Amara! 💕\nI'm Miora, your AI companion. I'm here to listen, answer your questions, and support you through your postpartum journey.\n\nHow are you feeling today?`,
+    text: `Hi Amara!\nI'm AANCHAL, your AI companion. I'm here to listen, answer your questions, and support you through your postpartum journey.\n\nHow are you feeling today?`,
     timestamp: '10:24 AM',
   },
   {
@@ -193,7 +193,7 @@ const INITIAL_MESSAGES = [
   {
     id: 'msg-3',
     sender: 'bot',
-    text: `I'm really sorry you're feeling this way. It's completely understandable, especially after childbirth. 💖\n\nWould you like me to share some simple coping strategies, a calming exercise, or help you decide if it's a good time to talk to a professional?`,
+    text: `I'm really sorry you're feeling this way. It's completely understandable, especially after childbirth.\n\nWould you like me to share some simple coping strategies, a calming exercise, or help you decide if it's a good time to talk to a professional?`,
     timestamp: '10:26 AM',
   },
 ];
@@ -568,7 +568,7 @@ export function AiAssistantScreen() {
       id: `msg-epds-intro-${Date.now()}`,
       sender: 'bot',
       text:
-        "Welcome to the Edinburgh Postnatal Depression Scale (EPDS) screening. 💕\n\n" +
+        "Welcome to the Edinburgh Postnatal Depression Scale (EPDS) screening.\n\n" +
         "As you are pregnant or have recently had a baby, we would like to know how you are feeling. " +
         "Please select the answer that comes closest to how you have felt in the past 7 days, not just how you feel today.\n\n" +
         "There are exactly 10 questions. We will go through them one by one. You can click your answer or reply using your voice or keyboard.",
@@ -968,14 +968,14 @@ export function AiAssistantScreen() {
     if (isGreeting) {
       const gLang = selectedLanguage !== 'auto' ? selectedLanguage : 'en';
       const GREETING_RESPONSES = {
-        en: 'Hello! Welcome to MIORA. How are you and your baby feeling today?',
-        hi: 'नमस्ते! मियोरा (MIORA) में आपका स्वागत है। आज आप और आपका शिशु कैसा महसूस कर रहे हैं?',
-        kn: 'ನಮಸ್ಕಾರ! ಮಿಯೋರಾ (MIORA) ಗೆ ಸುಸ್ವಾಗತ. ಇಂದು ನೀವು ಮತ್ತು ನಿಮ್ಮ ಮಗು ಹೇಗೆ ಭಾವಿಸುತ್ತಿದ್ದೀರಿ?',
-        ta: 'வணக்கம்! மியோராவுக்கு (MIORA) வரவேற்கிறோம். இன்று நீங்கள் எப்படி உணர்கிறீர்கள்?',
-        te: 'నమస్కారం! మియోరా (MIORA) కు స్వాగతం. ఈ రోజు మీరు ఎలా ఉన్నారు?',
-        ml: 'നമസ്കാരം! മിയോറയിലേക്ക് (MIORA) സ്വാഗതം. ഇന്ന് നിങ്ങൾക്ക് എങ്ങനെ തോന്നുന്നു?',
-        bn: 'নমস্কার! মিওরাতে (MIORA) আপনাকে স্বাগতম। আজ আপনি কেমন অনুভব করছেন?',
-        mr: 'नमस्कार! मियोरा (MIORA) मध्ये आपले स्वागत आहे. आज आपल्याला कसे वाटत आहे?',
+        en: 'Hello! Welcome to AANCHAL. How are you and your baby feeling today?',
+        hi: 'नमस्ते! आँचल (AANCHAL) में आपका स्वागत है। आज आप और आपका शिशु कैसा महसूस कर रहे हैं?',
+        kn: 'ನಮಸ್ಕಾರ! ಆಂಚಲ್ (AANCHAL) ಗೆ ಸುಸ್ವಾಗತ. ಇಂದು ನೀವು ಮತ್ತು ನಿಮ್ಮ ಮಗು ಹೇಗೆ ಭಾವಿಸುತ್ತಿದ್ದೀರಿ?',
+        ta: 'வணக்கம்! ஆஞ்சலுக்கு (AANCHAL) வரவேற்கிறோம். இன்று நீங்கள் எப்படி உணர்கிறீர்கள்?',
+        te: 'నమస్కారం! ఆంచల్ (AANCHAL) కు స్వాగతం. ఈ రోజు మీరు ఎలా ఉన్నారు?',
+        ml: 'നമസ്കാരം! ആഞ്ചലിലേക്ക് (AANCHAL) സ്വാഗതം. ഇന്ന് നിങ്ങൾക്ക് എങ്ങനെ തോന്നുന്നു?',
+        bn: 'নমস্কার! আঁচলে (AANCHAL) আপনাকে স্বাগতম। আজ আপনি কেমন অনুভব করছেন?',
+        mr: 'नमस्कार! आँचल (AANCHAL) मध्ये आपले स्वागत आहे. आज आपल्याला कसे वाटत आहे?',
       };
       const botReply = {
         id: `msg-${Date.now() + 1}`,
@@ -1094,7 +1094,7 @@ export function AiAssistantScreen() {
         : '';
 
   const welcomeSpeakText =
-    "Hello! I'm Miora, your AI Assistant. How can I help support you today?";
+    "Hello! I'm AANCHAL, your AI Assistant. How can I help support you today?";
 
   return (
     <div className="companion-page-content companion-holo-page">
@@ -1114,7 +1114,7 @@ export function AiAssistantScreen() {
       {/* Full-Screen Holographic AI Assistant Experience */}
       <section
         className={`companion-holo-fullscreen ${robotStateClass}`}
-        aria-label="Miora AI Assistant Hologram"
+        aria-label="AANCHAL AI Assistant Hologram"
       >
         <div className="companion-holo-wrapper">
           {/* Full-Width Translucent Rose-Blush Hologram Frame */}
@@ -1131,7 +1131,7 @@ export function AiAssistantScreen() {
                   </span>
                   <span className="companion-holo-badge-label">AI ASSISTANT</span>
                 </div>
-                <span className="companion-holo-sub-badge">Miora AI • Maternal Companion</span>
+                <span className="companion-holo-sub-badge">AANCHAL AI • Maternal Companion</span>
               </div>
 
               <div className="companion-holo-controls">
@@ -1142,7 +1142,7 @@ export function AiAssistantScreen() {
                   aria-label="Select conversation language"
                   title="Select conversation language"
                 >
-                  <option value="auto">🌐 Auto Language</option>
+                  <option value="auto">Auto Language</option>
                   {Object.entries(supportedLanguages).map(([code, info]) => (
                     <option key={code} value={code}>
                       {info.native_name} ({info.name})
@@ -1221,7 +1221,6 @@ export function AiAssistantScreen() {
               <div className="companion-holo-inline-banner companion-crisis-sticky-banner" role="alert" aria-label="Crisis Safety Helpline">
                 <div className="companion-crisis-sticky-content">
                   <div className="companion-crisis-sticky-title">
-                    <span>🚨</span>
                     <strong>{activeCrisisMsg ? activeCrisisMsg.text.split('\n\n')[0] : 'Immediate Crisis Support Available'}</strong>
                   </div>
                   {activeCrisisMsg && (
@@ -1279,7 +1278,7 @@ export function AiAssistantScreen() {
 
                   <img
                     src="/assets/indian-mother-ai-holo-avatar.jpg"
-                    alt="Miora AI Assistant - Compassionate Maternal Guide"
+                    alt="AANCHAL AI Assistant - Compassionate Maternal Guide"
                     className="companion-holo-avatar-img"
                   />
 
@@ -1311,10 +1310,10 @@ export function AiAssistantScreen() {
                   {isTyping ? (
                     <div className="companion-holo-thinking-state">
                       <div className="companion-holo-reply-head">
-                        <span className="companion-holo-reply-speaker">Miora AI</span>
+                        <span className="companion-holo-reply-speaker">AANCHAL AI</span>
                         <span className="companion-holo-reply-state-pill">Thinking</span>
                       </div>
-                      <div className="companion-holo-typing-dots" aria-label="Miora is typing">
+                      <div className="companion-holo-typing-dots" aria-label="AANCHAL is typing">
                         <span className="companion-typing-dot" />
                         <span className="companion-typing-dot" />
                         <span className="companion-typing-dot" />
@@ -1327,12 +1326,12 @@ export function AiAssistantScreen() {
                     <div className="companion-holo-live-reply">
                       {activeBotReply.isEmergency && (
                         <div className="companion-emergency-alert-banner">
-                          <span>🚨 Urgent Crisis Support Helpline</span>
+                          <span>Urgent Crisis Support Helpline</span>
                         </div>
                       )}
 
                       <div className="companion-holo-reply-head">
-                        <span className="companion-holo-reply-speaker">Miora AI</span>
+                        <span className="companion-holo-reply-speaker">AANCHAL AI</span>
                         {isSpeaking && (
                           <span className="companion-holo-reply-state-pill is-speaking">
                             Speaking...
@@ -1351,7 +1350,7 @@ export function AiAssistantScreen() {
                         {screeningActive && currentQuestionIdx < screeningQuestions.length && (
                           <div className="companion-holo-epds-inline" data-testid="active-screening-box">
                             <div className="companion-screening-top">
-                              <span className="companion-screening-badge">📋 EPDS Screening</span>
+                              <span className="companion-screening-badge">EPDS Screening</span>
                               <span className="companion-screening-counter">
                                 Question {currentQuestionIdx + 1} of 10
                               </span>
@@ -1586,7 +1585,7 @@ export function AiAssistantScreen() {
                 className="companion-prompt-chip is-epds-chip"
                 onClick={() => startEPDSScreening()}
               >
-                <span>📋 Take EPDS Screening</span>
+                <span>Take EPDS Screening</span>
               </button>
             </div>
 
@@ -1648,7 +1647,7 @@ export function AiAssistantScreen() {
                 placeholder="Ask me anything about your maternal well-being..."
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                aria-label="Message Miora AI"
+                aria-label="Message AANCHAL AI"
               />
 
               <button
@@ -1677,7 +1676,7 @@ export function AiAssistantScreen() {
             <div className="companion-history-head">
               <div>
                 <h2 className="companion-history-title">Conversation History</h2>
-                <span className="companion-history-sub">Saved privately with Miora AI</span>
+                <span className="companion-history-sub">Saved privately with AANCHAL AI</span>
               </div>
               <button
                 type="button"

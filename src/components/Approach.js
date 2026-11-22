@@ -5,7 +5,7 @@ export const Approach = () => `
     <div class="shell approach-grid">
       <div class="section-intro reveal">
         <div class="eyebrow">OUR APPROACH <span aria-hidden="true"></span></div>
-        <h2>How <em>Miora</em><br />Works</h2>
+        <h2>How <em>AANCHAL</em><br />Works</h2>
         <p>A simple, supportive journey from listening to care.</p>
       </div>
       <div class="steps reveal reveal-delay-1">
@@ -43,8 +43,8 @@ export const Approach = () => `
       </div>
       <div class="orb-details">
         <div class="orb-kicker">INTERACTIVE 3D EMPATHY CORE</div>
-        <h3>See how Miora adapts to every stage of care</h3>
-        <p class="orb-summary">Move your cursor over the 3D companion orb or select a stage below to preview how Miora shifts from gentle listening to personalized support.</p>
+        <h3>See how AANCHAL adapts to every stage of care</h3>
+        <p class="orb-summary">Move your cursor over the 3D companion orb or select a stage below to preview how AANCHAL shifts from gentle listening to personalized support.</p>
         <div class="orb-controls" role="group" aria-label="Companion stage preview">
           <button type="button" class="orb-mode-btn is-active" data-orb-mode="share" aria-pressed="true">
             <span class="orb-mode-num">01</span>

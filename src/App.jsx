@@ -2,6 +2,13 @@ import React from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { LandingPageRoute } from './LandingPageRoute.jsx';
 import { LoginScreen } from './LoginScreen.jsx';
+import { HospitalLoginScreen } from './HospitalLoginScreen.jsx';
+import { HospitalLayout } from './hospital/HospitalLayout.jsx';
+import { HospitalDashboardPage } from './hospital/HospitalDashboardPage.jsx';
+import { HospitalAppointmentsPage } from './hospital/HospitalAppointmentsPage.jsx';
+import { HospitalAppointmentDetailPage } from './hospital/HospitalAppointmentDetailPage.jsx';
+import { HospitalReportsPage } from './hospital/HospitalReportsPage.jsx';
+import { HospitalReportDetailPage } from './hospital/HospitalReportDetailPage.jsx';
 import { CreateAccountScreen } from './CreateAccountScreen.jsx';
 import { PatientLayout } from './patient/layout/PatientLayout.jsx';
 import { PatientScreeningPage } from './patient/pages/PatientScreeningPage.jsx';
@@ -9,6 +16,8 @@ import { ScreeningResultsPage } from './patient/pages/ScreeningResultsPage.jsx';
 import { MedicalHistoryScreen } from './patient/pages/MedicalHistoryScreen.jsx';
 import { AiAssistantScreen } from './patient/pages/AiAssistantScreen.jsx';
 import { ConnectDoctorPage } from './patient/pages/ConnectDoctorPage.jsx';
+import { FindDoctorPage } from './patient/pages/FindDoctorPage.jsx';
+import { AppointmentBookingPage } from './patient/pages/AppointmentBookingPage.jsx';
 import { PatientHomePage } from './patient/pages/PatientHomePage.jsx';
 import { PatientReportsPage } from './patient/pages/PatientReportsPage.jsx';
 import { CareSuggestionsPage } from './patient/pages/CareSuggestionsPage.jsx';
@@ -26,6 +35,7 @@ import { ResultsPage } from './dashboard/pages/ResultsPage.jsx';
 import { DiscordancePage } from './dashboard/pages/DiscordancePage.jsx';
 import { InsightsCarePage } from './dashboard/pages/InsightsCarePage.jsx';
 import { ClinicalReviewPage } from './dashboard/pages/ClinicalReviewPage.jsx';
+import { CreateConsultationReportPage } from './dashboard/pages/CreateConsultationReportPage.jsx';
 
 export function App() {
   return (
@@ -39,6 +49,17 @@ export function App() {
             <Route path="/create-account" element={<CreateAccountScreen />} />
             <Route path="/register" element={<CreateAccountScreen />} />
             <Route path="/signup" element={<Navigate to="/create-account" replace />} />
+
+            {/* Hospital Portal Routes */}
+            <Route path="/hospital-login" element={<Navigate to="/login?portal=hospital" replace />} />
+            <Route path="/hospital" element={<Navigate to="/hospital/dashboard" replace />} />
+            <Route element={<HospitalLayout />}>
+              <Route path="/hospital/dashboard" element={<HospitalDashboardPage />} />
+              <Route path="/hospital/appointments" element={<HospitalAppointmentsPage />} />
+              <Route path="/hospital/appointments/:id" element={<HospitalAppointmentDetailPage />} />
+              <Route path="/hospital/reports" element={<HospitalReportsPage />} />
+              <Route path="/hospital/reports/:id" element={<HospitalReportDetailPage />} />
+            </Route>
 
             {/* Patient Portal Routes with Unified Patient Shell */}
             <Route element={<PatientLayout />}>
@@ -88,6 +109,11 @@ export function App() {
               <Route path="/care-suggestions" element={<CareSuggestionsPage />} />
               <Route path="/patient/suggestions" element={<Navigate to="/patient/care-suggestions" replace />} />
 
+              {/* Doctor Discovery & Appointment Booking (frontend demo) */}
+              <Route path="/patient/find-doctor" element={<FindDoctorPage />} />
+              <Route path="/patient/book-appointment" element={<AppointmentBookingPage />} />
+
+              {/* Existing consultation page — preserved, route unchanged */}
               <Route path="/patient/connect-doctor" element={<ConnectDoctorPage />} />
               <Route path="/connect-doctor" element={<ConnectDoctorPage />} />
               <Route path="/patient/connect" element={<Navigate to="/patient/connect-doctor" replace />} />
@@ -95,8 +121,8 @@ export function App() {
 
             {/* Clinician Dashboard */}
             <Route element={<DashboardLayout />}>
-              <Route path="/dashboard" element={<CommandCenterPage />} />
-              <Route path="/command-center" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<Navigate to="/mothers" replace />} />
+              <Route path="/command-center" element={<Navigate to="/mothers" replace />} />
               <Route path="/mothers" element={<MothersCasesPage />} />
               <Route path="/mothers/:motherId" element={<MothersCasesPage />} />
               <Route path="/live-screening" element={<LiveScreeningPage />} />
@@ -107,6 +133,8 @@ export function App() {
               <Route path="/discordance/:motherId" element={<DiscordancePage />} />
               <Route path="/clinical-review" element={<ClinicalReviewPage />} />
               <Route path="/clinical-review/:motherId" element={<ClinicalReviewPage />} />
+              <Route path="/create-consultation-report" element={<CreateConsultationReportPage />} />
+              <Route path="/consultation-report" element={<CreateConsultationReportPage />} />
               <Route path="/insights" element={<InsightsCarePage />} />
               <Route path="/insights/:motherId" element={<InsightsCarePage />} />
             </Route>

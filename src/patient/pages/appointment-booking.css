@@ -1,0 +1,356 @@
+/* ==========================================================================
+   AANCHAL — Appointment Booking & Confirmation  ·  Patient Portal
+   ========================================================================== */
+
+/* ── Page shell ──────────────────────────────────────────────────────────── */
+.appt-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+}
+
+/* ── Demo disclaimer banner ──────────────────────────────────────────────── */
+.appt-demo-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  background: rgba(254, 243, 199, 0.55);
+  border: 1px solid #fcd34d;
+  border-radius: 12px;
+  font-size: 12.5px;
+  color: #7a5900;
+  line-height: 1.5;
+}
+
+.appt-demo-banner strong { color: #6b4f00; }
+
+/* ── Doctor summary card ─────────────────────────────────────────────────── */
+.appt-doctor-summary {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.appt-doctor-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--patient-primary-gradient);
+  color: white;
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(217, 60, 117, 0.25);
+}
+
+.appt-doctor-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.appt-doctor-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--patient-ink);
+  margin: 0 0 2px;
+}
+
+.appt-doctor-spec {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--patient-brand-rose-deep);
+  margin: 0 0 4px;
+}
+
+.appt-doctor-location {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--patient-muted);
+  line-height: 1.4;
+}
+
+.appt-doctor-location-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--patient-subtle);
+}
+
+/* ── Booking form layout ─────────────────────────────────────────────────── */
+.appt-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 680px) {
+  .appt-form-grid { grid-template-columns: 1fr; }
+}
+
+.appt-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.appt-form-group.appt-full-width {
+  grid-column: 1 / -1;
+}
+
+.appt-form-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--patient-ink-secondary);
+}
+
+.appt-form-label .appt-required {
+  color: var(--patient-brand-rose);
+  margin-left: 2px;
+}
+
+.appt-form-input,
+.appt-form-select,
+.appt-form-textarea {
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--patient-ink);
+  background: var(--patient-surface-subtle);
+  border: 1.5px solid var(--patient-blush-border);
+  border-radius: 11px;
+  outline: none;
+  transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.appt-form-input,
+.appt-form-select {
+  height: 44px;
+  padding: 0 14px;
+}
+
+.appt-form-textarea {
+  padding: 12px 14px;
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.5;
+}
+
+.appt-form-input:focus,
+.appt-form-select:focus,
+.appt-form-textarea:focus {
+  border-color: var(--patient-brand-rose);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(217, 60, 117, 0.1);
+}
+
+.appt-form-input:disabled,
+.appt-form-select:disabled {
+  color: var(--patient-muted);
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+/* Time slot grid */
+.appt-timeslot-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.appt-timeslot-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border-radius: var(--patient-radius-pill);
+  background: var(--patient-surface-subtle);
+  border: 1.5px solid var(--patient-blush-border);
+  color: var(--patient-ink-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: var(--patient-transition);
+}
+
+.appt-timeslot-btn:hover {
+  border-color: var(--patient-brand-rose);
+  color: var(--patient-brand-rose-deep);
+  background: var(--patient-blush-soft);
+}
+
+.appt-timeslot-btn.is-selected {
+  background: var(--patient-primary-gradient);
+  border-color: transparent;
+  color: white;
+  box-shadow: 0 3px 10px rgba(217, 60, 117, 0.3);
+}
+
+/* Patient info prefill note */
+.appt-prefill-note {
+  font-size: 12px;
+  color: var(--patient-subtle);
+  margin-top: 2px;
+}
+
+/* Form section heading */
+.appt-section-heading {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--patient-ink);
+  margin: 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--patient-blush-border);
+  grid-column: 1 / -1;
+}
+
+/* Actions row */
+.appt-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+}
+
+/* ── Confirmation screen ─────────────────────────────────────────────────── */
+.appt-confirmation-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 12px 0;
+}
+
+.appt-confirm-icon-wrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--patient-success-bg);
+  border: 2px solid var(--patient-success-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--patient-success-text);
+  animation: fd-fadein 300ms ease;
+}
+
+.appt-confirm-heading {
+  font-family: var(--patient-font-serif);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--patient-ink);
+  margin: 0;
+  text-align: center;
+  letter-spacing: -0.3px;
+}
+
+.appt-confirm-sub {
+  font-size: 14px;
+  color: var(--patient-muted);
+  text-align: center;
+  margin: -12px 0 0;
+  line-height: 1.6;
+}
+
+/* Summary card */
+.appt-confirm-summary {
+  width: 100%;
+  max-width: 480px;
+  background: var(--patient-surface-subtle);
+  border: 1px solid var(--patient-blush-border);
+  border-radius: var(--patient-radius-card);
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.appt-confirm-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 13.5px;
+}
+
+.appt-confirm-row-label {
+  font-weight: 600;
+  color: var(--patient-ink-secondary);
+  min-width: 110px;
+  flex-shrink: 0;
+}
+
+.appt-confirm-row-value {
+  color: var(--patient-ink);
+  flex: 1;
+  min-width: 0;
+  line-height: 1.4;
+}
+
+.appt-confirm-divider {
+  height: 1px;
+  background: var(--patient-blush-border);
+}
+
+/* Reference ID */
+.appt-ref-id {
+  font-family: monospace;
+  font-size: 12.5px;
+  background: var(--patient-blush-pill);
+  color: var(--patient-brand-rose-deep);
+  padding: 2px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(217, 60, 117, 0.15);
+  display: inline-block;
+}
+
+/* Demo disclaimer on confirmation */
+.appt-confirm-demo-note {
+  width: 100%;
+  max-width: 480px;
+  padding: 12px 14px;
+  background: rgba(254, 243, 199, 0.5);
+  border: 1px solid #fcd34d;
+  border-radius: 10px;
+  font-size: 12px;
+  color: #7a5900;
+  line-height: 1.55;
+  text-align: center;
+}
+
+/* Error state */
+.appt-error-state {
+  text-align: center;
+  padding: 56px 24px;
+  color: var(--patient-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.appt-error-state h3 {
+  margin: 0;
+  color: var(--patient-ink);
+  font-size: 17px;
+}
+
+/* Loading state */
+.appt-loading {
+  text-align: center;
+  padding: 48px;
+  color: var(--patient-subtle);
+}
+
+/* Responsive */
+@media (max-width: 540px) {
+  .appt-confirm-row { flex-direction: column; gap: 2px; }
+  .appt-confirm-row-label { min-width: auto; }
+}

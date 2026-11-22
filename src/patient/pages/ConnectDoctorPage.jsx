@@ -17,7 +17,7 @@ export function ConnectDoctorPage() {
         time: '11:00 AM',
         status: 'Scheduled',
         type: 'Telehealth Video',
-        clinic: 'Miora Maternal Care Unit',
+        clinic: 'AANCHAL Maternal Care Unit',
       },
       {
         id: 'c-100',
@@ -27,7 +27,7 @@ export function ConnectDoctorPage() {
         time: '02:30 PM',
         status: 'Completed',
         type: 'Audio Consult',
-        clinic: 'Miora Maternal Care Unit',
+        clinic: 'AANCHAL Maternal Care Unit',
       },
     ]
   );
@@ -61,7 +61,7 @@ export function ConnectDoctorPage() {
         date: bookingDate,
         time: bookingTime,
         type: selectedType,
-        clinic: 'Miora Maternal Care Unit',
+        clinic: 'AANCHAL Maternal Care Unit',
         reason: bookingReason,
       })
         .then((booked) => {
@@ -81,7 +81,7 @@ export function ConnectDoctorPage() {
         time: bookingTime,
         status: 'Scheduled',
         type: selectedType,
-        clinic: 'Miora Maternal Care Unit',
+        clinic: 'AANCHAL Maternal Care Unit',
       };
       setConsultationsList((prev) => [newConsultation, ...prev]);
     }
@@ -143,7 +143,7 @@ export function ConnectDoctorPage() {
         <div className="connect-disclaimer-content">
           <strong className="connect-disclaimer-title">Telehealth Simulation Notice</strong>
           <p className="connect-disclaimer-text">
-            All virtual consultations, video feeds, and clinical session notes within Miora are end-to-end encrypted and HIPAA-compliant. Scheduled sessions are securely mirrored to your clinical care plan.
+            All virtual consultations, video feeds, and clinical session notes within AANCHAL are end-to-end encrypted and HIPAA-compliant. Scheduled sessions are securely mirrored to your clinical care plan.
           </p>
         </div>
       </div>
@@ -186,7 +186,7 @@ export function ConnectDoctorPage() {
                   Dr. Elena Rostova, MD
                 </h2>
                 <p className="connect-doctor-designation">
-                  Perinatal Psychiatry Lead &bull; Miora Maternal Care Unit
+                  Perinatal Psychiatry Lead &bull; AANCHAL Maternal Care Unit
                 </p>
               </div>
 
@@ -240,11 +240,17 @@ export function ConnectDoctorPage() {
 
         <div className="connect-consultations-list">
           {consultationsList.map((c) => {
-            const isScheduled = c.status.toLowerCase() === 'scheduled';
+            const rawStatus = (c.status || '').toLowerCase();
+            const isConfirmed = rawStatus === 'confirmed' || rawStatus === 'scheduled';
+            const isScheduled = isConfirmed;
+            const isPending = rawStatus.includes('pending');
+            const isRescheduled = rawStatus.includes('propos') || rawStatus.includes('reschedul');
+            const badgeClass = isConfirmed ? 'status-confirmed' : isPending ? 'status-pending' : isRescheduled ? 'status-rescheduled' : 'status-completed';
+
             return (
-              <div key={c.id} className={`connect-consultation-row ${isScheduled ? 'is-scheduled' : 'is-completed'}`}>
+              <div key={c.id} className={`connect-consultation-row ${isConfirmed ? 'is-scheduled' : ''}`}>
                 <div className="connect-row-icon-col" aria-hidden="true">
-                  <div className={`connect-row-icon-pill ${isScheduled ? 'is-active-pill' : ''}`}>
+                  <div className={`connect-row-icon-pill ${isConfirmed ? 'is-active-pill' : ''}`}>
                     <PatientIcon name="connect-doctor" size={18} />
                   </div>
                 </div>
@@ -252,7 +258,7 @@ export function ConnectDoctorPage() {
                 <div className="connect-row-info-col">
                   <div className="connect-row-top">
                     <strong className="connect-row-type">{c.type}</strong>
-                    <span className={`connect-status-badge ${isScheduled ? 'status-scheduled' : 'status-completed'}`}>
+                    <span className={`connect-status-badge ${badgeClass}`}>
                       {c.status}
                     </span>
                   </div>

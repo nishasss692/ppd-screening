@@ -30,6 +30,12 @@ const NAV_ITEMS = [
     icon: 'ai-assistant',
   },
   {
+    to: '/patient/find-doctor',
+    matchPaths: ['/patient/find-doctor', '/patient/book-appointment'],
+    label: 'Find a Doctor',
+    icon: 'connect-doctor',
+  },
+  {
     to: '/patient/connect-doctor',
     matchPaths: ['/patient/connect-doctor', '/connect-doctor'],
     label: 'Connect to a Doctor',
@@ -110,7 +116,7 @@ export function PatientSidebar({ isMobileOpen, onCloseMobile }) {
               to="/"
               className="patient-brand-link"
               onClick={onCloseMobile}
-              aria-label="Miora Home"
+              aria-label="AANCHAL Home"
             >
               <BrandWordmark />
             </Link>

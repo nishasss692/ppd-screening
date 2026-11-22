@@ -67,7 +67,7 @@ export function PatientScreeningPage() {
                 <polyline points="2.5 6 4.8 8.5 9.5 3.5" />
               </svg>
             </div>
-            <span className="tracker-label">Medical History</span>
+            <span className="tracker-label">Patient Details</span>
           </NavLink>
 
           <div className="tracker-line is-active-line" aria-hidden="true" />

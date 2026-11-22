@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PatientIcon } from '../PatientIcons.jsx';
 import { usePatient } from '../../context/PatientContext.jsx';
 
 export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
+  const navigate = useNavigate();
   const { patient, screening, downloadReport, downloadToast } = usePatient();
 
   const [storedAiSession, setStoredAiSession] = useState(null);
@@ -38,8 +40,7 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
         </div>
         <h2 className="patient-page-heading" style={{ fontSize: '20px' }}>Assessment Portfolio Overview</h2>
         <p className="patient-page-subheading">
-          Unified overview of your multimodal AI screening, Edinburgh Postnatal Depression Scale (EPDS) score,
-          and clinical care summaries.
+          Unified overview of your AI screening, questionnaire score, and clinical care summaries.
         </p>
       </section>
 
@@ -120,7 +121,7 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
                 <PatientIcon name="arrow-right" size={15} />
               </button>
             ) : (
-              <span className="result-note-text">✓ Video response captured for clinical evaluation</span>
+              <span className="result-note-text">Video response captured for clinical evaluation</span>
             )}
           </div>
         </section>
@@ -158,14 +159,14 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
                   </h4>
                   <small>Completed on: {epdsSubmittedDate}</small>
                   {storedEpds?.q10Alert && (
-                    <span className="epds-alert-pill">⚠️ Question 10 non-zero response flagged</span>
+                    <span className="epds-alert-pill">Question 10 non-zero response flagged</span>
                   )}
                 </div>
               </div>
 
               <p className="epds-result-expl">
-                The Edinburgh Postnatal Depression Scale is a clinical screening instrument (Cox et al. 1987)
-                designed to detect symptoms of depression. It does not replace a clinical diagnosis.
+                This screening instrument helps reflect emotional wellbeing and symptoms over the past week.
+                It does not replace a clinical consultation or diagnosis.
               </p>
             </div>
           ) : (
@@ -183,6 +184,103 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
           )}
         </section>
       </div>
+
+      {/* ── Doctor Consultation Recommendation Card (Always accessible, not gated on ML integration) ── */}
+      {(() => {
+        let category = 'pending';
+        if (hasEpds && epdsScore !== null) {
+          if (epdsScore >= 13) category = 'high';
+          else if (epdsScore >= 10) category = 'moderate';
+          else category = 'low';
+        }
+
+        const consultConfig = {
+          low: {
+            categoryLabel: 'Low Risk Category',
+            heading: 'Your Current Screening Result',
+            message:
+              'Your current screening session shows low-risk indicators. If you are still concerned about your emotional wellbeing, you can consult a healthcare professional.',
+            buttonLabel: 'Consult a Doctor',
+            badgeClass: 'is-low',
+            cardClass: 'is-low',
+          },
+          moderate: {
+            categoryLabel: 'Moderate Risk Category',
+            heading: 'Professional Consultation Recommended',
+            message:
+              'Your screening session shows indicators that may benefit from further professional assessment.',
+            buttonLabel: 'Find a Doctor',
+            badgeClass: 'is-moderate',
+            cardClass: 'is-moderate',
+          },
+          high: {
+            categoryLabel: 'High Risk Category',
+            heading: 'Professional Consultation Recommended',
+            message:
+              'Your screening session indicates that professional assessment may be helpful. We recommend consulting a qualified healthcare professional.',
+            buttonLabel: 'Find a Doctor',
+            badgeClass: 'is-high',
+            cardClass: 'is-high',
+          },
+          pending: {
+            categoryLabel: 'Doctor Consultation Available',
+            heading: 'Consult a Healthcare Professional',
+            message:
+              'AI multimodal analysis is currently awaiting model integration and pending final clinical scoring. You can explore verified specialists, clinics, and hospital care teams at any time without waiting for AI processing.',
+            buttonLabel: 'Find a Doctor',
+            badgeClass: 'is-pending',
+            cardClass: 'is-pending',
+          },
+        };
+
+        const config = consultConfig[category];
+
+        return (
+          <section
+            className={`patient-card results-consult-card ${config.cardClass}`}
+            aria-label="Doctor Consultation Recommendation"
+            data-testid="results-consultation-card"
+          >
+            <div className="results-consult-inner">
+              <div className={`results-consult-icon-pill ${config.badgeClass}`} aria-hidden="true">
+                <PatientIcon name="stethoscope" size={24} />
+              </div>
+
+              <div className="results-consult-content">
+                <div className="results-consult-top-meta">
+                  <span className={`results-consult-pill ${config.badgeClass}`}>
+                    {config.categoryLabel}
+                  </span>
+                  <span className="results-consult-ml-notice">
+                    AI models awaiting integration • Consultation permanently accessible
+                  </span>
+                </div>
+
+                <h3 className="results-consult-heading">{config.heading}</h3>
+                <p className="results-consult-message">{config.message}</p>
+
+                <p className="results-consult-note">
+                  <strong>Important:</strong> Screening is not a clinical diagnosis and does not replace medical advice. Always consult a qualified healthcare provider for clinical evaluation.
+                </p>
+
+                <div className="results-consult-actions">
+                  <button
+                    type="button"
+                    className="patient-btn-primary results-consult-cta"
+                    onClick={() => navigate('/patient/find-doctor')}
+                    data-testid="consult-doctor-btn"
+                    aria-label={`${config.buttonLabel} — navigate to doctor directory`}
+                  >
+                    <PatientIcon name="stethoscope" size={16} />
+                    <span>{config.buttonLabel}</span>
+                    <PatientIcon name="arrow-right" size={16} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        );
+      })()}
 
       {/* Previous Assessments & Available Reports */}
       <section className="patient-card results-reports-table-card" aria-label="Assessment History & Reports">

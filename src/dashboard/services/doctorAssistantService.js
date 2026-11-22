@@ -53,7 +53,7 @@ export const FALLBACK_DOCTOR_KNOWLEDGE = {
     '• Clinical Review (/clinical-review): Final clinical sign-off.'
   ),
   default: (
-    'Miora Clinician Copilot provides guidance on dashboard navigation and standard EPDS instrument interpretation. ' +
+    'AANCHAL Clinician Copilot provides guidance on clinical workspace navigation and standard EPDS instrument interpretation. ' +
     'This assistant is strictly non-diagnostic and does not process patient identifiable data or make treatment decisions.'
   ),
 };
@@ -75,7 +75,7 @@ export function screenDoctorAssistantPrompt(prompt) {
   if (diagnosticPatterns.some((p) => p.test(clean))) {
     return {
       allowed: false,
-      reason: 'Non-Diagnostic Clinical Boundary Notice: The Miora Clinician Copilot cannot diagnose patients or prescribe medications.',
+      reason: 'Non-Diagnostic Clinical Boundary Notice: The AANCHAL Clinician Copilot cannot diagnose patients or prescribe medications.',
     };
   }
 
@@ -180,7 +180,7 @@ export async function sendDoctorAssistantChat({ message, history = [] }, fetchIm
       model: null,
       is_diagnostic: false,
       disclaimer:
-        'Miora Clinician Copilot provides workflow and instrument navigation only. Strictly non-diagnostic. ' +
+        'AANCHAL Clinician Copilot provides workflow and instrument navigation only. Strictly non-diagnostic. ' +
         'Does not make clinical decisions, diagnose patients, or prescribe treatments.',
     };
   }

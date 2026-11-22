@@ -161,7 +161,7 @@ export function getBestNaturalVoice(voiceLocale) {
  */
 export const LOCALIZED_Q10_CRISIS_MESSAGES = {
   en: {
-    title: '🚨 CRITICAL SAFETY ESCALATION NOTICE',
+    title: 'CRITICAL SAFETY ESCALATION NOTICE',
     body:
       'Your safety and well-being are paramount. You noted having thoughts of self-harm. ' +
       'Please know that you are not alone, and immediate compassionate support is available right now:\n\n' +
@@ -172,7 +172,7 @@ export const LOCALIZED_Q10_CRISIS_MESSAGES = {
     helpline: 'Tele-MANAS: 14416 / 1800-891-4416',
   },
   hi: {
-    title: '🚨 आपातकालीन सुरक्षा सूचना (Safety Escalation)',
+    title: 'आपातकालीन सुरक्षा सूचना (Safety Escalation)',
     body:
       'आपकी सुरक्षा और भलाई सर्वोपरि है। आपने स्वयं को नुकसान पहुँचाने के विचार व्यक्त किए हैं। ' +
       'कृपया जानें कि आप अकेली नहीं हैं, और तुरंत दयालु सहायता उपलब्ध है:\n\n' +
@@ -183,7 +183,7 @@ export const LOCALIZED_Q10_CRISIS_MESSAGES = {
     helpline: 'टेली-मानस: 14416 / 1800-891-4416',
   },
   kn: {
-    title: '🚨 ತುರ್ತು ಸುರಕ್ಷತಾ ಪ್ರಕಟಣೆ (Safety Escalation)',
+    title: 'ತುರ್ತು ಸುರಕ್ಷತಾ ಪ್ರಕಟಣೆ (Safety Escalation)',
     body:
       'ನಿಮ್ಮ ಸುರಕ್ಷತೆ ಅತ್ಯಂತ ಮಹತ್ವದ್ದಾಗಿದೆ. ನೀವು ಸ್ವಯಂ-ಹಾನಿಯ ಆಲೋಚನೆಗಳನ್ನು ಹಂಚಿಕೊಂಡಿದ್ದೀರಿ. ' +
       'ದಯವಿಟ್ಟು ತಿಳಿಯಿರಿ ನೀವು ಒಬ್ಬಂಟಿಯಲ್ಲ, ತಕ್ಷಣದ ಕರುಣಾಪೂರ್ಣ ನೆರವು ಲಭ್ಯವಿದೆ:\n\n' +
@@ -194,7 +194,7 @@ export const LOCALIZED_Q10_CRISIS_MESSAGES = {
     helpline: 'ಟೆಲಿ-ಮಾನಸ್: 14416 / 1800-891-4416',
   },
   ta: {
-    title: '🚨 அவசர பாதுகாப்பு அறிவிப்பு (Safety Escalation)',
+    title: 'அவசர பாதுகாப்பு அறிவிப்பு (Safety Escalation)',
     body:
       'உங்கள் பாதுகாப்பு மிக முக்கியமானது. உங்களுக்கு சுய தீங்கு விளைவிக்கும் எண்ணங்கள் தோன்றியுள்ளன. ' +
       'நீங்கள் தனியாக இல்லை என்பதை உணருங்கள், உடனடி ஆதரவு தயாராக உள்ளது:\n\n' +
@@ -205,7 +205,7 @@ export const LOCALIZED_Q10_CRISIS_MESSAGES = {
     helpline: 'டெலி-மானாஸ்: 14416 / 1800-891-4416',
   },
   te: {
-    title: '🚨 అత్యవసర భద్రతా నోటీసు (Safety Escalation)',
+    title: 'అత్యవసర భద్రతా నోటీసు (Safety Escalation)',
     body:
       'మీ భద్రత మరియు ఆరోగ్యం ఎంతో ముఖ్యం. మీకు హాని కలిగించే ఆలోచనలు వస్తున్నాయని తెలిపారు. ' +
       'మీరు ఒంటరిగా లేరని తెలుసుకోండి, వెంటనే సహాయం అందుబాటులో ఉంది:\n\n' +
@@ -216,7 +216,7 @@ export const LOCALIZED_Q10_CRISIS_MESSAGES = {
     helpline: 'టెలి-మానస్: 14416 / 1800-891-4416',
   },
   ml: {
-    title: '🚨 അടിയന്തര സുരക്ഷാ അറിയിപ്പ് (Safety Escalation)',
+    title: 'അടിയന്തര സുരക്ഷാ അറിയിപ്പ് (Safety Escalation)',
     body:
       'നിങ്ങളുടെ സുരക്ഷ പ്രധാനമാണ്. സ്വയം ഉപദ്രവിക്കാനുള്ള ചിന്തകൾ ഉള്ളതായി നിങ്ങൾ രേഖപ്പെടുത്തിയിട്ടുണ്ട്. ' +
       'നിങ്ങൾ തനിച്ചല്ലെന്ന് ഓർക്കുക, അടിയന്തര സഹായം ലഭ്യമാണ്:\n\n' +
@@ -227,7 +227,7 @@ export const LOCALIZED_Q10_CRISIS_MESSAGES = {
     helpline: 'ടെലി-മാനസ്: 14416 / 1800-891-4416',
   },
   bn: {
-    title: '🚨 জরুরি নিরাপত্তা বিজ্ঞপ্তি (Safety Escalation)',
+    title: 'জরুরি নিরাপত্তা বিজ্ঞপ্তি (Safety Escalation)',
     body:
       'আপনার নিরাপত্তা ও সুস্থতা সর্বাধিক গুরুত্বপূর্ণ। আপনি নিজেকে আঘাত করার চিন্তার কথা জানিয়েছেন। ' +
       'জানবেন আপনি একা নন, এবং অবিলম্বে সহমর্মী সহায়তা প্রস্তুত রয়েছে:\n\n' +
@@ -238,7 +238,7 @@ export const LOCALIZED_Q10_CRISIS_MESSAGES = {
     helpline: 'টেলি-মানস: 14416 / 1800-891-4416',
   },
   mr: {
-    title: '🚨 आणीबाणी सुरक्षा सूचना (Safety Escalation)',
+    title: 'आणीबाणी सुरक्षा सूचना (Safety Escalation)',
     body:
       'तुमची सुरक्षितता अत्यंत महत्त्वाची आहे. तुम्हाला स्वतःला दुखावण्याचे विचार येत आहेत. ' +
       'तुम्ही एकट्या नाही आहात आणि लगेच मदत उपलब्ध आहे:\n\n' +

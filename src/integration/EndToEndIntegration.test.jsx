@@ -176,11 +176,11 @@ describe('MIORA Phase 7 — End-to-End Application Integration', () => {
     const copilotToggle = screen.getByRole('button', { name: /Clinician AI Assistant/i });
     fireEvent.click(copilotToggle);
 
-    expect((await screen.findAllByText(/Miora Clinical Copilot/i)).length).toBeGreaterThanOrEqual(1);
+    expect((await screen.findAllByText(/(AANCHAL|Miora) Clinical Copilot/i)).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/Strictly Non-Diagnostic/i)).toBeInTheDocument();
 
     // 3. Ask Copilot a workflow question
-    const input = screen.getByRole('textbox', { name: /Message Miora Clinician Copilot/i });
+    const input = screen.getByRole('textbox', { name: /Message (AANCHAL|Miora) Clinician Copilot/i });
     const sendBtn = screen.getByRole('button', { name: /Send query/i });
 
     fireEvent.change(input, { target: { value: 'How are priority cases calculated?' } });

@@ -8,13 +8,12 @@ import { RiskBadge, StatusBadge } from './Badges.jsx';
 import { DoctorAssistantPopover } from './DoctorAssistantPopover.jsx';
 
 const NAV_ITEMS = [
-  { label: 'Dashboard', to: '/dashboard' },
   { label: 'Mothers & Cases', to: '/mothers' },
   { label: 'Screening', to: '/live-screening', matchPaths: ['/live-screening', '/upload-analyze'] },
   { label: 'Results', to: '/results' },
   { label: 'Discordance', to: '/discordance' },
   { label: 'Insights & Care', to: '/insights' },
-  { label: 'Clinical Review', to: '/clinical-review' },
+  { label: 'Clinical Review', to: '/clinical-review', matchPaths: ['/clinical-review', '/create-consultation-report', '/consultation-report'] },
 ];
 
 export function TopNav() {
@@ -77,9 +76,9 @@ export function TopNav() {
       <div className="dash-topnav-inner">
         <div className="dash-brand-group">
           <Link
-            to="/dashboard"
+            to="/mothers"
             className="dash-brand-link"
-            aria-label="Miora Dashboard"
+            aria-label="AANCHAL Clinician Portal"
           >
             <BrandWordmark />
           </Link>
@@ -112,7 +111,7 @@ export function TopNav() {
               aria-label="Clinician AI Assistant"
               aria-expanded={openMenu === 'assistant'}
               onClick={() => setOpenMenu((prev) => (prev === 'assistant' ? null : 'assistant'))}
-              title="Miora Clinical Copilot"
+              title="AANCHAL Clinical Copilot"
             >
               <DashboardIcon name="sparkle" size={17} strokeWidth={1.8} />
             </button>
@@ -287,7 +286,7 @@ export function TopNav() {
                       navigate('/');
                     }}
                   >
-                    View Miora Landing Page
+                    View AANCHAL Landing Page
                   </button>
                   <button
                     type="button"

@@ -44,7 +44,7 @@ describe('Miora Components & Fixes', () => {
     const html = Proof();
     expect(html).toContain('id="about"');
     expect(html).toContain('<span class="eyebrow-label">WHY IT <em>MATTERS</em></span>');
-    expect(html).toContain('Why We Built Miora');
+    expect(html).toMatch(/Why We Built (Miora|AANCHAL)/);
     expect(html).not.toContain('Aishwarya');
     expect(html).not.toContain('<blockquote');
   });

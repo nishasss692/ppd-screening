@@ -88,13 +88,13 @@ export function PatientProfilePage() {
 
       {saveSuccess && (
         <div className="patient-notice-banner is-success">
-          ✓ Profile details updated and saved to PostgreSQL successfully.
+          Profile details updated and saved to PostgreSQL successfully.
         </div>
       )}
 
       {saveError && (
         <div className="patient-notice-banner is-error">
-          ✕ {saveError}
+          {saveError}
         </div>
       )}
 

@@ -180,7 +180,12 @@ class AppointmentBookRequest(BaseModel):
     """Appointment booking payload from Connect to a Doctor."""
 
     doctor_name: str = Field("Dr. Elena Rostova", description="Doctor name")
+    doctor_id: Optional[str] = Field(None, description="Selected Doctor ID (e.g. 'DR-001')")
     role: str = Field("Perinatal Psychiatry Lead", description="Clinician designation")
+    hospital_id: Optional[str] = Field(None, description="Target Hospital ID (e.g. 'HOSP-001')")
+    hospital_name: Optional[str] = Field(None, description="Target Hospital display name")
+    hospital_location: Optional[str] = Field(None, description="Target Hospital address/city")
+    phone: Optional[str] = Field(None, description="Patient contact telephone number")
     date: str = Field(..., description="Target appointment date (e.g. '2026-11-25' or '25 Nov 2026')")
     time: str = Field("11:00 AM", description="Target appointment time")
     type: str = Field("Telehealth Video", description="Consultation format")
@@ -200,6 +205,14 @@ class AppointmentResponse(BaseModel):
     type: str
     clinic: str
     summary: Optional[str] = None
+    hospitalId: Optional[str] = None
+    hospitalName: Optional[str] = None
+    hospitalLocation: Optional[str] = None
+    proposedDate: Optional[str] = None
+    proposedTime: Optional[str] = None
+    assignedDoctorId: Optional[str] = None
+    assignedDoctorName: Optional[str] = None
+    responseNote: Optional[str] = None
 
 
 class NotificationItemResponse(BaseModel):

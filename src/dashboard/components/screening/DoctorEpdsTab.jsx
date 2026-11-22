@@ -57,23 +57,6 @@ export function DoctorEpdsTab({ defaultMotherId }) {
 
   return (
     <div className="doctor-epds-shell" aria-label="Clinician EPDS Overview">
-      {/* Clinician Overview Banner */}
-      <section className="dash-card doc-screening-intro-card">
-        <div className="doc-screening-intro-copy">
-          <div className="miora-dash-eyebrow">
-            <span>VALIDATED PERINATAL SCREENING INSTRUMENT</span>
-            <span className="miora-dash-eyebrow-line" aria-hidden="true" />
-          </div>
-          <h2 className="miora-dash-title" style={{ margin: '4px 0 8px 0', fontSize: '20px' }}>
-            EPDS Assessment — Clinician Oversight (Cox et al. 1987)
-          </h2>
-          <p className="miora-dash-subtitle" style={{ margin: 0, fontSize: '13.5px' }}>
-            Inspect validated 10-item self-report questionnaire scores, individual item choices, and safety-critical Question 10 alerts.
-            The EPDS is a screening instrument and does not establish a clinical diagnosis.
-          </p>
-        </div>
-      </section>
-
       {/* Patient EPDS Directory Table */}
       <section className="dash-card doc-screening-table-card" aria-label="Authorized Patients EPDS Directory">
         <div className="doc-table-header">
@@ -133,9 +116,9 @@ export function DoctorEpdsTab({ defaultMotherId }) {
                     </td>
                     <td>
                       {isQ10Flagged ? (
-                        <span className="doc-q10-pill is-flagged">⚠️ Non-zero (score 1)</span>
+                        <span className="doc-q10-pill is-flagged">Non-zero (score 1)</span>
                       ) : (
-                        <span className="doc-q10-pill is-clear">✓ Negative (0)</span>
+                        <span className="doc-q10-pill is-clear">Negative (0)</span>
                       )}
                     </td>
                     <td>
@@ -198,7 +181,7 @@ export function DoctorEpdsTab({ defaultMotherId }) {
           {/* Q10 Safety Alert if Triggered */}
           {(activeMother.epdsScore ?? 11) >= 13 && (
             <div className="patient-notice-banner is-error" role="alert" style={{ marginBottom: 20 }}>
-              <strong>⚠️ Question 10 Positive Safety Alert:</strong> Patient indicated a non-zero response ("Hardly ever" / score 1) to self-harm ideation. Immediate structured clinical evaluation mandated.
+              <strong>Question 10 Positive Safety Alert:</strong> Patient indicated a non-zero response ("Hardly ever" / score 1) to self-harm ideation. Immediate structured clinical evaluation mandated.
             </div>
           )}
 

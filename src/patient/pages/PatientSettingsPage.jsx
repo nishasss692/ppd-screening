@@ -74,7 +74,7 @@ export function PatientSettingsPage() {
 
       {saveSuccess && (
         <div className="patient-notice-banner is-success">
-          ✓ Preferences saved successfully to database.
+          Preferences saved successfully to database.
         </div>
       )}
 

@@ -204,9 +204,8 @@ export function EpdsTab({ onCompleted }) {
         {/* Instrument Clarification Disclaimer */}
         <div className="epds-disclaimer-box">
           <p>
-            <strong>Screening Instrument Notice:</strong> The Edinburgh Postnatal Depression Scale (EPDS, Cox et al. 1987)
-            is a standardized screening questionnaire to gauge emotional symptoms over the past 7 days.
-            It does <strong>not</strong> establish a clinical medical diagnosis. Only a qualified healthcare professional can make a clinical diagnosis.
+            <strong>Screening Instrument Notice:</strong> This questionnaire helps gauge emotional symptoms over the past 7 days.
+            It does <strong>not</strong> establish a clinical medical diagnosis. Only a qualified healthcare professional can provide a clinical diagnosis.
           </p>
         </div>
 
@@ -243,7 +242,7 @@ export function EpdsTab({ onCompleted }) {
 
         {submitError && (
           <div className="patient-notice-banner is-error" role="alert">
-            <span>⚠️ {submitError}</span>
+            <span>{submitError}</span>
           </div>
         )}
 
@@ -268,9 +267,9 @@ export function EpdsTab({ onCompleted }) {
                   <div className="epds-review-q">{q.question}</div>
                   <div className="epds-review-ans">
                     {chosen ? (
-                      <span className="chosen-ans-badge">✓ {chosen.label}</span>
+                      <span className="chosen-ans-badge">{chosen.label}</span>
                     ) : (
-                      <span className="missing-ans-badge">⚠️ Not answered</span>
+                      <span className="missing-ans-badge">Not answered</span>
                     )}
                   </div>
                 </div>

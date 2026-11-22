@@ -2125,3 +2125,185 @@
   margin-top: 2px;
 }
 
+/* ==========================================================================
+   Doctor Consultation Recommendation Card
+   Immediately below AI Screening & EPDS cards, above Assessment History
+   ========================================================================== */
+
+.results-consult-card {
+  margin-top: 24px;
+  margin-bottom: 24px;
+  padding: 24px 28px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #f2d9e0;
+  box-shadow: 0 4px 16px rgba(186, 30, 83, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.results-consult-card.is-low,
+.results-consult-card.consult-card-low {
+  border-left: 5px solid #10b981;
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+}
+
+.results-consult-card.is-moderate,
+.results-consult-card.consult-card-moderate {
+  border-left: 5px solid #f59e0b;
+  background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
+}
+
+.results-consult-card.is-high,
+.results-consult-card.consult-card-high {
+  border-left: 5px solid #ba1e53;
+  background: linear-gradient(135deg, #ffffff 0%, #fff1f2 100%);
+}
+
+.results-consult-card.is-pending,
+.results-consult-card.consult-card-pending {
+  border-left: 5px solid #6366f1;
+  background: linear-gradient(135deg, #ffffff 0%, #f5f3ff 100%);
+}
+
+.results-consult-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.results-consult-icon-pill {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.results-consult-icon-pill.is-low,
+.results-consult-icon-wrap.consult-icon-low {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.results-consult-icon-pill.is-moderate,
+.results-consult-icon-wrap.consult-icon-moderate {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.results-consult-icon-pill.is-high,
+.results-consult-icon-wrap.consult-icon-high {
+  background: #ffe4e6;
+  color: #ba1e53;
+}
+
+.results-consult-icon-pill.is-pending,
+.results-consult-icon-wrap.consult-icon-pending {
+  background: #ede9fe;
+  color: #4f46e5;
+}
+
+.results-consult-content,
+.results-consult-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.results-consult-top-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.results-consult-pill,
+.results-consult-category-pill {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 3px 10px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.results-consult-pill.is-low,
+.results-consult-category-pill.consult-card-low {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.results-consult-pill.is-moderate,
+.results-consult-category-pill.consult-card-moderate {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.results-consult-pill.is-high,
+.results-consult-category-pill.consult-card-high {
+  background: #ffe4e6;
+  color: #ba1e53;
+}
+
+.results-consult-pill.is-pending,
+.results-consult-category-pill.consult-card-pending {
+  background: #ede9fe;
+  color: #4f46e5;
+}
+
+.results-consult-ml-notice {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.results-consult-heading {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #2b1b22;
+  font-family: var(--patient-font-serif, "Playfair Display", Georgia, serif);
+}
+
+.results-consult-message {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  color: #4a3840;
+  line-height: 1.55;
+}
+
+.results-consult-note,
+.results-consult-disclaimer {
+  margin: 0 0 16px 0;
+  font-size: 12px;
+  color: #8d737e;
+  line-height: 1.45;
+}
+
+.results-consult-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.results-consult-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .results-consult-inner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+

@@ -145,7 +145,7 @@ export const INITIAL_CONSULTATIONS = [
     time: '11:00 AM',
     status: 'Scheduled',
     type: 'Telehealth Video',
-    clinic: 'Miora Maternal Care Unit',
+    clinic: 'AANCHAL Maternal Care Unit',
   },
   {
     id: 'c-100',
@@ -155,7 +155,7 @@ export const INITIAL_CONSULTATIONS = [
     time: '02:30 PM',
     status: 'Completed',
     type: 'Audio Consult',
-    clinic: 'Miora Maternal Care Unit',
+    clinic: 'AANCHAL Maternal Care Unit',
     summary: 'Reviewed postpartum baseline and sleep hygiene support.',
   },
 ];
@@ -428,7 +428,7 @@ export function PatientProvider({ children }) {
         time: appointmentData.time,
         status: 'Scheduled',
         type: appointmentData.type || 'Telehealth Video',
-        clinic: appointmentData.clinic || 'Miora Maternal Care Unit',
+        clinic: appointmentData.clinic || 'AANCHAL Maternal Care Unit',
         reason: appointmentData.reason,
       };
       setConsultations((prev) => [fallbackBooked, ...prev]);
@@ -471,12 +471,12 @@ export function PatientProvider({ children }) {
         try {
           blob = await downloadTranscriptTxtBlob(targetScreeningId);
         } catch {
-          blob = new Blob(['MIORA screening transcript'], { type: 'text/plain' });
+          blob = new Blob(['AANCHAL screening transcript'], { type: 'text/plain' });
         }
         if (!targetFilename.endsWith('.txt')) targetFilename += '.txt';
       } else {
         // Fallback for audio/video media if requested
-        blob = new Blob(['MIORA multimodal screening media recording'], { type: report.mimeType || 'application/octet-stream' });
+        blob = new Blob(['AANCHAL multimodal screening media recording'], { type: report.mimeType || 'application/octet-stream' });
       }
 
       if (typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {

@@ -345,6 +345,15 @@ export function ClinicalReviewPage({ reviewSubmitter = submitClinicalReview }) {
           <div className="miora-results-header-actions">
             <button
               type="button"
+              className="miora-cta-primary"
+              onClick={() => navigate(`/create-consultation-report?mother=${activeMother?.id || 'M-108'}`)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            >
+              <DashboardIcon name="fileText" size={15} />
+              <span>Create Consultation Report</span>
+            </button>
+            <button
+              type="button"
               className="miora-btn-secondary"
               onClick={() => setPreviousModalOpen(true)}
             >
