@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useClinicalData } from '../context/ClinicalContext.jsx';
-import { INITIAL_SCREENINGS } from '../data/mockClinicalData.js';
 import { DashboardIcon } from '../components/DashboardIcon.jsx';
 import {
   ClinicalInterpretationCard,
@@ -51,9 +50,6 @@ export function DiscordancePage() {
     if (selectedMotherId) {
       const ctxMatch = screenings.find((s) => s.motherId === selectedMotherId);
       if (ctxMatch) return ctxMatch;
-    }
-    if (screenings.length > INITIAL_SCREENINGS.length) {
-      return screenings[0];
     }
     return screenings.find((s) => s.motherId === 'M-108') || screenings[0] || null;
   }, [screenings, requestedMotherId, selectedMotherId]);
@@ -223,6 +219,17 @@ export function DiscordancePage() {
             </button>
           </div>
         </section>
+
+        {/* Empty State when no screening is available */}
+        {!activeScreening && (
+          <section className="miora-card" style={{ padding: '48px 24px', textAlign: 'center', marginTop: '16px' }}>
+            <DashboardIcon name="layers" size={36} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
+            <h3 style={{ margin: '0 0 8px', fontSize: '18px' }}>No Screening Sessions Available</h3>
+            <p style={{ margin: 0, color: 'var(--miora-muted)', fontSize: '14px' }}>
+              Complete a screening session in Live Screening or Upload &amp; Analyze to review cross-modal discordance.
+            </p>
+          </section>
+        )}
 
         {/* Patient Information Strip */}
         {activeScreening && (

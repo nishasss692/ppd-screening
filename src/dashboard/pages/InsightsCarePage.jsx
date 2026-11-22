@@ -10,7 +10,6 @@ import {
   YAxis,
 } from 'recharts';
 import { useClinicalData } from '../context/ClinicalContext.jsx';
-import { INITIAL_SCREENINGS } from '../data/mockClinicalData.js';
 import { DashboardIcon } from '../components/DashboardIcon.jsx';
 import { RiskBadge } from '../components/Badges.jsx';
 import {
@@ -83,9 +82,6 @@ export function InsightsCarePage() {
         screenings.find((s) => s.motherId.toLowerCase() === motherId.toLowerCase()) ||
         null
       );
-    }
-    if (screenings.length > INITIAL_SCREENINGS.length) {
-      return screenings[0];
     }
     return screenings.find((s) => s.motherId === 'M-108') || screenings[0] || null;
   }, [screenings, motherId]);
