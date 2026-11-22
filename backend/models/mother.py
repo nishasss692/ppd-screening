@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from backend.models.screening import Screening
     from backend.models.clinical_review import ClinicalReview
     from backend.models.care_plan import CarePlan
+    from backend.models.consultation_report import ConsultationReport
 
 
 class Mother(Base, TimestampMixin):
@@ -102,6 +103,12 @@ class Mother(Base, TimestampMixin):
         back_populates="mother",
         cascade="all, delete-orphan",
         order_by="desc(CarePlan.created_at)",
+    )
+    consultation_reports: Mapped[List["ConsultationReport"]] = relationship(
+        "ConsultationReport",
+        back_populates="mother",
+        cascade="all, delete-orphan",
+        order_by="desc(ConsultationReport.created_at)",
     )
 
     def __repr__(self) -> str:

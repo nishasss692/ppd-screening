@@ -17,7 +17,7 @@ export const Proof = () => `
           </picture>
         </div>
         <div class="quote-card">
-          <span class="spotlight-kicker">Why We Built Miora</span>
+          <span class="spotlight-kicker">Why We Built AANCHAL</span>
           <p class="spotlight-copy">Many new mothers carry postpartum overwhelm quietly—often before anyone thinks to ask how they truly feel.</p>
           <p class="spotlight-note">Designed as a gentle, judgment-free first step toward support.</p>
         </div>

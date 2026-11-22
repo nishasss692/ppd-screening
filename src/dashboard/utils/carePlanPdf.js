@@ -38,7 +38,7 @@ export function formatCarePlanLines({
   generatedDate,
 }) {
   const rawLines = [
-    'MIORA - MATERNAL EMOTIONAL INTELLIGENCE',
+    'AANCHAL - MATERNAL EMOTIONAL INTELLIGENCE',
     'Personalized Maternal Care Plan',
     `Generated: ${generatedDate}`,
     '--------------------------------------------------------------------------------',
@@ -67,7 +67,7 @@ export function formatCarePlanLines({
     summaryText,
     '',
     'RESPONSIBLE AI & CLINICAL SAFETY DISCLAIMER',
-    'Miora does not diagnose postpartum depression. Screening observations are supportive',
+    'AANCHAL does not diagnose postpartum depression. Screening observations are supportive',
     'indicators only and must not replace professional clinical judgement.',
   ];
 

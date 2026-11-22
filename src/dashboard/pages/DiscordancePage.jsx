@@ -103,7 +103,7 @@ export function DiscordancePage() {
       date: 'In 7 Days',
       type: 'Follow-up Screening',
       description: 'Post-discordance contextual screening check-in across consented modalities.',
-      clinician: 'Miora Care Team',
+      clinician: 'AANCHAL Care Team',
     });
     setActionFeedback(
       `7-day follow-up screening scheduled for ${activeScreening.motherId}.`

@@ -352,7 +352,7 @@ export function ClinicalProvider({ children }) {
             summary: bs.notes || 'Recorded in PostgreSQL backend.',
             interpretation: [
               'Completed clinical screening session synchronized from patient database.',
-              bs.q10_safety_alert ? '🚨 CRITICAL: Item 10 self-harm indicator reported.' : 'EPDS 10-item instrument completed.',
+              bs.q10_safety_alert ? 'CRITICAL: Item 10 self-harm indicator reported.' : 'EPDS 10-item instrument completed.',
             ],
             isFromBackend: true,
           };
@@ -464,7 +464,7 @@ export function ClinicalProvider({ children }) {
       lastScreeningTime: 'Just now',
       voiceCueSummary: 'Awaiting initial voice-assisted check-in.',
       textCueSummary: reasonForReview?.trim() || 'Newly registered mother.',
-      carePlan: 'Schedule baseline Miora multimodal screening within 48 hours.',
+      carePlan: 'Schedule baseline AANCHAL multimodal screening within 48 hours.',
     };
     setMothers((prev) => [newMother, ...prev]);
     setAlerts((prev) => [

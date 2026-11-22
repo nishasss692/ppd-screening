@@ -23,6 +23,7 @@ from sqlalchemy.orm import Session
 from backend.database.connection import get_db
 from backend.models.mother import Mother
 from backend.models.user import User
+from backend.models.consultation_report import ConsultationReport
 
 logger = logging.getLogger("ppd.auth")
 
@@ -149,10 +150,12 @@ def get_optional_current_user(
 
 
 def normalize_role(role: Optional[str]) -> str:
-    """Normalize role string to 'doctor', 'patient', or 'family'."""
+    """Normalize role string to 'doctor', 'patient', 'family', or 'hospital'."""
     if not role:
         return "patient"
     r = role.strip().lower()
+    if r in ("hospital", "hospital_staff", "hospital_admin", "clinic"):
+        return "hospital"
     if r in ("doctor", "clinician", "physician", "admin"):
         return "doctor"
     if r in ("family", "patients_family", "patient_family", "partner", "caregiver", "relative"):
@@ -198,6 +201,47 @@ def require_doctor(user: User = Depends(get_current_user)) -> User:
             detail="Access forbidden: Healthcare professional (Doctor) authorization required.",
         )
     return user
+
+
+def require_hospital(user: User = Depends(get_current_user)) -> User:
+    """Authorize only verified hospital staff accounts."""
+    if user.role not in ("hospital", "admin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access forbidden: Hospital staff authorization required.",
+        )
+    return user
+
+
+HOSPITAL_USER_MAPPING = {
+    "apollo@hospital.miora.health": {
+        "hospital_id": "HOSP-001",
+        "hospital_name": "Apollo Women's Hospital",
+        "hospital_location": "Bangalore, Karnataka",
+    },
+    "cloudnine@hospital.miora.health": {
+        "hospital_id": "HOSP-002",
+        "hospital_name": "Cloudnine Hospitals",
+        "hospital_location": "Hyderabad, Telangana",
+    },
+    "fortis@hospital.miora.health": {
+        "hospital_id": "HOSP-003",
+        "hospital_name": "Fortis La Femme",
+        "hospital_location": "New Delhi, NCR",
+    },
+}
+
+
+def get_user_hospital_profile(user: User) -> Dict[str, str]:
+    """Resolve hospital profile details for authenticated hospital staff user."""
+    profile = HOSPITAL_USER_MAPPING.get(user.email.lower().strip())
+    if profile:
+        return profile
+    return {
+        "hospital_id": "HOSP-001",
+        "hospital_name": user.full_name or "Apollo Women's Hospital",
+        "hospital_location": "Bangalore, Karnataka",
+    }
 
 
 def seed_default_users(db: Session) -> None:
@@ -263,6 +307,70 @@ def seed_default_users(db: Session) -> None:
         )
         db.add(family_user)
         logger.info("Seeded default patient's family account: %s (Linked Mother ID: %s)", family_email, existing_mother.id)
+
+    # 4. Seed demo hospital staff accounts
+    demo_hospitals = [
+        ("apollo@hospital.miora.health", "Apollo Women's Hospital Staff", "HOSP-001"),
+        ("cloudnine@hospital.miora.health", "Cloudnine Hospital Staff", "HOSP-002"),
+    ]
+    for h_email, h_name, h_id in demo_hospitals:
+        stmt = select(User).where(User.email == h_email)
+        existing_hosp = db.scalar(stmt)
+        if not existing_hosp:
+            hosp_user = User(
+                email=h_email,
+                hashed_password=hash_password("password123"),
+                full_name=h_name,
+                role="hospital",
+                is_active=True,
+            )
+            db.add(hosp_user)
+            logger.info("Seeded default hospital account: %s (%s)", h_email, h_id)
+
+    # 4. Seed sample consultation report for Apollo Hospital and Amara
+    existing_rep = db.scalar(select(ConsultationReport).limit(1))
+    if not existing_rep:
+        demo_patient = db.scalar(select(User).where(User.email == patient_email))
+        mother_id = demo_patient.mother_id if demo_patient and demo_patient.mother_id else None
+        if not mother_id:
+            m = db.scalar(select(Mother).limit(1))
+            mother_id = m.id if m else None
+
+        if mother_id:
+            sample_report = ConsultationReport(
+                report_code="REP-2026-001",
+                mother_id=mother_id,
+                patient_name="Amara",
+                patient_identifier="M-108",
+                appointment_id=None,
+                doctor_id="DR-005",
+                doctor_name="Dr. Elena Rostova",
+                doctor_specialization="Perinatal Psychiatry Lead",
+                hospital_id="HOSP-001",
+                hospital_name="Apollo Women's Hospital",
+                department="Perinatal Mental Health",
+                consultation_date="20 Nov 2026",
+                presenting_complaints="Patient reported persistent low mood, fragmented sleep under 4 continuous hours, and crying spells especially during evening hours over the past 3 weeks.",
+                clinical_observations="Patient was cooperative, affect was constricted and mildly dysphoric. Thought processes coherent, denied active suicidal ideation (EPDS Question 10 score 0). Insight preserved.",
+                clinical_assessment="Postpartum depression with mild-to-moderate emotional exhaustion and sleep fragmentation (ICD-10 F53.0).",
+                treatment_plan="Initiate supportive cognitive-behavioral perinatal therapy (6 sessions). Coordinate sleep restoration with family support. Psychoeducation on emotional recovery.",
+                medications="No pharmacotherapy indicated at this stage. Recommended continuation of prenatal vitamins and magnesium glycinate (200mg nightly) for sleep hygiene.",
+                recommendations="Daily 4-7-8 grounding breathing exercises. Partner to manage 1-2 nighttime feeds to ensure 5+ hours unbroken maternal sleep.",
+                followup_instructions="Schedule follow-up appointment in 3 weeks. Contact clinic or Tele-MANAS immediately if acute distress increases.",
+                next_followup_date="11 Dec 2026 at 11:00 AM",
+                additional_notes="Patient is receptive to non-pharmacological interventions. Husband Raj is engaged and supportive.",
+                ai_screening_summary="AI multimodal acoustic analysis indicated mild prosodic flatness; EPDS equivalent score was 14/30.",
+                epds_summary="EPDS Total Score: 14/30 (Moderate distress). Item 10: 0 (No self-harm).",
+                status="final",
+                patient_friendly_summary="During your consultation on 20 Nov 2026, Dr. Elena Rostova reviewed your emotional wellbeing and discussed your sleep challenges and low mood. We agreed on a gentle, supportive plan focused on getting more continuous rest and daily relaxation.",
+                patient_friendly_medications="Continue your regular daily vitamins. Magnesium glycinate (200mg) before bed can help relax your body for sleep.",
+                patient_friendly_recommendations="Practice your 4-7-8 breathing exercises daily. Ask your partner or family to help take over one nighttime feed so you can get at least 5 hours of unbroken sleep.",
+                patient_friendly_followup="Your next check-in is scheduled for 11 Dec 2026 at 11:00 AM. If you feel overwhelmed before then, please message us or reach out anytime.",
+                patient_approved=True,
+                submitted_at=datetime.now(timezone.utc),
+            )
+            db.add(sample_report)
+            logger.info("Seeded initial consultation report REP-2026-001")
 
     db.commit()
 

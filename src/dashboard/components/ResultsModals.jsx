@@ -3,7 +3,7 @@ import { DashboardIcon } from './DashboardIcon.jsx';
 
 export function buildScreeningReportText(screening, mother) {
   const lines = [
-    'MIORA — MATERNAL SCREENING REPORT',
+    'AANCHAL — MATERNAL SCREENING REPORT',
     '====================================',
     `Screening ID: ${screening.id}`,
     `Mother ID: ${screening.motherId} (${screening.motherInitials || mother?.initials || '—'})`,

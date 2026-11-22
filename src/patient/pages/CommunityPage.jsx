@@ -50,10 +50,10 @@ const PERSONAS = [
 ];
 
 const REACTION_CONFIG = [
-  { type: 'sending_love', label: 'Sending Love', emoji: '❤️' },
-  { type: 'i_understand', label: 'I Understand', emoji: '🌸' },
-  { type: 'youre_not_alone', label: "You're Not Alone", emoji: '🫂' },
-  { type: 'sending_strength', label: 'Sending Strength', emoji: '💪' },
+  { type: 'sending_love', label: 'Sending Love' },
+  { type: 'i_understand', label: 'I Understand' },
+  { type: 'youre_not_alone', label: "You're Not Alone" },
+  { type: 'sending_strength', label: 'Sending Strength' },
 ];
 
 const REPORT_REASONS = [
@@ -833,7 +833,7 @@ export function CommunityPage() {
               <div className="post-actions-bar">
                 {/* 4 Supportive Reactions */}
                 <div className="reactions-group" role="group" aria-label="Supportive emotional reactions">
-                  {REACTION_CONFIG.map(({ type, label, emoji }) => {
+                  {REACTION_CONFIG.map(({ type, label }) => {
                     const count = post.reaction_breakdown?.[type] || 0;
                     const isActive = post.user_reaction === type;
 
@@ -846,7 +846,6 @@ export function CommunityPage() {
                         title={`${label} (${count})`}
                         aria-pressed={isActive}
                       >
-                        <span aria-hidden="true">{emoji}</span>
                         <span>{label}</span>
                         {count > 0 && <span style={{ fontWeight: 700, marginLeft: '0.15rem' }}>{count}</span>}
                       </button>

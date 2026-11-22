@@ -54,9 +54,11 @@ from sqlalchemy.orm import Session
 
 from backend.database.connection import get_db
 from backend.models.care_plan import CarePlan
+from backend.models.consultation_report import ConsultationReport
 from backend.models.mother import Mother
 from backend.models.screening import Screening
 from backend.models.user import User
+from backend.schemas.consultation_report import PatientConsultationReportResponse
 from backend.schemas.questionnaire import AnswerSubmissionItem, EPDSSubmissionRequest
 from backend.schemas.patient_portal import (
     AiConversationMessageItem,
@@ -1093,17 +1095,48 @@ def get_patient_appointments(
     plans = db.scalars(stmt).all()
     for cp in plans:
         date_str = cp.scheduled_followup_date.strftime("%d %b %Y") if cp.scheduled_followup_date else cp.created_at.strftime("%d %b %Y")
+        
+        # Parse rich JSON metadata if present
+        meta_dict: Dict[str, Any] = {}
+        if cp.notes and cp.notes.strip().startswith("{"):
+            try:
+                meta_dict = json.loads(cp.notes)
+            except Exception:
+                meta_dict = {}
+
+        raw_status = (meta_dict.get("status") or cp.status or "pending").lower()
+        if raw_status in ("pending", "requested"):
+            display_status = "Pending Confirmation"
+        elif raw_status == "confirmed":
+            display_status = "Confirmed"
+        elif raw_status == "rescheduled":
+            display_status = "New Time Proposed"
+        elif raw_status in ("cancelled", "rejected"):
+            display_status = "Declined"
+        elif raw_status == "completed":
+            display_status = "Completed"
+        else:
+            display_status = raw_status.title()
+
         results.append(
             AppointmentResponse(
                 id=str(cp.id),
-                doctorName=cp.assigned_clinician_id or "Dr. Elena Rostova",
-                role="Perinatal Psychiatry Lead",
-                date=date_str,
-                time="11:00 AM",
-                status=cp.status.title(),
-                type="Telehealth Video" if "video" in (cp.intervention_type or "").lower() else (cp.intervention_type or "Telehealth Video"),
-                clinic=cp.referral_destination or "Miora Maternal Care Unit",
-                summary=cp.notes,
+                doctorName=meta_dict.get("assigned_doctor_name") or meta_dict.get("doctor_name") or cp.assigned_clinician_id or "Dr. Elena Rostova",
+                role=meta_dict.get("doctor_role") or "Perinatal Psychiatry Lead",
+                date=meta_dict.get("confirmed_date") or meta_dict.get("requested_date") or date_str,
+                time=meta_dict.get("confirmed_time") or meta_dict.get("requested_time") or "11:00 AM",
+                status=display_status,
+                type=meta_dict.get("consultation_type") or ("Telehealth Video" if "video" in (cp.intervention_type or "").lower() else (cp.intervention_type or "Telehealth Video")),
+                clinic=meta_dict.get("hospital_name") or cp.referral_destination or "Miora Maternal Care Unit",
+                summary=meta_dict.get("reason") or (cp.notes if not meta_dict else None),
+                hospitalId=meta_dict.get("hospital_id"),
+                hospitalName=meta_dict.get("hospital_name"),
+                hospitalLocation=meta_dict.get("hospital_location"),
+                proposedDate=meta_dict.get("proposed_date"),
+                proposedTime=meta_dict.get("proposed_time"),
+                assignedDoctorId=meta_dict.get("assigned_doctor_id"),
+                assignedDoctorName=meta_dict.get("assigned_doctor_name"),
+                responseNote=meta_dict.get("hospital_notes"),
             )
         )
 
@@ -1119,10 +1152,13 @@ def get_patient_appointments(
                     role=a.get("role", "Perinatal Psychiatry Lead"),
                     date=a.get("date", "25 Nov 2026"),
                     time=a.get("time", "11:00 AM"),
-                    status=a.get("status", "Scheduled"),
+                    status=a.get("status", "Pending Confirmation"),
                     type=a.get("type", "Telehealth Video"),
                     clinic=a.get("clinic", "Miora Maternal Care Unit"),
                     summary=a.get("summary"),
+                    hospitalId=a.get("hospitalId"),
+                    hospitalName=a.get("hospitalName"),
+                    hospitalLocation=a.get("hospitalLocation"),
                 )
             )
 
@@ -1135,7 +1171,7 @@ def get_patient_appointments(
                 role="Perinatal Psychiatry Lead",
                 date="20 Nov 2026",
                 time="11:00 AM",
-                status="Scheduled",
+                status="Confirmed",
                 type="Telehealth Video",
                 clinic="Miora Maternal Care Unit",
                 summary="Initial post-registration baseline assessment with perinatal mental health specialist.",
@@ -1149,14 +1185,14 @@ def get_patient_appointments(
     "/me/appointments",
     response_model=AppointmentResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Book a new doctor consultation",
+    summary="Submit a new doctor consultation request",
 )
 def book_patient_appointment(
     payload: AppointmentBookRequest,
     user: User = Depends(require_patient),
     db: Session = Depends(get_db),
 ) -> AppointmentResponse:
-    """Book a new doctor consultation, persisting to both care_plans table and patient metadata."""
+    """Submit a consultation request awaiting hospital confirmation, persisted in care_plans table."""
     if not user.mother_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mother entity not linked.")
 
@@ -1171,16 +1207,38 @@ def book_patient_appointment(
     except Exception:
         appt_date = date.today()
 
+    target_hospital = payload.hospital_name or payload.clinic or "AANCHAL Partner Hospital"
+    target_hospital_id = payload.hospital_id or "HOSP-001"
+
+    # Build rich appointment request metadata
+    notes_payload = {
+        "request_type": "patient_appointment_request",
+        "hospital_id": target_hospital_id,
+        "hospital_name": target_hospital,
+        "hospital_location": payload.hospital_location or "Bangalore, Karnataka",
+        "doctor_id": payload.doctor_id or "DR-001",
+        "doctor_name": payload.doctor_name,
+        "doctor_role": payload.role,
+        "requested_date": payload.date,
+        "requested_time": payload.time,
+        "consultation_type": payload.type,
+        "patient_name": mother.name,
+        "patient_phone": payload.phone or mother.phone or "+91-98765-43210",
+        "reason": payload.reason,
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+
     # 1. Create row in PostgreSQL care_plans table
     new_care_plan = CarePlan(
         mother_id=mother.id,
         priority="routine",
         intervention_type=payload.type,
-        referral_destination=payload.clinic,
+        referral_destination=f"{target_hospital} [{target_hospital_id}]",
         scheduled_followup_date=appt_date,
         assigned_clinician_id=payload.doctor_name,
-        status="scheduled",
-        notes=payload.reason or f"Booked {payload.type} with {payload.doctor_name} at {payload.time}",
+        status="pending",
+        notes=json.dumps(notes_payload),
     )
     db.add(new_care_plan)
 
@@ -1191,8 +1249,8 @@ def book_patient_appointment(
         0,
         {
             "id": f"n-appt-{uuid.uuid4().hex[:6]}",
-            "title": "Consultation Booked",
-            "message": f"Consultation scheduled with {payload.doctor_name} on {payload.date} at {payload.time}.",
+            "title": "Appointment Request Sent",
+            "message": f"Your appointment request with {payload.doctor_name} at {target_hospital} has been submitted and is awaiting hospital confirmation.",
             "date": datetime.now(timezone.utc).strftime("%d %b %Y"),
             "read": False,
         },
@@ -1208,10 +1266,13 @@ def book_patient_appointment(
         "role": payload.role,
         "date": formatted_date,
         "time": payload.time,
-        "status": "Scheduled",
+        "status": "Pending Confirmation",
         "type": payload.type,
-        "clinic": payload.clinic,
+        "clinic": target_hospital,
         "summary": payload.reason,
+        "hospitalId": target_hospital_id,
+        "hospitalName": target_hospital,
+        "hospitalLocation": payload.hospital_location,
     }
     meta_appts.insert(0, new_appt_dict)
     meta["appointments"] = meta_appts
@@ -1222,7 +1283,7 @@ def book_patient_appointment(
     db.refresh(new_care_plan)
     db.refresh(mother)
 
-    logger.info("Booked consultation in PostgreSQL: id=%s for mother_id=%s", new_care_plan.id, mother.id)
+    logger.info("Created consultation request in database: id=%s for mother_id=%s, hospital=%s", new_care_plan.id, mother.id, target_hospital_id)
 
     return AppointmentResponse(
         id=str(new_care_plan.id),
@@ -1230,10 +1291,13 @@ def book_patient_appointment(
         role=payload.role,
         date=formatted_date,
         time=payload.time,
-        status="Scheduled",
+        status="Pending Confirmation",
         type=payload.type,
-        clinic=payload.clinic,
+        clinic=target_hospital,
         summary=payload.reason,
+        hospitalId=target_hospital_id,
+        hospitalName=target_hospital,
+        hospitalLocation=payload.hospital_location,
     )
 
 
@@ -1577,3 +1641,103 @@ def save_patient_ai_conversations(
         "message_count": len(meta["ai_conversations"]),
         "current_mood": meta.get("current_mood"),
     }
+
+
+@router.get(
+    "/me/consultation-reports",
+    response_model=List[PatientConsultationReportResponse],
+    summary="Get patient-friendly simplified consultation reports",
+)
+def get_patient_consultation_reports(
+    user: User = Depends(require_patient),
+    db: Session = Depends(get_db),
+) -> List[PatientConsultationReportResponse]:
+    """Retrieve simplified, patient-friendly reports approved by the treating doctor.
+
+    STRICT PRIVACY: Internal hospital administrative notes and unapproved drafts
+    are strictly excluded from the patient portal response.
+    """
+    if not user.mother_id:
+        return []
+
+    # Query reports for this patient that are final and approved
+    reports = db.scalars(
+        select(ConsultationReport)
+        .where(
+            ConsultationReport.mother_id == user.mother_id,
+            ConsultationReport.status == "final",
+            ConsultationReport.patient_approved == True,
+        )
+        .order_by(desc(ConsultationReport.created_at))
+    ).all()
+
+    results: List[PatientConsultationReportResponse] = []
+    for r in reports:
+        results.append(
+            PatientConsultationReportResponse(
+                id=str(r.id),
+                report_code=r.report_code,
+                doctor_name=r.doctor_name,
+                doctor_specialization=r.doctor_specialization,
+                hospital_name=r.hospital_name,
+                consultation_date=r.consultation_date,
+                summary=r.patient_friendly_summary or r.clinical_assessment,
+                medications_instructions=r.patient_friendly_medications or r.medications,
+                recommendations=r.patient_friendly_recommendations or r.recommendations,
+                followup_instructions=r.patient_friendly_followup or r.followup_instructions,
+                next_followup_date=r.next_followup_date,
+                submitted_at=r.submitted_at.strftime("%d %b %Y") if r.submitted_at else None,
+            )
+        )
+    return results
+
+
+@router.get(
+    "/me/consultation-reports/{report_id}",
+    response_model=PatientConsultationReportResponse,
+    summary="Get single patient-friendly consultation report",
+)
+def get_patient_consultation_report_detail(
+    report_id: str,
+    user: User = Depends(require_patient),
+    db: Session = Depends(get_db),
+) -> PatientConsultationReportResponse:
+    """Retrieve a single simplified consultation report."""
+    if not user.mother_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mother record not linked.")
+
+    report = None
+    try:
+        r_uuid = uuid.UUID(report_id)
+        report = db.get(ConsultationReport, r_uuid)
+    except ValueError:
+        report = db.scalar(select(ConsultationReport).where(ConsultationReport.report_code == report_id))
+
+    if not report:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Consultation report '{report_id}' not found.",
+        )
+
+    # Privacy enforcement: must belong to the patient and be approved
+    if report.mother_id != user.mother_id or report.status != "final" or not report.patient_approved:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: You are only authorized to view your own approved consultation reports.",
+        )
+
+    return PatientConsultationReportResponse(
+        id=str(report.id),
+        report_code=report.report_code,
+        doctor_name=report.doctor_name,
+        doctor_specialization=report.doctor_specialization,
+        hospital_name=report.hospital_name,
+        consultation_date=report.consultation_date,
+        summary=report.patient_friendly_summary or report.clinical_assessment,
+        medications_instructions=report.patient_friendly_medications or report.medications,
+        recommendations=report.patient_friendly_recommendations or report.recommendations,
+        followup_instructions=report.patient_friendly_followup or report.followup_instructions,
+        next_followup_date=report.next_followup_date,
+        submitted_at=report.submitted_at.strftime("%d %b %Y") if report.submitted_at else None,
+    )
+

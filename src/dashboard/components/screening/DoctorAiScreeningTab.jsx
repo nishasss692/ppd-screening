@@ -22,23 +22,6 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
 
   return (
     <div className="doctor-ai-screening-shell" aria-label="Clinician AI Screening Overview">
-      {/* Clinician Overview Banner */}
-      <section className="dash-card doc-screening-intro-card">
-        <div className="doc-screening-intro-copy">
-          <div className="miora-dash-eyebrow">
-            <span>CLINICAL SCREENING OVERSIGHT</span>
-            <span className="miora-dash-eyebrow-line" aria-hidden="true" />
-          </div>
-          <h2 className="miora-dash-title" style={{ margin: '4px 0 8px 0', fontSize: '20px' }}>
-            AI Multimodal Screening — Clinician Oversight
-          </h2>
-          <p className="miora-dash-subtitle" style={{ margin: 0, fontSize: '13.5px' }}>
-            Review acoustic, linguistic, and facial video dynamics captured during patient screening sessions.
-            Model outputs reflect true backend pipeline status with zero fabricated predictions.
-          </p>
-        </div>
-      </section>
-
       {/* Patient Screening Directory Table */}
       <section className="dash-card doc-screening-table-card" aria-label="Authorized Patients AI Screening Directory">
         <div className="doc-table-header">
@@ -89,7 +72,7 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                     </td>
                     <td>
                       {hasRecording ? (
-                        <span className="doc-rec-badge is-recorded">✓ Captured</span>
+                        <span className="doc-rec-badge is-recorded">Captured</span>
                       ) : (
                         <span className="doc-rec-badge is-pending">Pending</span>
                       )}

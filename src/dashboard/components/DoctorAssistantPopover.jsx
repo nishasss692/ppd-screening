@@ -7,8 +7,8 @@ const INITIAL_DOCTOR_MESSAGES = [
     id: 'doc-msg-init',
     sender: 'assistant',
     text: (
-      "Hello Doctor. I am your Miora Clinical Copilot.\n\n" +
-      "I can assist with dashboard navigation, multimodal feature workflows (e.g. cross-modal discordance), " +
+      "Hello Doctor. I am your AANCHAL Clinical Copilot.\n\n" +
+      "I can assist with clinical workspace navigation, multimodal feature workflows (e.g. cross-modal discordance), " +
       "and EPDS clinical scoring threshold references.\n\n" +
       "How may I help your workflow today?"
     ),
@@ -226,7 +226,7 @@ export function DoctorAssistantPopover({ onClose }) {
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           placeholder="Ask about dashboard navigation or EPDS..."
-          aria-label="Message Miora Clinician Copilot"
+          aria-label="Message AANCHAL Clinician Copilot"
         />
         <button
           type="submit"

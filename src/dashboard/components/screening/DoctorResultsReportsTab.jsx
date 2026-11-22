@@ -48,7 +48,7 @@ export function DoctorResultsReportsTab({ defaultMotherId }) {
       {/* Toast Notice */}
       {toastMessage && (
         <div className="patient-notice-banner is-success" role="status" style={{ marginBottom: 16 }}>
-          ✓ {toastMessage}
+          {toastMessage}
         </div>
       )}
 

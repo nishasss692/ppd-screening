@@ -11,6 +11,7 @@ Exports all primary clinical domain entities:
 from backend.models.audit_log import AuditLog
 from backend.models.care_plan import CarePlan
 from backend.models.clinical_review import ClinicalReview
+from backend.models.consultation_report import ConsultationReport
 from backend.models.community import (
     CommunityComment,
     CommunityPost,
@@ -26,6 +27,7 @@ __all__ = [
     "Mother",
     "Screening",
     "ClinicalReview",
+    "ConsultationReport",
     "CarePlan",
     "AuditLog",
     "User",

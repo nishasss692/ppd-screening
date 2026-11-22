@@ -266,7 +266,7 @@ export function buildClinicalNoteText({
   const isSaved = Boolean(savedReview?.finalizedAt);
 
   const lines = [
-    'MIORA - CLINICAL REVIEW & ASSESSMENT NOTE',
+    'AANCHAL - CLINICAL REVIEW & ASSESSMENT NOTE',
     '==========================================',
     `Mother ID: ${mother.id} (${mother.initials || screening.motherInitials || '--'})`,
     `Postpartum Week: Week ${mother.postpartumWeek}`,
@@ -310,7 +310,7 @@ export function buildClinicalNoteText({
     '',
     'LIMITATIONS & RESPONSIBLE AI DISCLAIMER',
     `Limitations: ${summary.discordanceAnalysis.limitations}`,
-    'Miora provides screening-support indicators only and does not diagnose postpartum',
+    'AANCHAL provides screening-support indicators only and does not diagnose postpartum',
     'depression or prescribe treatment. Clinicians retain full decision-making authority.',
   ];
 

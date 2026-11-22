@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { BrandWordmark } from './dashboard/components/BrandWordmark.jsx';
 import { authenticate, authenticateWithGoogle, registerAccount, DEMO_ACCOUNTS } from './auth/authService.js';
+import { loginHospital } from './hospital/hospitalService.js';
 import './styles/login.css';
 
 // SVG Icons matching Miora's clean stroke style
@@ -51,12 +52,26 @@ const Icons = {
       <path d="M5 12h14M12 5l7 7-7 7" />
     </svg>
   ),
+  arrowLeft: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M19 12H5M12 19l-7-7 7-7" />
+    </svg>
+  ),
   family: (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
       <circle cx="9" cy="7" r="4" />
       <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  ),
+  hospital: (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 21h18" />
+      <path d="M5 21V7l7-4 7 4v14" />
+      <path d="M9 21v-6h6v6" />
+      <rect x="9" y="9" width="2" height="2" fill="currentColor" stroke="none" />
+      <rect x="13" y="9" width="2" height="2" fill="currentColor" stroke="none" />
     </svg>
   ),
   check: (
@@ -76,12 +91,14 @@ const Icons = {
 
 export function LoginScreen() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   // Active tab: 'signin' | 'create'
   const [activeTab, setActiveTab] = useState('signin');
 
-  // Selected role: 'patient' (default) | 'doctor'
-  const [selectedRole, setSelectedRole] = useState('patient');
+  // Selected role: 'patient' (default) | 'doctor' | 'family' | 'hospital'
+  const initialRoleParam = (searchParams.get('role') || searchParams.get('portal') || '').toLowerCase();
+  const [selectedRole, setSelectedRole] = useState(initialRoleParam === 'hospital' ? 'hospital' : 'patient');
 
   // Form fields
   const [name, setName] = useState('');
@@ -105,6 +122,9 @@ export function LoginScreen() {
     } else if (role === 'family') {
       setEmail(DEMO_ACCOUNTS.family.email);
       setPassword(DEMO_ACCOUNTS.family.password);
+    } else if (role === 'hospital') {
+      setEmail('apollo@hospital.miora.health');
+      setPassword('password123');
     } else {
       setEmail(DEMO_ACCOUNTS.doctor.email);
       setPassword(DEMO_ACCOUNTS.doctor.password);
@@ -119,14 +139,32 @@ export function LoginScreen() {
     setIsLoading(true);
 
     try {
+      if (selectedRole === 'hospital') {
+        const trimmedId = email.trim();
+        const trimmedPw = password.trim();
+        if (!trimmedId) {
+          setErrorMessage('Please enter your hospital email or organisation ID.');
+          setIsLoading(false);
+          return;
+        }
+        if (!trimmedPw || trimmedPw.length < 6) {
+          setErrorMessage('Please enter a valid password (minimum 6 characters).');
+          setIsLoading(false);
+          return;
+        }
+        await loginHospital(trimmedId, trimmedPw);
+        navigate('/hospital/dashboard', { replace: true });
+        return;
+      }
+
       if (activeTab === 'signin') {
         const result = await authenticate({
           email,
           password,
           selectedRole,
         });
-        const targetUrl = (result?.user?.role === 'doctor' || selectedRole === 'doctor' || result?.redirectUrl === '/dashboard')
-          ? '/dashboard'
+        const targetUrl = (result?.user?.role === 'doctor' || selectedRole === 'doctor' || result?.redirectUrl === '/dashboard' || result?.redirectUrl === '/mothers')
+          ? '/mothers'
           : '/patient/dashboard';
         navigate(targetUrl);
       } else {
@@ -136,8 +174,8 @@ export function LoginScreen() {
           password,
           role: selectedRole,
         });
-        const targetUrl = (result?.user?.role === 'doctor' || selectedRole === 'doctor' || result?.redirectUrl === '/dashboard')
-          ? '/dashboard'
+        const targetUrl = (result?.user?.role === 'doctor' || selectedRole === 'doctor' || result?.redirectUrl === '/dashboard' || result?.redirectUrl === '/mothers')
+          ? '/mothers'
           : '/patient/dashboard';
         navigate(targetUrl);
       }
@@ -156,8 +194,8 @@ export function LoginScreen() {
 
     try {
       const result = await authenticateWithGoogle(selectedRole);
-      const targetUrl = (result?.user?.role === 'doctor' || selectedRole === 'doctor' || result?.redirectUrl === '/dashboard')
-        ? '/dashboard'
+      const targetUrl = (result?.user?.role === 'doctor' || selectedRole === 'doctor' || result?.redirectUrl === '/dashboard' || result?.redirectUrl === '/mothers')
+        ? '/mothers'
         : '/patient/dashboard';
       navigate(targetUrl);
     } catch (err) {
@@ -249,31 +287,13 @@ export function LoginScreen() {
         {/* ================================================================
             Left Section – Branding and Illustration
             ================================================================ */}
-        <section className="login-left-col" aria-label="Miora brand presentation">
+        <section className="login-left-col" aria-label="AANCHAL brand presentation">
           <div className="login-left-top">
             {/* Upper-left branding */}
             <div className="login-branding">
-              <Link to="/" className="login-logo-link" aria-label="Miora Home">
-                <span className="login-brand-wordmark">
-                  <svg className="login-brand-m" viewBox="0 0 50 30" fill="none" aria-hidden="true">
-                    <path
-                      d="M30.8 1.5H36.6L28.8 21.8H26.8L32.8 3.4C32.9 2.5 32.2 2.0 30.8 2.0Z"
-                      fill="currentColor"
-                    />
-                    <path
-                      d="M33.2 2.0L19.4 21.8C16.2 25.8 12.1 27.2 7.8 26.6C4.2 26.1 2.0 23.8 2.2 21.2C2.3 19.9 3.4 19.4 4.2 19.9C4.9 20.4 4.8 21.5 4.0 21.9"
-                      stroke="currentColor"
-                      strokeWidth="1.35"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <circle cx="3.3" cy="21.0" r="1.45" fill="currentColor" />
-                    <path
-                      d="M44.8 1.5H49.4L42.2 20.9C42.0 21.4 42.5 21.7 43.7 21.7H44.1V22.4H36.8V21.7H37.6C38.8 21.7 39.3 21.4 39.6 20.8L45.6 4.0L28.4 21.9H27.1L46.0 2.2C45.5 1.8 45.1 1.6 44.8 1.5Z"
-                      fill="currentColor"
-                    />
-                  </svg>
-                  <span className="login-brand-script">iora</span>
+              <Link to="/" className="login-logo-link" aria-label="AANCHAL Home">
+                <span className="login-brand-wordmark" style={{ fontFamily: 'var(--font-serif, "Playfair Display", Georgia, serif)', letterSpacing: '0.04em', fontWeight: 700, fontSize: '32px', color: '#ba1e53', display: 'inline-block' }}>
+                  AANCHAL
                 </span>
               </Link>
 
@@ -309,47 +329,66 @@ export function LoginScreen() {
             ================================================================ */}
         <section className="login-right-col" aria-label="Sign in credentials">
           <div className="login-auth-card">
-            {/* Tabs: Sign In / Create Account */}
-            <div className="login-tabs-bar" role="tablist" aria-label="Authentication modes">
-              <button
-                type="button"
-                role="tab"
-                id="tab-signin"
-                aria-selected={activeTab === 'signin'}
-                aria-controls="panel-auth"
-                className={`login-tab-btn ${activeTab === 'signin' ? 'is-active' : ''}`}
-                onClick={() => {
-                  setActiveTab('signin');
-                  setErrorMessage('');
-                  setSuccessMessage('');
-                }}
-              >
-                Sign In
-              </button>
-              <button
-                type="button"
-                role="tab"
-                id="tab-create"
-                aria-selected={false}
-                aria-controls="panel-auth"
-                className="login-tab-btn"
-                onClick={() => {
-                  navigate('/create-account');
-                }}
-              >
-                Create Account
-              </button>
-            </div>
+            {/* Tabs: Sign In / Create Account — hidden for Hospital */}
+            {selectedRole !== 'hospital' && (
+              <div className="login-tabs-bar" role="tablist" aria-label="Authentication modes">
+                <button
+                  type="button"
+                  role="tab"
+                  id="tab-signin"
+                  aria-selected={activeTab === 'signin'}
+                  aria-controls="panel-auth"
+                  className={`login-tab-btn ${activeTab === 'signin' ? 'is-active' : ''}`}
+                  onClick={() => {
+                    setActiveTab('signin');
+                    setErrorMessage('');
+                    setSuccessMessage('');
+                  }}
+                >
+                  Sign In
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  id="tab-create"
+                  aria-selected={false}
+                  aria-controls="panel-auth"
+                  className="login-tab-btn"
+                  onClick={() => {
+                    navigate('/create-account');
+                  }}
+                >
+                  Create Account
+                </button>
+              </div>
+            )}
+
+            {/* Back button — only shown when Hospital is selected */}
+            {selectedRole === 'hospital' && (
+              <div className="login-back-bar">
+                <button
+                  type="button"
+                  className="login-back-btn"
+                  onClick={() => { setSelectedRole('patient'); setErrorMessage(''); setSuccessMessage(''); }}
+                >
+                  {Icons.arrowLeft} Back to portal selection
+                </button>
+              </div>
+            )}
 
             {/* Header Titles */}
             <header className="login-card-header">
               <h2 className="login-card-title">
-                {activeTab === 'signin' ? 'Welcome Back' : 'Create Your Account'}
+                {selectedRole === 'hospital'
+                  ? 'Hospital Portal Sign In'
+                  : activeTab === 'signin' ? 'Welcome Back' : 'Create Your Account'}
               </h2>
               <p className="login-card-subtext">
-                {activeTab === 'signin'
-                  ? 'Sign in to continue your Miora journey.'
-                  : 'Join Miora for compassionate, personalised support.'}
+                {selectedRole === 'hospital'
+                  ? 'Sign in with your registered hospital email or organisation ID.'
+                  : activeTab === 'signin'
+                  ? 'Sign in to continue your AANCHAL journey.'
+                  : 'Join AANCHAL for compassionate, personalised support.'}
               </p>
             </header>
 
@@ -475,6 +514,39 @@ export function LoginScreen() {
                       )}
                     </span>
                   </button>
+
+                  {/* Hospital Card */}
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-label="Hospital"
+                    aria-checked={selectedRole === 'hospital'}
+                    tabIndex={0}
+                    className={`login-role-card login-role-card-hospital ${selectedRole === 'hospital' ? 'is-hospital-selected' : ''}`}
+                    onClick={() => {
+                      setSelectedRole('hospital');
+                      setErrorMessage('');
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === ' ' || e.key === 'Enter') {
+                        e.preventDefault();
+                        setSelectedRole('hospital');
+                      }
+                    }}
+                  >
+                    <span className="login-role-icon">{Icons.hospital}</span>
+                    <span className="login-role-content">
+                      <strong className="login-role-title">Hospital</strong>
+                      <span className="login-role-desc">For registered healthcare organisations</span>
+                    </span>
+                    <span className="login-role-indicator">
+                      {selectedRole === 'hospital' ? (
+                        <span className="login-indicator-checked" style={{ background: '#0f3d3e' }}>{Icons.check}</span>
+                      ) : (
+                        <span className="login-indicator-empty" />
+                      )}
+                    </span>
+                  </button>
                 </div>
 
                 {/* Quick 1-Click Demo Fill */}
@@ -528,6 +600,22 @@ export function LoginScreen() {
                   >
                     Patient's Family (Raj)
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectDemo('hospital')}
+                    style={{
+                      fontSize: '12px',
+                      padding: '4px 12px',
+                      background: selectedRole === 'hospital' ? '#e6f4f1' : '#f5f5f7',
+                      color: selectedRole === 'hospital' ? '#0f3d3e' : '#555',
+                      border: '1px solid ' + (selectedRole === 'hospital' ? '#0d9488' : '#dcdce0'),
+                      borderRadius: '16px',
+                      cursor: 'pointer',
+                      fontWeight: selectedRole === 'hospital' ? '600' : '500',
+                    }}
+                  >
+                    Hospital (Apollo)
+                  </button>
                 </div>
               </div>
 
@@ -555,15 +643,15 @@ export function LoginScreen() {
               {/* Email Address */}
               <div className="login-form-group">
                 <label className="login-field-label" htmlFor="user-email">
-                  Email Address
+                  {selectedRole === 'hospital' ? 'Hospital Email or Organisation ID' : 'Email Address'}
                 </label>
                 <div className="login-input-wrap">
                   <span className="login-input-icon">{Icons.mail}</span>
                   <input
                     id="user-email"
-                    type="email"
+                    type={selectedRole === 'hospital' ? 'text' : 'email'}
                     className="login-text-input"
-                    placeholder="Enter your email"
+                    placeholder={selectedRole === 'hospital' ? 'admin@hospital.org or HOSP-001' : 'Enter your email'}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     autoComplete="email"
@@ -616,7 +704,7 @@ export function LoginScreen() {
               {/* Primary Action Button */}
               <button
                 type="submit"
-                className="login-submit-btn"
+                className={`login-submit-btn${selectedRole === 'hospital' ? ' login-submit-btn-hospital' : ''}`}
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -626,37 +714,42 @@ export function LoginScreen() {
                   </>
                 ) : (
                   <>
-                    <span>{activeTab === 'signin' ? 'Sign In' : 'Create Account'}</span>
+                    <span>{selectedRole === 'hospital' ? 'Sign In to Hospital Portal' : activeTab === 'signin' ? 'Sign In' : 'Create Account'}</span>
                     <span>{Icons.arrowRight}</span>
                   </>
                 )}
               </button>
 
-              {/* Divider with 'or' */}
-              <div className="login-divider-row" aria-hidden="true">
-                <span className="login-divider-line" />
-                <span className="login-divider-text">or</span>
-                <span className="login-divider-line" />
-              </div>
+              {/* Divider + Google + Bottom Link — hidden for Hospital (pre-provisioned accounts only) */}
+              {selectedRole !== 'hospital' && (
+                <>
+                  {/* Divider with 'or' */}
+                  <div className="login-divider-row" aria-hidden="true">
+                    <span className="login-divider-line" />
+                    <span className="login-divider-text">or</span>
+                    <span className="login-divider-line" />
+                  </div>
 
-              {/* Continue with Google */}
-              <button
-                type="button"
-                className="login-google-btn"
-                onClick={handleGoogleAuth}
-                disabled={isLoading}
-              >
-                {Icons.google}
-                <span>Continue with Google</span>
-              </button>
+                  {/* Continue with Google */}
+                  <button
+                    type="button"
+                    className="login-google-btn"
+                    onClick={handleGoogleAuth}
+                    disabled={isLoading}
+                  >
+                    {Icons.google}
+                    <span>Continue with Google</span>
+                  </button>
 
-              {/* Bottom Switch Link */}
-              <div className="login-bottom-link" style={{ textAlign: 'center', marginTop: '16px' }}>
-                <span style={{ fontSize: '13px', color: '#62555a' }}>Don't have an account? </span>
-                <Link to="/create-account" style={{ color: '#c73566', fontWeight: '600', fontSize: '13px' }}>
-                  Create Account
-                </Link>
-              </div>
+                  {/* Bottom Switch Link */}
+                  <div className="login-bottom-link" style={{ textAlign: 'center', marginTop: '16px' }}>
+                    <span style={{ fontSize: '13px', color: '#62555a' }}>Don't have an account? </span>
+                    <Link to="/create-account" style={{ color: '#c73566', fontWeight: '600', fontSize: '13px' }}>
+                      Create Account
+                    </Link>
+                  </div>
+                </>
+              )}
             </form>
           </div>
         </section>

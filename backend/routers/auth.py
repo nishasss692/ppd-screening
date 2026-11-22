@@ -124,7 +124,7 @@ def login_user(
         "postpartumWeek": 4,
     }
 
-    redirect_url = "/dashboard" if user.role == "doctor" else "/patient/dashboard"
+    redirect_url = "/mothers" if user.role == "doctor" else "/patient/dashboard"
     logger.info("User authenticated successfully: email=%s, role=%s", user.email, user.role)
 
     return AuthTokenResponse(
@@ -233,7 +233,7 @@ def register_user(
         "postpartumWeek": payload.postpartum_week or 4,
     }
 
-    redirect_url = "/dashboard" if role == "doctor" else "/patient/dashboard"
+    redirect_url = "/mothers" if role == "doctor" else "/patient/dashboard"
     logger.info("User registered successfully: email=%s, role=%s", clean_email, role)
 
     return AuthTokenResponse(

@@ -4,7 +4,7 @@ import { BrandLogo } from './BrandLogo.js';
 export const Header = () => `
   <header class="brand-header" id="top">
     <div class="shell brand-header-inner">
-      <a class="brand" href="#top" aria-label="Miora — Maternal Emotional Intelligence">
+      <a class="brand" href="#top" aria-label="AANCHAL — Maternal Emotional Intelligence">
         ${BrandLogo()}
       </a>
       <div class="header-actions" style="display: flex; align-items: center; gap: 12px;">

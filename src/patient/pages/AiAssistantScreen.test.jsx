@@ -59,7 +59,7 @@ describe('AiAssistantScreen — Voice Assistant Integration', () => {
 
     // Verify Title & Tag
     expect(screen.getByRole('heading', { level: 1, name: /Your AI Companion/i })).toBeInTheDocument();
-    expect(screen.getByText(/Miora AI/i)).toBeInTheDocument();
+    expect(screen.getByText(/AANCHAL AI|Miora AI/i)).toBeInTheDocument();
     expect(screen.getByText('AI ASSISTANT')).toBeInTheDocument();
 
     // Verify Language Selector exists with 8 languages and Auto
@@ -70,8 +70,8 @@ describe('AiAssistantScreen — Voice Assistant Integration', () => {
     expect(screen.getByText(/ಕನ್ನಡ \(Kannada\)/i)).toBeInTheDocument();
 
     // Verify Full-Screen Holographic AI Assistant Stage & Greeting
-    expect(screen.getByLabelText(/Miora AI Assistant Hologram/i)).toBeInTheDocument();
-    expect(screen.getByAltText(/Miora AI Assistant/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/AANCHAL AI Assistant Hologram|Miora AI Assistant Hologram/i)).toBeInTheDocument();
+    expect(screen.getByAltText(/AANCHAL AI Assistant|Miora AI Assistant/i)).toBeInTheDocument();
     expect(screen.getByText(/How can I help support you today\?/i)).toBeInTheDocument();
     expect(screen.getByText('SMART')).toBeInTheDocument();
     expect(screen.getByText('ADAPTIVE')).toBeInTheDocument();
@@ -235,7 +235,7 @@ describe('AiAssistantScreen — Voice Assistant Integration', () => {
 
     expect(window.speechSynthesis.speak).toHaveBeenCalled();
     const utteranceArg = window.speechSynthesis.speak.mock.calls[0][0];
-    expect(utteranceArg.text).toContain('Miora');
+    expect(utteranceArg.text).toMatch(/AANCHAL|Miora/);
   });
 
   it('handles network failure gracefully with compassionate fallback message', async () => {

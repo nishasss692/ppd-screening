@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { NavLink, useNavigate, useSearchParams } from 'react-router-dom';
 import { usePatient } from '../context/PatientContext.jsx';
 import { PatientIcon } from '../components/PatientIcons.jsx';
@@ -23,6 +23,53 @@ export function PatientReportsPage() {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [hoveredPoint, setHoveredPoint] = useState(null);
   const [isEmptyStateDemo, setIsEmptyStateDemo] = useState(false);
+  const [patientReports, setPatientReports] = useState([]);
+  const [selectedReportForView, setSelectedReportForView] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    async function fetchReports() {
+      try {
+        const token = localStorage.getItem('aanchal_token') || localStorage.getItem('miora_token') || '';
+        const res = await fetch('/api/patients/me/consultation-reports', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (mounted && Array.isArray(data) && data.length > 0) {
+            setPatientReports(data);
+            return;
+          }
+        }
+      } catch {
+        // Fallback to initial seed
+      }
+      if (mounted) {
+        setPatientReports([
+          {
+            id: 'rep-seed-001',
+            report_code: 'REP-2026-001',
+            doctor_name: 'Dr. Elena Rostova',
+            doctor_specialization: 'Perinatal Psychiatry Lead',
+            hospital_name: "Apollo Women's Hospital",
+            consultation_date: '20 Nov 2026',
+            summary:
+              'During your consultation on 20 Nov 2026, Dr. Elena Rostova reviewed your emotional wellbeing and discussed your sleep challenges and low mood. We agreed on a gentle, supportive plan focused on getting more continuous rest and daily relaxation.',
+            medications_instructions:
+              'Continue your regular daily vitamins. Magnesium glycinate (200mg) before bed can help relax your body for sleep.',
+            recommendations:
+              'Practice your 4-7-8 breathing exercises daily. Ask your partner or family to help take over one nighttime feed so you can get at least 5 hours of unbroken sleep.',
+            followup_instructions:
+              'Your next check-in is scheduled for 11 Dec 2026 at 11:00 AM. If you feel overwhelmed before then, please message us or reach out anytime.',
+            next_followup_date: '11 Dec 2026 at 11:00 AM',
+            submitted_at: '20 Nov 2026',
+          },
+        ]);
+      }
+    }
+    fetchReports();
+    return () => { mounted = false; };
+  }, []);
 
   // Filter downloadable reports: preserve Screening Report PDF & Conversation Transcript, exclude raw recordings per Change 6
   const downloadableReports = useMemo(() => {
@@ -86,7 +133,7 @@ export function PatientReportsPage() {
   const tabs = [
     { id: 'overview', label: 'Overview', icon: 'bar-chart' },
     { id: 'screening', label: 'Screening Reports', icon: 'clipboard' },
-    { id: 'consultations', label: 'Doctor Consultations', icon: 'calendar' },
+    { id: 'consultations', label: 'Consultation Reports', icon: 'file-text' },
     { id: 'mood', label: 'Mood Tracking', icon: 'trending-up' },
     { id: 'all-reports', label: 'All Reports', icon: 'file-text' },
   ];
@@ -494,53 +541,260 @@ export function PatientReportsPage() {
         </div>
       )}
 
-      {/* Tab 3: Doctor Consultations View */}
+      {/* Tab 3: Consultation Reports View */}
       {activeTab === 'consultations' && (
         <div className="reports-tab-view">
           <div className="patient-card reports-tab-card">
             <div className="tab-card-header-row">
               <div>
-                <h2 className="reports-tab-heading">Doctor Consultations &amp; Care Notes</h2>
+                <h2 className="reports-tab-heading">Consultation Reports</h2>
                 <p className="reports-tab-sub">
-                  Direct telehealth consultations and clinical summaries coordinated with Dr. Elena Rostova.
+                  Simplified, doctor-approved summaries of your consultations, medication instructions, and care guidance.
                 </p>
               </div>
 
               <button
                 type="button"
                 className="patient-btn-primary"
-                onClick={() => navigate('/patient/connect-doctor')}
+                onClick={() => navigate('/patient/find-doctor')}
               >
                 <PatientIcon name="calendar" size={14} />
-                <span>Schedule New Consultation</span>
+                <span>Book Consultation</span>
               </button>
             </div>
 
-            <div className="consultations-tab-list">
-              {(consultations || []).map((c) => (
-                <div key={c.id} className="consultation-tab-row">
-                  <div className="consultation-row-details">
-                    <div className="consultation-row-top">
-                      <strong>{c.doctorName} &bull; {c.role}</strong>
-                      <span className={`connect-status-badge ${c.status === 'Scheduled' ? 'status-scheduled' : 'status-completed'}`}>
-                        {c.status}
-                      </span>
+            {/* List of Simplified Consultation Reports */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
+              {patientReports.length === 0 ? (
+                <p style={{ color: '#7a6870', fontStyle: 'italic', padding: '16px 0' }}>
+                  No consultation reports have been published yet. Once you complete a consultation with your doctor, your simplified report will appear here.
+                </p>
+              ) : (
+                patientReports.map((r) => (
+                  <article
+                    key={r.id}
+                    style={{
+                      backgroundColor: '#ffffff',
+                      border: '1px solid #f1dede',
+                      borderRadius: '10px',
+                      padding: '20px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '14px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
+                      <div>
+                        <span style={{ fontSize: '11px', fontWeight: '700', color: '#c73566', background: '#fdeaf0', padding: '3px 8px', borderRadius: '10px', display: 'inline-block', marginBottom: '6px' }}>
+                          {r.report_code}
+                        </span>
+                        <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#2b2326', margin: 0 }}>
+                          Consultation with {r.doctor_name}
+                        </h3>
+                        <p style={{ fontSize: '12px', color: '#7a6870', margin: '2px 0 0 0' }}>
+                          {r.doctor_specialization} &bull; {r.hospital_name} &bull; Visit Date: <strong>{r.consultation_date}</strong>
+                        </p>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          type="button"
+                          className="patient-btn-secondary"
+                          onClick={() => setSelectedReportForView(r)}
+                          style={{ padding: '6px 14px', fontSize: '12px' }}
+                        >
+                          Read Full Summary
+                        </button>
+                        <button
+                          type="button"
+                          className="patient-btn-secondary"
+                          onClick={() => window.print()}
+                          style={{ padding: '6px 10px', fontSize: '12px' }}
+                          title="Print / Save PDF"
+                          aria-label={`Print or download report ${r.report_code}`}
+                        >
+                          <PatientIcon name="download" size={13} />
+                          <span>PDF</span>
+                        </button>
+                      </div>
                     </div>
-                    <p className="consultation-row-meta">
-                      {c.clinic} &bull; {c.date} at {c.time} ({c.type})
+
+                    {/* Summary of What Was Discussed */}
+                    <div style={{ backgroundColor: '#fffbf9', borderLeft: '3px solid #f4a6c0', padding: '12px 16px', borderRadius: '0 6px 6px 0', fontSize: '13px', lineHeight: '1.6', color: '#4a3d42' }}>
+                      <strong style={{ display: 'block', color: '#2b2326', marginBottom: '4px' }}>
+                        Summary of What We Discussed:
+                      </strong>
+                      <p style={{ margin: 0 }}>{r.summary}</p>
+                    </div>
+
+                    {/* Medication Instructions if prescribed */}
+                    {r.medications_instructions && (
+                      <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', padding: '12px 16px', borderRadius: '6px', fontSize: '13px', lineHeight: '1.5' }}>
+                        <strong style={{ color: '#166534', display: 'block', marginBottom: '2px' }}>
+                          Prescribed Medication Instructions:
+                        </strong>
+                        <p style={{ margin: 0, color: '#14532d' }}>{r.medications_instructions}</p>
+                      </div>
+                    )}
+
+                    {/* Follow-up Note */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#7a6870', borderTop: '1px solid #f8eaeb', paddingTop: '10px' }}>
+                      <span>
+                        Next Follow-up: <strong style={{ color: '#c73566' }}>{r.next_followup_date || 'Scheduled as needed'}</strong>
+                      </span>
+                      {r.submitted_at && <span>Signed by Doctor: {r.submitted_at}</span>}
+                    </div>
+                  </article>
+                ))
+              )}
+            </div>
+
+            {/* Existing Doctor Consultations / Appointments strip */}
+            <div style={{ marginTop: '28px', borderTop: '1px solid #f0e1d8', paddingTop: '18px' }}>
+              <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#2b2326', marginBottom: '12px' }}>
+                Your Scheduled &amp; Past Appointments
+              </h3>
+              <div className="consultations-tab-list">
+                {(consultations || []).map((c) => (
+                  <div key={c.id} className="consultation-tab-row">
+                    <div className="consultation-row-details">
+                      <div className="consultation-row-top">
+                        <strong>{c.doctorName} &bull; {c.role}</strong>
+                        <span className={`connect-status-badge ${c.status === 'Scheduled' ? 'status-scheduled' : 'status-completed'}`}>
+                          {c.status}
+                        </span>
+                      </div>
+                      <p className="consultation-row-meta">
+                        {c.clinic} &bull; {c.date} at {c.time} ({c.type})
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="patient-btn-secondary"
+                      onClick={() => navigate('/patient/connect-doctor')}
+                    >
+                      View Details
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Modal / Detailed view for selected report */}
+          {selectedReportForView && (
+            <div
+              style={{
+                position: 'fixed',
+                inset: 0,
+                backgroundColor: 'rgba(0,0,0,0.4)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 1000,
+                padding: '16px',
+              }}
+              role="dialog"
+              aria-modal="true"
+              onClick={() => setSelectedReportForView(null)}
+            >
+              <div
+                style={{
+                  backgroundColor: '#ffffff',
+                  borderRadius: '12px',
+                  maxWidth: '640px',
+                  width: '100%',
+                  maxHeight: '90vh',
+                  overflowY: 'auto',
+                  padding: '28px',
+                  position: 'relative',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '16px',
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #f3e8e2', paddingBottom: '14px' }}>
+                  <div>
+                    <span style={{ fontSize: '11px', fontWeight: '700', color: '#c73566', background: '#fdeaf0', padding: '3px 8px', borderRadius: '10px' }}>
+                      {selectedReportForView.report_code}
+                    </span>
+                    <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#2b2326', margin: '6px 0 2px 0' }}>
+                      Consultation Report &bull; Patient Care Summary
+                    </h2>
+                    <p style={{ fontSize: '12px', color: '#7a6870', margin: 0 }}>
+                      Consultation with {selectedReportForView.doctor_name} on {selectedReportForView.consultation_date}
                     </p>
                   </div>
                   <button
                     type="button"
-                    className="patient-btn-secondary"
-                    onClick={() => navigate('/patient/connect-doctor')}
+                    onClick={() => setSelectedReportForView(null)}
+                    style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#7a6870' }}
+                    aria-label="Close report view"
                   >
-                    View Details
+                    ✕
                   </button>
                 </div>
-              ))}
+
+                <div>
+                  <h4 style={{ fontSize: '13px', fontWeight: '700', color: '#2b2326', marginBottom: '6px' }}>
+                    What We Discussed
+                  </h4>
+                  <p style={{ fontSize: '14px', lineHeight: '1.6', color: '#4a3d42', backgroundColor: '#fffbf9', padding: '12px 16px', borderRadius: '6px', border: '1px solid #f9ece4' }}>
+                    {selectedReportForView.summary}
+                  </p>
+                </div>
+
+                {selectedReportForView.medications_instructions && (
+                  <div>
+                    <h4 style={{ fontSize: '13px', fontWeight: '700', color: '#166534', marginBottom: '6px' }}>
+                      Medication Instructions
+                    </h4>
+                    <p style={{ fontSize: '14px', lineHeight: '1.6', color: '#14532d', backgroundColor: '#f0fdf4', padding: '12px 16px', borderRadius: '6px', border: '1px solid #bbf7d0' }}>
+                      {selectedReportForView.medications_instructions}
+                    </p>
+                  </div>
+                )}
+
+                {selectedReportForView.recommendations && (
+                  <div>
+                    <h4 style={{ fontSize: '13px', fontWeight: '700', color: '#2b2326', marginBottom: '6px' }}>
+                      Self-Care &amp; Restorative Guidance
+                    </h4>
+                    <p style={{ fontSize: '14px', lineHeight: '1.6', color: '#4a3d42', backgroundColor: '#fffbf9', padding: '12px 16px', borderRadius: '6px', border: '1px solid #f9ece4' }}>
+                      {selectedReportForView.recommendations}
+                    </p>
+                  </div>
+                )}
+
+                <div>
+                  <h4 style={{ fontSize: '13px', fontWeight: '700', color: '#2b2326', marginBottom: '6px' }}>
+                    Follow-Up Instructions
+                  </h4>
+                  <p style={{ fontSize: '14px', lineHeight: '1.6', color: '#4a3d42', backgroundColor: '#fffbf9', padding: '12px 16px', borderRadius: '6px', border: '1px solid #f9ece4' }}>
+                    {selectedReportForView.followup_instructions}
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f3e8e2', paddingTop: '16px', marginTop: '8px' }}>
+                  <button
+                    type="button"
+                    className="patient-btn-secondary"
+                    onClick={() => window.print()}
+                  >
+                    Print or Save as PDF
+                  </button>
+                  <button
+                    type="button"
+                    className="patient-btn-primary"
+                    onClick={() => setSelectedReportForView(null)}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 

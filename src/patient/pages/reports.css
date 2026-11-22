@@ -907,6 +907,24 @@
   border: 1px solid var(--patient-blush-border);
 }
 
+.status-pending {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.status-confirmed {
+  background: #eaf7ee;
+  color: #1d7338;
+  border: 1px solid #c4ebd0;
+}
+
+.status-rescheduled {
+  background: #e0e7ff;
+  color: #3730a3;
+  border: 1px solid #c7d2fe;
+}
+
 .connect-row-doctor-info {
   margin: 0;
   font-size: 13px;

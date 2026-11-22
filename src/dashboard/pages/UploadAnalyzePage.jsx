@@ -238,7 +238,11 @@ export function UploadAnalyzePage({ analyzer = submitMultimodalAnalysis }) {
       summary:
         result.indicators?.join('; ') ||
         `Completed uploaded multimodal analysis (${modalityLabels.join(', ')}).`,
-      epdsEquivalent: result.epdsEquivalent ?? Math.round((result.combinedScore || 0.5) * 20),
+      epdsEquivalent:
+        result.epdsEquivalent ??
+        (typeof result.combinedScore === 'number'
+          ? Math.round(result.combinedScore * 20)
+          : null),
       discordanceDetected: Boolean(result.discordanceDetected),
       capturedModalities: {
         text: activeSelectedModalities.includes('text'),

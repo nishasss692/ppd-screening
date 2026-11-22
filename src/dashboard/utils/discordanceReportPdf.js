@@ -36,7 +36,7 @@ export function buildDiscordanceReportText({ screening, mother, analysis, notes 
   if (!screening || !analysis) return '';
 
   const lines = [
-    'MIORA - CROSS-MODAL DISCORDANCE REPORT',
+    'AANCHAL - CROSS-MODAL DISCORDANCE REPORT',
     '========================================',
     `Screening ID: ${screening.id}`,
     `Mother ID: ${screening.motherId} (${screening.motherInitials || mother?.initials || '--'})`,

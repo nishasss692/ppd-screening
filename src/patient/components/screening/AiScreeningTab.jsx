@@ -622,12 +622,12 @@ export function AiScreeningTab({ onContinueToEpds }) {
         <section className="patient-card ai-screening-intro-card">
           <div className="ai-screening-header">
             <div className="miora-dash-eyebrow">
-              <span>MULTIMODAL AI SCREENING — VIDEO &amp; VOICE SESSION</span>
+              <span>AI SCREENING</span>
               <span className="miora-dash-eyebrow-line" aria-hidden="true" />
             </div>
             <h2 className="miora-dash-title patient-page-heading" style={{ fontSize: '20px' }}>AI Screening Session Setup</h2>
             <p className="miora-dash-subtitle patient-page-subheading">
-              A guided conversational screening with the AANCHAL AI Assistant. This session uses acoustic, facial, and linguistic analysis to assess emotional wellbeing.
+              A gentle conversational screening with the AANCHAL AI Assistant. Share your thoughts and experiences across 5 questions.
             </p>
           </div>
 
@@ -639,8 +639,8 @@ export function AiScreeningTab({ onContinueToEpds }) {
             <div className="ai-compulsory-video-text">
               <strong>Compulsory Video &amp; Audio Recording</strong>
               <p>
-                Continuous video and audio recording is a <strong>mandatory requirement</strong> for this research screening.
-                Your live camera preview will remain visible throughout the 5-question conversation to enable multimodal affect and acoustic analysis.
+                Continuous video and audio recording is a <strong>mandatory requirement</strong> for this screening.
+                Your live camera preview will remain visible throughout the 5-question conversation.
               </p>
               <label className="ai-screening-consent-checkbox" style={{ marginTop: '12px' }}>
                 <input
@@ -657,7 +657,7 @@ export function AiScreeningTab({ onContinueToEpds }) {
 
           {cameraError && (
             <div className="patient-notice-banner is-error" role="alert" style={{ marginTop: '18px' }}>
-              <span>⚠️ {cameraError}</span>
+              <span>{cameraError}</span>
             </div>
           )}
 
@@ -696,7 +696,7 @@ export function AiScreeningTab({ onContinueToEpds }) {
         </div>
 
         <div className="ai-chat-timer-wrap">
-          <span className="ai-live-rec-tag">🔴 REC</span>
+          <span className="ai-live-rec-tag"><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#dc2626', marginRight: 5 }} />REC</span>
           <span className="ai-live-rec-timer">{formatTimer(sessionSeconds)}</span>
         </div>
       </div>
@@ -742,7 +742,7 @@ export function AiScreeningTab({ onContinueToEpds }) {
 
                   <div className="ai-chat-msg-meta">
                     <span className="ai-chat-time">{msg.timestamp}</span>
-                    {msg.isVoice && <span className="ai-chat-voice-tag">🎙️ Spoken</span>}
+                    {msg.isVoice && <span className="ai-chat-voice-tag">Spoken</span>}
                   </div>
                 </div>
               </div>
@@ -834,7 +834,7 @@ export function AiScreeningTab({ onContinueToEpds }) {
           ) : (
             <div className="ai-chat-completion-footer">
               <span className="ai-chat-completion-text">
-                ✓ All 5 questions answered. Multimodal video and acoustic data saved.
+                All 5 questions answered. Multimodal video and acoustic data saved.
               </span>
               <button
                 type="button"
@@ -857,7 +857,7 @@ export function AiScreeningTab({ onContinueToEpds }) {
                 <PatientIcon name="video" size={16} color="#ba1e53" />
                 <span>Continuous Video Recording</span>
               </div>
-              <span className="ai-rec-live-badge">🔴 REC LIVE</span>
+              <span className="ai-rec-live-badge"><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#dc2626', marginRight: 5 }} />REC LIVE</span>
             </div>
 
             <div className="ai-camera-stream-container">
@@ -875,7 +875,7 @@ export function AiScreeningTab({ onContinueToEpds }) {
             </div>
 
             <p className="ai-camera-requirement-note">
-              ✓ Mandatory continuous video active for facial affect &amp; Action Unit analysis.
+              Mandatory continuous video active for facial affect &amp; Action Unit analysis.
             </p>
           </div>
 

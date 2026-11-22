@@ -30,6 +30,13 @@ export const DEMO_ACCOUNTS = {
     name: 'Raj K.',
     relationship: 'Partner / Family Caregiver',
   },
+  hospital: {
+    email: 'apollo@hospital.miora.health',
+    password: 'password123',
+    role: 'hospital',
+    name: "Apollo Women's Hospital Staff",
+    hospitalId: 'HOSP-001',
+  },
 };
 
 function getRegisteredUsers() {
@@ -179,7 +186,7 @@ export async function authenticate({ email, password, selectedRole }) {
           authenticatedAt: new Date().toISOString(),
         };
         backendRedirectUrl =
-          data.redirect_url || (resolvedRole === 'doctor' ? '/dashboard' : '/patient/dashboard');
+          data.redirect_url || (resolvedRole === 'doctor' ? '/mothers' : '/patient/dashboard');
       }
     } else if (response.status === 401 || response.status === 403) {
       const err = await response.json().catch(() => ({}));
@@ -222,8 +229,8 @@ export async function authenticate({ email, password, selectedRole }) {
     }
     setCurrentUser(backendUser);
     const targetRedirect =
-      backendUser.role === 'doctor' || backendRedirectUrl === '/dashboard'
-        ? '/dashboard'
+      backendUser.role === 'doctor' || backendRedirectUrl === '/mothers' || backendRedirectUrl === '/dashboard'
+        ? '/mothers'
         : '/patient/dashboard';
     return {
       user: backendUser,
@@ -309,7 +316,7 @@ export async function authenticate({ email, password, selectedRole }) {
 
   return {
     user: authenticatedUser,
-    redirectUrl: accountRole === 'doctor' ? '/dashboard' : '/patient/dashboard',
+    redirectUrl: accountRole === 'doctor' ? '/mothers' : '/patient/dashboard',
   };
 }
 
@@ -349,7 +356,7 @@ export async function authenticateWithGoogle(selectedRole) {
 
   return {
     user,
-    redirectUrl: norm === 'doctor' ? '/dashboard' : '/patient/dashboard',
+    redirectUrl: norm === 'doctor' ? '/mothers' : '/patient/dashboard',
   };
 }
 
@@ -446,6 +453,6 @@ export async function registerAccount({ name, email, password, role, patientEmai
 
   return {
     user: newUser,
-    redirectUrl: normRole === 'doctor' ? '/dashboard' : '/patient/dashboard',
+    redirectUrl: normRole === 'doctor' ? '/mothers' : '/patient/dashboard',
   };
 }

@@ -38,9 +38,9 @@ describe('Miora Screen 01: Dashboard', () => {
     renderDashboard();
 
     // Top Navigation
-    expect(screen.getByRole('link', { name: /(AANCHAL|Miora) Dashboard/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /(AANCHAL|Miora) (Dashboard|Clinician Portal)/i })).toBeInTheDocument();
     expect(screen.queryByText('Maternal Emotional')).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Dashboard' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^Dashboard$/ })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Mothers & Cases' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Screening' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Results' })).toBeInTheDocument();
@@ -117,8 +117,7 @@ describe('Miora Screen 01: Dashboard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open case profile for M-104' }));
     expect(screen.getByRole('heading', { name: 'Amara K.' })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('link', { name: 'Dashboard' }));
-    fireEvent.click(screen.getByRole('button', { name: /Start Screening/i }));
+    fireEvent.click(screen.getByRole('link', { name: 'Screening' }));
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Maternal Screening Session/i);
     expect(screen.getByRole('tab', { name: /AI Screening/i })).toBeInTheDocument();
   });
