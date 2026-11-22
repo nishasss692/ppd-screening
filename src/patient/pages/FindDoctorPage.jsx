@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { SAMPLE_DOCTORS, getHospitalById } from '../data/sampleDoctors.js';
+import { fetchDoctors } from '../services/patientApiService.js';
 import './find-doctor.css';
 
 /* ── Inline SVG icons (stroke-only, Miora style) ───────────────────────── */
@@ -142,7 +143,7 @@ function UrgentSupportModal({ onClose }) {
 /* ── Doctor card ──────────────────────────────────────────────────────────── */
 function DoctorCard({ doctor }) {
   const navigate = useNavigate();
-  const hospital = getHospitalById(doctor.hospitalId);
+  const hospital = doctor.hospital || getHospitalById(doctor.hospitalId);
 
   const handleSelect = () => {
     navigate(`/patient/book-appointment?doctorId=${doctor.doctorId}`);
@@ -236,6 +237,45 @@ export function FindDoctorPage() {
   const [showManualInput, setShowManualInput] = useState(false);
   const [urgentModalOpen, setUrgentModalOpen] = useState(false);
 
+  const [doctors, setDoctors] = useState(SAMPLE_DOCTORS);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const loadDoctors = useCallback(async (locationFilter = '') => {
+    setIsLoading(true);
+    try {
+      const data = await fetchDoctors(locationFilter ? { location: locationFilter } : {});
+      if (Array.isArray(data) && data.length > 0) {
+        setDoctors(data);
+      } else if (Array.isArray(data) && data.length === 0 && locationFilter) {
+        setDoctors([]);
+      } else {
+        setDoctors(SAMPLE_DOCTORS);
+      }
+    } catch (err) {
+      console.warn('Doctor directory API offline or error, falling back to local dataset:', err);
+      if (locationFilter) {
+        const norm = locationFilter.toLowerCase();
+        const filtered = SAMPLE_DOCTORS.filter((d) => {
+          const hosp = getHospitalById(d.hospitalId);
+          return (
+            (hosp && hosp.location.toLowerCase().includes(norm)) ||
+            (hosp && hosp.address.toLowerCase().includes(norm)) ||
+            (hosp && hosp.name.toLowerCase().includes(norm))
+          );
+        });
+        setDoctors(filtered);
+      } else {
+        setDoctors(SAMPLE_DOCTORS);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDoctors();
+  }, [loadDoctors]);
+
   /* Request browser geolocation */
   const requestLocation = useCallback(() => {
     if (!navigator.geolocation) {
@@ -255,8 +295,9 @@ export function FindDoctorPage() {
         const lat = pos.coords.latitude.toFixed(3);
         const lng = pos.coords.longitude.toFixed(3);
         setLocationStatus('granted');
-        setLocationLabel(`Location detected (${lat}°N, ${lng}°E) — showing all sample doctors`);
+        setLocationLabel(`Location detected (${lat}°N, ${lng}°E) — showing all verified specialists`);
         setShowManualInput(false);
+        loadDoctors();
       },
       () => {
         setLocationStatus('denied');
@@ -265,7 +306,7 @@ export function FindDoctorPage() {
       },
       { timeout: 8000 }
     );
-  }, []);
+  }, [loadDoctors]);
 
   /* Handle manual city / PIN submit */
   const handleManualSubmit = (e) => {
@@ -273,8 +314,9 @@ export function FindDoctorPage() {
     const val = manualInput.trim();
     if (!val) return;
     setLocationStatus('manual');
-    setLocationLabel(`Showing sample doctors for: "${val}"`);
+    setLocationLabel(`Showing specialists for: "${val}"`);
     setShowManualInput(false);
+    loadDoctors(val);
   };
 
   const locationDotClass =
@@ -415,15 +457,38 @@ export function FindDoctorPage() {
       {/* Doctor grid */}
       <section aria-label="Available doctors">
         <div className="miora-dash-eyebrow" style={{ marginBottom: 16 }}>
-          <span>{SAMPLE_DOCTORS.length} SAMPLE DOCTORS</span>
+          <span>{doctors.length} AVAILABLE SPECIALISTS</span>
           <span className="miora-dash-eyebrow-line" aria-hidden="true" />
         </div>
 
-        <div className="find-doctor-grid">
-          {SAMPLE_DOCTORS.map((doc) => (
-            <DoctorCard key={doc.doctorId} doctor={doc} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div style={{ textAlign: 'center', padding: '36px 0', color: 'var(--patient-ink-secondary)' }}>
+            Loading doctor directory…
+          </div>
+        ) : doctors.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '36px 20px', background: '#fff', borderRadius: '12px', border: '1px solid #f0e6eb' }}>
+            <p style={{ margin: 0, fontWeight: 600, color: 'var(--patient-ink)' }}>No specialists found for this location.</p>
+            <p style={{ margin: '6px 0 16px 0', fontSize: 13, color: 'var(--patient-subtle)' }}>Try searching for a major city like Bangalore, Hyderabad, Chennai, or Mumbai.</p>
+            <button
+              type="button"
+              className="find-doctor-location-btn"
+              onClick={() => {
+                setManualInput('');
+                setLocationStatus('idle');
+                setLocationLabel('');
+                loadDoctors();
+              }}
+            >
+              Show All Specialists
+            </button>
+          </div>
+        ) : (
+          <div className="find-doctor-grid">
+            {doctors.map((doc) => (
+              <DoctorCard key={doc.doctorId} doctor={doc} />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* ── Urgent support placeholder ──────────────────────────────────── */}
