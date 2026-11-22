@@ -22,6 +22,17 @@ from backend.models.community import (
 from backend.models.mother import Mother
 from backend.models.screening import Screening
 from backend.models.user import User
+from backend.models.moments import (
+    BabyLetter,
+    FamilyCircleMember,
+    FamilyInvitation,
+    MomentReport,
+    MomentsComment,
+    MomentsPost,
+    MomentsReaction,
+    SavedMoment,
+    UserBlock,
+)
 
 __all__ = [
     "Mother",
@@ -36,5 +47,14 @@ __all__ = [
     "CommunityReaction",
     "CommunityReport",
     "ModerationAction",
+    "MomentsPost",
+    "MomentsComment",
+    "MomentsReaction",
+    "SavedMoment",
+    "BabyLetter",
+    "FamilyInvitation",
+    "FamilyCircleMember",
+    "UserBlock",
+    "MomentReport",
 ]
 

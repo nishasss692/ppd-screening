@@ -22,6 +22,8 @@ import { PatientHomePage } from './patient/pages/PatientHomePage.jsx';
 import { PatientReportsPage } from './patient/pages/PatientReportsPage.jsx';
 import { CareSuggestionsPage } from './patient/pages/CareSuggestionsPage.jsx';
 import { CommunityPage } from './patient/pages/CommunityPage.jsx';
+import { SupportSpacePage } from './patient/pages/SupportSpacePage.jsx';
+import { FamilyMomentsPage } from './family/FamilyMomentsPage.jsx';
 import { PatientProfilePage } from './patient/pages/PatientProfilePage.jsx';
 import { PatientSettingsPage } from './patient/pages/PatientSettingsPage.jsx';
 import { PatientProvider } from './patient/context/PatientContext.jsx';
@@ -61,6 +63,12 @@ export function App() {
               <Route path="/hospital/reports/:id" element={<HospitalReportDetailPage />} />
             </Route>
 
+            {/* Family Portal Routes */}
+            <Route path="/family/moments" element={<FamilyMomentsPage />} />
+            <Route path="/family/dashboard" element={<FamilyMomentsPage />} />
+            <Route path="/family/join" element={<FamilyMomentsPage initialAction="join" />} />
+            <Route path="/family" element={<Navigate to="/family/moments" replace />} />
+
             {/* Patient Portal Routes with Unified Patient Shell */}
             <Route element={<PatientLayout />}>
               <Route path="/patient/dashboard" element={<PatientHomePage />} />
@@ -98,11 +106,15 @@ export function App() {
               <Route path="/patient/screening/results" element={<ScreeningResultsPage />} />
               <Route path="/patient/results" element={<ScreeningResultsPage />} />
 
-              {/* Anonymous Mother's Community (Mother's Circle) */}
-              <Route path="/patient/community" element={<CommunityPage />} />
-              <Route path="/community" element={<CommunityPage />} />
-              <Route path="/mothers-circle" element={<Navigate to="/patient/community" replace />} />
-              <Route path="/patient/mothers-circle" element={<Navigate to="/patient/community" replace />} />
+              {/* AANCHAL Moments & Support Space */}
+              <Route path="/patient/support-space" element={<SupportSpacePage />} />
+              <Route path="/support-space" element={<SupportSpacePage />} />
+              <Route path="/patient/moments" element={<SupportSpacePage />} />
+              <Route path="/moments" element={<SupportSpacePage />} />
+              <Route path="/patient/community" element={<SupportSpacePage initialTab="community" />} />
+              <Route path="/community" element={<SupportSpacePage initialTab="community" />} />
+              <Route path="/mothers-circle" element={<Navigate to="/patient/support-space" replace />} />
+              <Route path="/patient/mothers-circle" element={<Navigate to="/patient/support-space" replace />} />
 
               {/* Care Suggestions & Doctor Consultations */}
               <Route path="/patient/care-suggestions" element={<CareSuggestionsPage />} />

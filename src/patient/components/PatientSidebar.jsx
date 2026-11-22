@@ -48,9 +48,9 @@ const NAV_ITEMS = [
     icon: 'reports',
   },
   {
-    to: '/patient/community',
-    matchPaths: ['/patient/community', '/community', '/mothers-circle'],
-    label: "Mother's Circle",
+    to: '/patient/support-space',
+    matchPaths: ['/patient/support-space', '/patient/moments', '/patient/community', '/community', '/mothers-circle'],
+    label: 'Support Space',
     icon: 'community',
   },
   {

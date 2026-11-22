@@ -20,9 +20,11 @@ from backend.routers.patients import router as patients_router
 from backend.routers.community import router as community_router
 from backend.routers.hospital import router as hospital_router
 from backend.routers.consultation_reports import router as consultation_reports_router
+from backend.routers.moments import router as moments_router
 from backend.database.connection import get_db_context, init_db
 from backend.services.auth_service import seed_default_users
 from backend.services.community_service import CommunityService
+from backend.services.moments_service import MomentsService
 from backend.services.text_ner_service import text_ner_service
 from backend.services.clinical_service import clinical_service
 from backend.services.audio_service import audio_service
@@ -41,6 +43,7 @@ async def lifespan(_app: FastAPI):
         with get_db_context() as db:
             seed_default_users(db)
             CommunityService.seed_demo_posts(db)
+            MomentsService.seed_demo_moments(db)
     except Exception as exc:
         pass
     yield
@@ -91,6 +94,7 @@ app.include_router(patients_router)
 app.include_router(community_router)
 app.include_router(hospital_router)
 app.include_router(consultation_reports_router)
+app.include_router(moments_router)
 
 
 @app.get("/", tags=["Health Check"])
