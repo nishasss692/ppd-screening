@@ -102,13 +102,14 @@ export async function updateMedicalHistory(historyData) {
 /**
  * Persist completed EPDS screening to PostgreSQL via POST /api/patients/me/screenings.
  */
-export async function saveScreeningSession(answers, notes = '', videoMetadata = null, questionTimestamps = null) {
+export async function saveScreeningSession(answers, notes = '', videoMetadata = null, questionTimestamps = null, psychosocialAnswers = null) {
   const url = `${getApiBase()}/api/patients/me/screenings`;
   const payload = {
     answers,
     notes,
     video_metadata: videoMetadata || undefined,
     question_timestamps: questionTimestamps || undefined,
+    psychosocial_answers: psychosocialAnswers || undefined,
   };
   const response = await fetch(url, {
     method: 'POST',
@@ -119,6 +120,43 @@ export async function saveScreeningSession(answers, notes = '', videoMetadata = 
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
     throw new Error(err.detail || `HTTP ${response.status}: Failed to save screening session`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Retrieve mother's persistent Stage 1 clinical profile from GET /api/patients/me/clinical-profile.
+ */
+export async function fetchClinicalProfile() {
+  const url = `${getApiBase()}/api/patients/me/clinical-profile`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: getHeaders(),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${response.status}: Failed to fetch clinical profile`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Save or update mother's Stage 1 clinical profile via PUT /api/patients/me/clinical-profile.
+ */
+export async function updateClinicalProfile(data) {
+  const url = `${getApiBase()}/api/patients/me/clinical-profile`;
+  const response = await fetch(url, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${response.status}: Failed to save clinical profile`);
   }
 
   return response.json();

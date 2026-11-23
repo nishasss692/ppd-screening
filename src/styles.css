@@ -150,7 +150,8 @@ section[id],
 .brand-header { padding: 26px 0 10px; }
 .brand-header-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .brand { display: inline-flex; align-items: center; flex: 0 0 auto; }
-.brand-wordmark { position: relative; display: inline-flex; align-items: baseline; color: #d93c75; font-size: 33px; padding-bottom: 0.16em; }
+.brand-wordmark { position: relative; display: inline-flex; align-items: center; color: #d93c75; font-size: 33px; }
+.aanchal-brand-logo-img { height: 42px; width: auto; max-height: 48px; object-fit: contain; display: block; }
 .brand-m { height: 0.96em; width: auto; display: inline-block; vertical-align: baseline; transform: translateY(0.22em); margin-right: 0.02em; }
 .brand-script { font-family: var(--serif); font-size: 1em; font-style: italic; font-weight: 500; letter-spacing: -0.03em; color: inherit; line-height: 1; }
 .button { display: inline-flex; align-items: center; justify-content: center; gap: 10px; background: var(--rose); color: #fff; border: 1px solid var(--rose); border-radius: 999px; padding: 13px 25px; font-family: var(--serif); font-size: 16px; line-height: 1; white-space: nowrap; cursor: pointer; transition: background 180ms var(--ease-out), transform 160ms ease-out, box-shadow 180ms var(--ease-out); }

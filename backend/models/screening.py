@@ -119,6 +119,24 @@ class Screening(Base, TimestampMixin):
         nullable=False,
         doc="Structured prediction outputs from individual modalities and multimodal fusion",
     )
+    psychosocial_answers: Mapped[Optional[Dict[str, Any]]] = mapped_column(
+        JSON,
+        default=dict,
+        nullable=True,
+        doc="Stage 2 Mother's Wellbeing & Support Assessment responses for this screening session",
+    )
+    clinical_features_snapshot: Mapped[Optional[Dict[str, Any]]] = mapped_column(
+        JSON,
+        default=dict,
+        nullable=True,
+        doc="Exact 46-feature input snapshot evaluated by the clinical model for this screening session",
+    )
+    clinical_model_prediction: Mapped[Optional[Dict[str, Any]]] = mapped_column(
+        JSON,
+        default=dict,
+        nullable=True,
+        doc="Direct prediction output: risk_probability, predicted_class, risk_category, decision_threshold",
+    )
     notes: Mapped[Optional[str]] = mapped_column(
         Text,
         nullable=True,

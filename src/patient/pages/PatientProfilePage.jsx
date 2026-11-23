@@ -98,6 +98,32 @@ export function PatientProfilePage() {
         </div>
       )}
 
+      {/* Clinical Profile Stage 1 Banner Card */}
+      <div className="patient-card" style={{ marginBottom: 20, padding: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, background: '#fff', border: '1px solid #fed7e2' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: '#fcebf0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ba1e53', flexShrink: 0 }}>
+            <PatientIcon name="clipboard-check" size={24} />
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--patient-ink, #2d3748)' }}>
+                Stage 1 — Clinical &amp; Demographic Profile
+              </h2>
+              <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, background: '#fef3c7', color: '#92400e' }}>
+                Health &amp; Obstetric Record
+              </span>
+            </div>
+            <p style={{ margin: '4px 0 0', fontSize: 13, color: '#718096' }}>
+              Demographic, obstetric and background details used for maternal risk assessment. Editable at any time.
+            </p>
+          </div>
+        </div>
+        <NavLink to="/patient/clinical-profile" className="patient-btn-primary" style={{ padding: '8px 18px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <span>View &amp; Edit Clinical Profile</span>
+          <PatientIcon name="arrow-right" size={15} />
+        </NavLink>
+      </div>
+
       {/* Main Profile Card */}
       <div className="patient-profile-card">
         <div className="patient-profile-user-row">

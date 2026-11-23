@@ -292,9 +292,7 @@ export function LoginScreen() {
             {/* Upper-left branding */}
             <div className="login-branding">
               <Link to="/" className="login-logo-link" aria-label="AANCHAL Home">
-                <span className="login-brand-wordmark" style={{ fontFamily: 'var(--font-serif, "Playfair Display", Georgia, serif)', letterSpacing: '0.04em', fontWeight: 700, fontSize: '32px', color: '#ba1e53', display: 'inline-block' }}>
-                  AANCHAL
-                </span>
+                <BrandWordmark height={46} />
               </Link>
 
               {/* Exact Tagline */}

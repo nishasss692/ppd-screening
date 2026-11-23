@@ -138,11 +138,30 @@ def check_db_connection() -> bool:
 
 
 def init_db(target_engine: Optional[Engine] = None) -> None:
-    """Create all configured tables in the target database.
+    """Create all configured tables in the target database and ensure schema migration.
 
     Note: In production, Alembic migrations should be preferred over create_all().
     """
     active_engine = target_engine or engine
     Base.metadata.create_all(bind=active_engine)
+
+    # Dynamic non-destructive column additions for existing SQLite / Postgres dev instances
+    with active_engine.connect() as conn:
+        columns_to_add = [
+            ("mothers", "clinical_profile", "JSON"),
+            ("mothers", "profile_completed", "BOOLEAN DEFAULT 0"),
+            ("screenings", "psychosocial_answers", "JSON"),
+            ("screenings", "clinical_features_snapshot", "JSON"),
+            ("screenings", "clinical_model_prediction", "JSON"),
+        ]
+        for tbl, col, col_type in columns_to_add:
+            try:
+                conn.execute(text(f"ALTER TABLE {tbl} ADD COLUMN {col} {col_type}"))
+                conn.commit()
+                logger.info("Migrated column %s.%s successfully.", tbl, col)
+            except Exception:
+                # Column already exists or dialect does not support syntax
+                pass
+
     logger.info("Database schema verified against metadata tables.")
 

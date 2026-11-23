@@ -25,6 +25,7 @@ import { CommunityPage } from './patient/pages/CommunityPage.jsx';
 import { SupportSpacePage } from './patient/pages/SupportSpacePage.jsx';
 import { FamilyMomentsPage } from './family/FamilyMomentsPage.jsx';
 import { PatientProfilePage } from './patient/pages/PatientProfilePage.jsx';
+import { ClinicalProfilePage } from './patient/pages/ClinicalProfilePage.jsx';
 import { PatientSettingsPage } from './patient/pages/PatientSettingsPage.jsx';
 import { PatientProvider } from './patient/context/PatientContext.jsx';
 import { ClinicalProvider } from './dashboard/context/ClinicalContext.jsx';
@@ -79,8 +80,10 @@ export function App() {
               <Route path="/reports" element={<Navigate to="/patient/reports" replace />} />
               <Route path="/my-reports" element={<Navigate to="/patient/reports" replace />} />
               <Route path="/patient/profile" element={<PatientProfilePage />} />
+              <Route path="/patient/clinical-profile" element={<ClinicalProfilePage />} />
               <Route path="/patient/settings" element={<PatientSettingsPage />} />
               <Route path="/profile" element={<Navigate to="/patient/profile" replace />} />
+              <Route path="/clinical-profile" element={<ClinicalProfilePage />} />
               <Route path="/settings" element={<Navigate to="/patient/settings" replace />} />
 
               {/* AI Assistant / Companion */}
