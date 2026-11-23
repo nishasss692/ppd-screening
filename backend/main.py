@@ -21,6 +21,7 @@ from backend.routers.community import router as community_router
 from backend.routers.hospital import router as hospital_router
 from backend.routers.consultation_reports import router as consultation_reports_router
 from backend.routers.moments import router as moments_router
+from backend.routers.directory import router as directory_router
 from backend.database.connection import get_db_context, init_db
 from backend.services.auth_service import seed_default_users
 from backend.services.community_service import CommunityService
@@ -95,6 +96,7 @@ app.include_router(community_router)
 app.include_router(hospital_router)
 app.include_router(consultation_reports_router)
 app.include_router(moments_router)
+app.include_router(directory_router)
 
 
 @app.get("/", tags=["Health Check"])

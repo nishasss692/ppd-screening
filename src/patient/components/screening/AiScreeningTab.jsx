@@ -72,15 +72,29 @@ export function AiScreeningTab({ onContinueToEpds }) {
 
   useEffect(() => {
     let isMounted = true;
-    fetchMultimodalStatus()
-      .then((data) => {
-        if (isMounted) setPipelineStatus(data);
-      })
-      .catch((err) => {
-        console.warn('Multimodal pipeline readiness notice:', err);
-      });
+    let pollTimer = null;
+
+    const checkStatus = () => {
+      fetchMultimodalStatus()
+        .then((data) => {
+          if (isMounted) {
+            setPipelineStatus(data);
+            if (data?.audio?.status === 'ready' && data?.video?.status === 'ready' && data?.text?.status === 'ready') {
+              if (pollTimer) clearInterval(pollTimer);
+            }
+          }
+        })
+        .catch((err) => {
+          console.warn('Multimodal pipeline readiness notice:', err);
+        });
+    };
+
+    checkStatus();
+    pollTimer = setInterval(checkStatus, 4000);
+
     return () => {
       isMounted = false;
+      if (pollTimer) clearInterval(pollTimer);
     };
   }, []);
 
