@@ -100,6 +100,7 @@ models/audio_model/*
 logs/
 temp/
 tmp/
+scratch/
 # Generated video model artifacts
 artifacts/video_model/**/*.pt
 artifacts/video_model/**/*.joblib

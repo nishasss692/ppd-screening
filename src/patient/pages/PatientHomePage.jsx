@@ -1,6 +1,14 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PatientIcon } from '../components/PatientIcons.jsx';
+import {
+  AANCHAL_LOGO_PNG,
+  AANCHAL_LOGO_WEBP,
+  AANCHAL_LOGO_DATA_URI,
+  HERO_MOTHER_PNG,
+  HERO_MOTHER_WEBP,
+  HERO_MOTHER_DATA_URI,
+} from '../../assets/brandAssets.js';
 import './patientHome.css';
 
 export function PatientHomePage() {
@@ -24,13 +32,18 @@ export function PatientHomePage() {
             {/* Prominent Official AANCHAL Logo in Top-Left Hero Corner */}
             <div className="aanchal-hero-brand-logo">
               <picture>
-                <source srcSet="/assets/aanchal-brand-logo.webp" type="image/webp" />
+                <source srcSet={AANCHAL_LOGO_WEBP} type="image/webp" />
                 <img
-                  src="/assets/aanchal-brand-logo.png"
+                  src={AANCHAL_LOGO_PNG}
                   alt="AANCHAL — Caring for the One Who Cares for All"
                   className="aanchal-hero-logo-img"
                   loading="eager"
                   decoding="async"
+                  onError={(e) => {
+                    if (e.currentTarget.src !== AANCHAL_LOGO_DATA_URI) {
+                      e.currentTarget.src = AANCHAL_LOGO_DATA_URI;
+                    }
+                  }}
                 />
               </picture>
             </div>
@@ -73,13 +86,18 @@ export function PatientHomePage() {
             role="region"
           >
             <picture>
-              <source srcSet="/assets/mother-baby-sculpture-hero.webp" type="image/webp" />
+              <source srcSet={HERO_MOTHER_WEBP} type="image/webp" />
               <img
-                src="/assets/mother-baby-sculpture-hero.png"
+                src={HERO_MOTHER_PNG}
                 alt="AANCHAL Mother and Baby Sculpture"
                 className="aanchal-hero-sculpture"
                 loading="eager"
                 decoding="async"
+                onError={(e) => {
+                  if (e.currentTarget.src !== HERO_MOTHER_DATA_URI) {
+                    e.currentTarget.src = HERO_MOTHER_DATA_URI;
+                  }
+                }}
               />
             </picture>
           </div>

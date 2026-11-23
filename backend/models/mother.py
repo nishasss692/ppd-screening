@@ -4,7 +4,7 @@ from datetime import date
 from typing import TYPE_CHECKING, List, Optional
 import uuid
 
-from sqlalchemy import Date, Integer, String, Text, Uuid
+from sqlalchemy import Boolean, Date, Integer, JSON, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.database.base import Base, TimestampMixin
@@ -78,6 +78,18 @@ class Mother(Base, TimestampMixin):
         Text,
         nullable=True,
         doc="Clinical medical history and obstetrical background notes",
+    )
+    clinical_profile: Mapped[Optional[dict]] = mapped_column(
+        JSON,
+        nullable=True,
+        default=dict,
+        doc="Structured 37-feature clinical profile collected during Stage 1 onboarding",
+    )
+    profile_completed: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+        doc="Whether the mother has completed the Stage 1 clinical profile",
     )
     notes: Mapped[Optional[str]] = mapped_column(
         Text,

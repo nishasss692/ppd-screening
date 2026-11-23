@@ -85,6 +85,9 @@ from backend.services.auth_service import (
 )
 from backend.services.patient_report_pdf import generate_patient_screening_pdf
 from backend.services.questionnaire_service import questionnaire_service
+from backend.services.clinical_adapter import assemble_clinical_features
+from backend.schemas.clinical_numerical import ClinicalFeatures
+from backend.services.clinical_service import clinical_service
 
 logger = logging.getLogger("ppd.patients")
 
@@ -287,6 +290,8 @@ def get_patient_profile(
         notes=mother.notes,
         postpartum_week=meta.get("postpartum_week", 4),
         emergency_contact=meta.get("emergency_contact"),
+        clinical_profile=mother.clinical_profile or {},
+        profile_completed=bool(mother.profile_completed),
         created_at=mother.created_at,
         updated_at=mother.updated_at,
     )
@@ -323,6 +328,13 @@ def update_patient_profile(
         mother.delivery_date = payload.delivery_date
     if payload.pregnancy_type is not None:
         mother.pregnancy_type = payload.pregnancy_type
+    if payload.clinical_profile is not None:
+        # Merge or replace clinical profile dictionary
+        current_prof = dict(mother.clinical_profile or {})
+        current_prof.update(payload.clinical_profile)
+        mother.clinical_profile = current_prof
+    if payload.profile_completed is not None:
+        mother.profile_completed = payload.profile_completed
 
     meta = _get_mother_portal_meta(mother)
     if payload.postpartum_week is not None:
@@ -355,9 +367,82 @@ def update_patient_profile(
         notes=mother.notes,
         postpartum_week=meta.get("postpartum_week", 4),
         emergency_contact=meta.get("emergency_contact"),
+        clinical_profile=mother.clinical_profile or {},
+        profile_completed=bool(mother.profile_completed),
         created_at=mother.created_at,
         updated_at=mother.updated_at,
     )
+
+
+@router.get(
+    "/me/clinical-profile",
+    summary="Retrieve mother's Stage 1 clinical profile",
+)
+def get_clinical_profile(
+    user: User = Depends(require_patient),
+    db: Session = Depends(get_db),
+) -> Dict[str, Any]:
+    """Retrieve the Stage 1 clinical profile and completeness status."""
+    if not user.mother_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mother record not linked.")
+    mother = db.get(Mother, user.mother_id)
+    if not mother:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mother record not found.")
+
+    profile = dict(mother.clinical_profile or {})
+    # Default age from mother entity if not explicitly in profile
+    if "Age" not in profile and mother.age is not None:
+        profile["Age"] = mother.age
+
+    return {
+        "mother_id": str(mother.id),
+        "clinical_profile": profile,
+        "profile_completed": bool(mother.profile_completed),
+        "updated_at": mother.updated_at.isoformat() if mother.updated_at else None,
+    }
+
+
+@router.put(
+    "/me/clinical-profile",
+    summary="Save or update mother's Stage 1 clinical profile",
+)
+def update_clinical_profile(
+    payload: Dict[str, Any],
+    user: User = Depends(require_patient),
+    db: Session = Depends(get_db),
+) -> Dict[str, Any]:
+    """Save or update Stage 1 clinical profile fields."""
+    if not user.mother_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mother record not linked.")
+    mother = db.get(Mother, user.mother_id)
+    if not mother:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mother record not found.")
+
+    new_profile = payload.get("clinical_profile", payload)
+    completed_flag = payload.get("profile_completed", True)
+
+    current_prof = dict(mother.clinical_profile or {})
+    current_prof.update(new_profile)
+
+    mother.clinical_profile = current_prof
+    mother.profile_completed = bool(completed_flag)
+
+    # Sync age if passed
+    if "Age" in new_profile:
+        try:
+            mother.age = int(float(new_profile["Age"]))
+        except (ValueError, TypeError):
+            pass
+
+    db.commit()
+    db.refresh(mother)
+
+    return {
+        "status": "success",
+        "mother_id": str(mother.id),
+        "clinical_profile": mother.clinical_profile,
+        "profile_completed": mother.profile_completed,
+    }
 
 
 # ============================================================================
@@ -552,6 +637,48 @@ def submit_and_save_screening(
     if payload.question_timestamps:
         model_meta["question_timestamps"] = payload.question_timestamps
 
+    # -------------------------------------------------------------------------
+    # 2-Stage Clinical Model Integration (Random Forest Model)
+    # -------------------------------------------------------------------------
+    features_snapshot: Optional[Dict[str, Any]] = None
+    clinical_pred_dict: Optional[Dict[str, Any]] = None
+
+    if payload.psychosocial_answers or mother.clinical_profile:
+        assembled_feats, is_suitable, diags = assemble_clinical_features(
+            clinical_profile=mother.clinical_profile,
+            psychosocial_answers=payload.psychosocial_answers,
+            fallback_age=mother.age,
+        )
+        if is_suitable and assembled_feats is not None:
+            try:
+                cf = ClinicalFeatures.model_validate(assembled_feats)
+                feature_dict = cf.to_feature_dict()
+                pred_resp = clinical_service.predict(mother_id=str(mother.id), features=feature_dict)
+                clinical_pred_dict = pred_resp.get("prediction", {})
+                clinical_pred_dict["status"] = "completed"
+                clinical_pred_dict["model_utilized"] = pred_resp.get("model_utilized", "random_forest")
+                clinical_pred_dict["predicted_label"] = clinical_pred_dict.get("risk_category", "LOW_RISK")
+                features_snapshot = feature_dict
+            except Exception as exc:
+                logger.warning("Clinical prediction failed during screening: %s", exc)
+                clinical_pred_dict = {
+                    "status": "unavailable",
+                    "reason": f"Clinical model execution error: {exc}",
+                }
+        else:
+            clinical_pred_dict = {
+                "status": "unavailable",
+                "reason": "insufficient_inputs",
+                "diagnostics": diags,
+            }
+
+    multimodal_dict = {
+        "epds_score": scored.total_score,
+        "epds_classification": scored.classification,
+    }
+    if clinical_pred_dict is not None:
+        multimodal_dict["clinical_prediction"] = clinical_pred_dict
+
     new_screening = Screening(
         mother_id=mother.id,
         instrument="EPDS",
@@ -564,7 +691,10 @@ def submit_and_save_screening(
         fusion_status="completed" if payload.video_metadata else "not_available",
         modality_status=mod_status,
         model_metadata=model_meta,
-        multimodal_scores={"epds_score": scored.total_score, "epds_classification": scored.classification},
+        multimodal_scores=multimodal_dict,
+        psychosocial_answers=payload.psychosocial_answers,
+        clinical_features_snapshot=features_snapshot,
+        clinical_model_prediction=clinical_pred_dict,
         notes=payload.notes or f"Completed EPDS via Patient Assistant. Score: {scored.total_score}/30",
     )
 
@@ -611,6 +741,9 @@ def submit_and_save_screening(
         item_scores=new_screening.item_scores,
         submitted_answers=new_screening.submitted_answers,
         model_metadata=new_screening.model_metadata,
+        psychosocial_answers=new_screening.psychosocial_answers,
+        clinical_features_snapshot=new_screening.clinical_features_snapshot,
+        clinical_model_prediction=new_screening.clinical_model_prediction,
         created_at=new_screening.created_at,
     )
 
@@ -649,6 +782,9 @@ def get_patient_screenings(
             item_scores=s.item_scores or {},
             submitted_answers=s.submitted_answers or {},
             model_metadata=s.model_metadata,
+            psychosocial_answers=s.psychosocial_answers,
+            clinical_features_snapshot=s.clinical_features_snapshot,
+            clinical_model_prediction=s.clinical_model_prediction,
             created_at=s.created_at,
         )
         for s in records
@@ -686,6 +822,9 @@ def get_screening_detail(
         item_scores=screening.item_scores or {},
         submitted_answers=screening.submitted_answers or {},
         model_metadata=screening.model_metadata,
+        psychosocial_answers=screening.psychosocial_answers,
+        clinical_features_snapshot=screening.clinical_features_snapshot,
+        clinical_model_prediction=screening.clinical_model_prediction,
         created_at=screening.created_at,
     )
 

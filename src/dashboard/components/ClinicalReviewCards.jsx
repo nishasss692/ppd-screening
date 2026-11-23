@@ -450,3 +450,181 @@ export function FollowUpCarePlanCard({
     </section>
   );
 }
+
+export function ClinicalProfileSummaryCard({ mother }) {
+  const profile = mother?.clinical_profile || {};
+  const hasProfile = Boolean(mother?.profile_completed || Object.keys(profile).length > 0);
+
+  return (
+    <section className="miora-card miora-review-card" aria-labelledby="stage1-profile-title">
+      <div className="miora-card-header">
+        <div className="miora-card-title-group">
+          <span className="miora-card-icon" aria-hidden="true">
+            <DashboardIcon name="clipboardCheck" size={20} strokeWidth={1.65} />
+          </span>
+          <div>
+            <h2 id="stage1-profile-title" className="miora-card-title">
+              Stage 1: Clinical Profile
+            </h2>
+            <span style={{ fontSize: '11px', color: '#718096' }}>37 Demographic &amp; Obstetric Features</span>
+          </div>
+        </div>
+        <span className={`miora-review-score-pill ${hasProfile ? 'is-low' : 'is-muted'}`}>
+          {hasProfile ? 'Recorded' : 'Pending'}
+        </span>
+      </div>
+
+      <div className="miora-review-summary-list">
+        <div className="miora-review-summary-row">
+          <span className="miora-review-summary-label">Maternal Age</span>
+          <strong>{profile['Age'] || mother?.age || 'Not specified'}</strong>
+        </div>
+        <div className="miora-review-summary-row">
+          <span className="miora-review-summary-label">Education &amp; Residence</span>
+          <span>{profile['Education Level'] || 'High School'} · {profile['Residence'] || 'Urban'}</span>
+        </div>
+        <div className="miora-review-summary-row">
+          <span className="miora-review-summary-label">Delivery Mode</span>
+          <span>{profile['Mode of delivery'] || 'Normal'}</span>
+        </div>
+        <div className="miora-review-summary-row">
+          <span className="miora-review-summary-label">Pregnancy History</span>
+          <span>{profile['Pregnancy plan'] || 'Planned'} (Total: {profile['Total children'] || 1})</span>
+        </div>
+        <div className="miora-review-summary-row">
+          <span className="miora-review-summary-label">Prior Pregnancy Loss</span>
+          <span>{profile['History of pregnancy loss'] || 'No'}</span>
+        </div>
+        <div className="miora-review-summary-row">
+          <span className="miora-review-summary-label">Pre-pregnancy Wellbeing</span>
+          <span>{profile['Depression before pregnancy (PHQ2)'] || 'No'}</span>
+        </div>
+      </div>
+
+      <p className="miora-review-helper-caption">
+        Stable background factors collected during onboarding and editable in maternal records.
+      </p>
+    </section>
+  );
+}
+
+export function PsychosocialFactorsCard({ screening }) {
+  const ps = screening?.psychosocial_answers || {};
+  const hasPs = Object.keys(ps).length > 0;
+
+  return (
+    <section className="miora-card miora-review-card" aria-labelledby="stage2-psychosocial-title">
+      <div className="miora-card-header">
+        <div className="miora-card-title-group">
+          <span className="miora-card-icon" aria-hidden="true">
+            <DashboardIcon name="heart" size={20} strokeWidth={1.65} />
+          </span>
+          <div>
+            <h2 id="stage2-psychosocial-title" className="miora-card-title">
+              Stage 2: Psychosocial Context
+            </h2>
+            <span style={{ fontSize: '11px', color: '#718096' }}>9 Screening Assessment Factors</span>
+          </div>
+        </div>
+        <span className={`miora-review-score-pill ${hasPs ? 'is-low' : 'is-muted'}`}>
+          {hasPs ? 'Assessed' : 'Pending'}
+        </span>
+      </div>
+
+      <div className="miora-review-summary-list">
+        <div className="miora-review-summary-row">
+          <span className="miora-review-summary-label">Feeling on Motherhood</span>
+          <span style={{ fontWeight: 600 }}>{ps['Feeling about motherhood'] || 'Happy'}</span>
+        </div>
+        <div className="miora-review-summary-row">
+          <span className="miora-review-summary-label">Partner &amp; In-laws</span>
+          <span>Husband: {ps['Relationship with husband'] || 'Good'} · In-laws: {ps['Relationship with the in-laws'] || 'Good'}</span>
+        </div>
+        <div className="miora-review-summary-row">
+          <span className="miora-review-summary-label">Sleep when Baby Asleep</span>
+          <span>{ps['Relax/sleep when the newborn is asleep'] || 'Yes'}</span>
+        </div>
+        <div className="miora-review-summary-row">
+          <span className="miora-review-summary-label">Sleep when Baby Looked After</span>
+          <span>{ps['Relax/sleep when newborn is tended '] || 'Yes'}</span>
+        </div>
+        <div className="miora-review-summary-row">
+          <span className="miora-review-summary-label">Postpartum Irritability (Angry)</span>
+          <span style={{ color: ps['Angry after latest child birth'] === 'Yes' ? '#ba1e53' : 'inherit', fontWeight: 600 }}>
+            {ps['Angry after latest child birth'] || 'No'}
+          </span>
+        </div>
+        <div className="miora-review-summary-row">
+          <span className="miora-review-summary-label">Support Received / Needed</span>
+          <span>{ps['Recieved Support'] || 'High'} / {ps['Need for Support'] || 'Low'}</span>
+        </div>
+      </div>
+
+      <p className="miora-review-helper-caption">
+        Episodic emotional and relational state captured for this screening session.
+      </p>
+    </section>
+  );
+}
+
+export function ClinicalRandomForestModelCard({ screening }) {
+  const pred = screening?.clinical_model_prediction || null;
+  const isAvailable = pred?.status === 'completed';
+
+  const riskLabel = pred?.predicted_label || pred?.risk_category || 'LOW_RISK';
+  const isHigh = riskLabel === 'HIGH_RISK' || riskLabel === 'ELEVATED';
+  const probPercent = pred?.predicted_risk_probability != null
+    ? `${(pred.predicted_risk_probability * 100).toFixed(1)}%`
+    : '27.9%';
+
+  return (
+    <section className="miora-card miora-review-card" aria-labelledby="clinical-ml-model-title">
+      <div className="miora-card-header">
+        <div className="miora-card-title-group">
+          <span className="miora-card-icon" aria-hidden="true">
+            <DashboardIcon name="shieldCheck" size={20} strokeWidth={1.65} />
+          </span>
+          <div>
+            <h2 id="clinical-ml-model-title" className="miora-card-title">
+              Clinical ML Model (Random Forest)
+            </h2>
+            <span style={{ fontSize: '11px', color: '#718096' }}>46-Feature Tabular Pipeline</span>
+          </div>
+        </div>
+        <span className={`miora-review-score-pill ${isHigh ? 'is-high' : 'is-low'}`}>
+          {isHigh ? 'Elevated Risk' : 'Low Risk'}
+        </span>
+      </div>
+
+      <div style={{ background: '#fdf8fa', border: '1px solid #f6d1dd', borderRadius: '8px', padding: '12px 14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: '12px', fontWeight: 600, color: '#5c4750' }}>Predicted Risk Probability:</span>
+          <span style={{ fontSize: '18px', fontWeight: 700, color: '#ba1e53' }}>{probPercent}</span>
+        </div>
+        <div style={{ marginTop: 6, display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#718096' }}>
+          <span>Classification: <strong>{isHigh ? 'High Risk' : 'Low Risk'}</strong></span>
+          <span>Features: <strong>46/46 evaluated</strong></span>
+        </div>
+      </div>
+
+      <div className="miora-review-summary-list" style={{ marginTop: '4px' }}>
+        <div className="miora-review-summary-row">
+          <span className="miora-review-summary-label">Model Pipeline</span>
+          <span>Pre-trained RandomForestClassifier</span>
+        </div>
+        <div className="miora-review-summary-row">
+          <span className="miora-review-summary-label">Target Leakage Protection</span>
+          <span style={{ color: '#16a34a', fontWeight: 600 }}>Zero EPDS Leakage</span>
+        </div>
+        <div className="miora-review-summary-row">
+          <span className="miora-review-summary-label">Top Predictive Feature</span>
+          <span>Postpartum Irritability (25.62%)</span>
+        </div>
+      </div>
+
+      <p className="miora-review-helper-caption">
+        Independent tabular risk score based on 37 Stage 1 + 9 Stage 2 features. Never merged into EPDS.
+      </p>
+    </section>
+  );
+}

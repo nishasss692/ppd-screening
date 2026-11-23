@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { BrandWordmark } from './dashboard/components/BrandWordmark.jsx';
 import { registerAccount, DEMO_ACCOUNTS } from './auth/authService.js';
 import './styles/login.css';
 
@@ -254,9 +255,7 @@ export function CreateAccountScreen() {
             {/* Upper-left branding */}
             <div className="login-branding create-account-branding">
               <Link to="/" className="login-logo-link" aria-label="AANCHAL Home">
-                <span className="login-brand-wordmark">
-                  <span className="login-brand-script" style={{ letterSpacing: '0.04em', fontWeight: 600 }}>AANCHAL</span>
-                </span>
+                <BrandWordmark height={46} />
               </Link>
 
               {/* Exact Tagline */}

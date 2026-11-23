@@ -2,6 +2,7 @@ import React from 'react';
 import { NavLink, useSearchParams } from 'react-router-dom';
 import { PatientIcon } from '../components/PatientIcons.jsx';
 import { AiScreeningTab } from '../components/screening/AiScreeningTab.jsx';
+import { PsychosocialTab } from '../components/screening/PsychosocialTab.jsx';
 import { EpdsTab } from '../components/screening/EpdsTab.jsx';
 import { ResultsReportsTab } from '../components/screening/ResultsReportsTab.jsx';
 import './screening.css';
@@ -11,9 +12,11 @@ export function PatientScreeningPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const rawTab = searchParams.get('tab');
 
-  // Normalize tab to exactly one of: 'ai-screening' | 'epds' | 'results'
+  // Normalize tab to exactly one of: 'ai-screening' | 'psychosocial' | 'epds' | 'results'
   const activeTab =
-    rawTab === 'epds'
+    rawTab === 'psychosocial' || rawTab === 'wellbeing'
+      ? 'psychosocial'
+      : rawTab === 'epds'
       ? 'epds'
       : rawTab === 'results' || rawTab === 'reports' || rawTab === 'results-reports'
       ? 'results'
@@ -95,7 +98,7 @@ export function PatientScreeningPage() {
         </div>
       </div>
 
-      {/* Exactly 3 Unified Screening Tabs */}
+      {/* Exactly 4 Screening Tabs */}
       <div className="screening-tab-nav" role="tablist" aria-label="Screening sections">
         <button
           type="button"
@@ -107,6 +110,18 @@ export function PatientScreeningPage() {
         >
           <PatientIcon name="video" size={16} />
           <span>AI Screening</span>
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          id="tab-psychosocial"
+          aria-selected={activeTab === 'psychosocial'}
+          className={`screening-tab-nav-btn ${activeTab === 'psychosocial' ? 'is-active' : ''}`}
+          onClick={() => handleTabChange('psychosocial')}
+        >
+          <PatientIcon name="heart" size={16} />
+          <span>Wellbeing &amp; Support (Stage 2)</span>
         </button>
 
         <button
@@ -137,7 +152,11 @@ export function PatientScreeningPage() {
       {/* Tab Panels */}
       <div className="screening-tab-content-area" role="tabpanel">
         {activeTab === 'ai-screening' && (
-          <AiScreeningTab onContinueToEpds={() => handleTabChange('epds')} />
+          <AiScreeningTab onContinueToEpds={() => handleTabChange('psychosocial')} />
+        )}
+
+        {activeTab === 'psychosocial' && (
+          <PsychosocialTab onContinueToEpds={() => handleTabChange('epds')} />
         )}
 
         {activeTab === 'epds' && (

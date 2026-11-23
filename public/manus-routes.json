@@ -1,20 +1,20 @@
 {
   "routes": [
-    { "path": "/", "title": "Miora — Maternal Emotional Intelligence" },
-    { "path": "/login", "title": "Miora — Sign In" },
-    { "path": "/create-account", "title": "Miora — Create Account" },
-    { "path": "/patient/home", "title": "Miora — Patient Home Dashboard" },
-    { "path": "/screening", "title": "Miora — AI Screening Session" },
-    { "path": "/patient/screening", "title": "Miora — AI Screening Session" },
-    { "path": "/screening-results", "title": "Miora — Screening Results" },
-    { "path": "/patient/care-suggestions", "title": "Miora — Care Suggestions" },
-    { "path": "/dashboard", "title": "Miora — Dashboard" },
-    { "path": "/mothers", "title": "Miora — Mothers & Cases" },
-    { "path": "/live-screening", "title": "Miora — Live Screening" },
-    { "path": "/upload-analyze", "title": "Miora — Upload & Analyze" },
-    { "path": "/results", "title": "Miora — Results" },
-    { "path": "/discordance", "title": "Miora — Discordance" },
-    { "path": "/clinical-review", "title": "Miora — Clinical Review" },
-    { "path": "/insights", "title": "Miora — Insights & Care" }
+    { "path": "/", "title": "AANCHAL — Maternal Emotional Intelligence" },
+    { "path": "/login", "title": "AANCHAL — Sign In" },
+    { "path": "/create-account", "title": "AANCHAL — Create Account" },
+    { "path": "/patient/home", "title": "AANCHAL — Patient Home Dashboard" },
+    { "path": "/screening", "title": "AANCHAL — AI Screening Session" },
+    { "path": "/patient/screening", "title": "AANCHAL — AI Screening Session" },
+    { "path": "/screening-results", "title": "AANCHAL — Screening Results" },
+    { "path": "/patient/care-suggestions", "title": "AANCHAL — Care Suggestions" },
+    { "path": "/dashboard", "title": "AANCHAL — Dashboard" },
+    { "path": "/mothers", "title": "AANCHAL — Mothers & Cases" },
+    { "path": "/live-screening", "title": "AANCHAL — Live Screening" },
+    { "path": "/upload-analyze", "title": "AANCHAL — Upload & Analyze" },
+    { "path": "/results", "title": "AANCHAL — Results" },
+    { "path": "/discordance", "title": "AANCHAL — Discordance" },
+    { "path": "/clinical-review", "title": "AANCHAL — Clinical Review" },
+    { "path": "/insights", "title": "AANCHAL — Insights & Care" }
   ]
 }

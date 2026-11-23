@@ -7,9 +7,12 @@ import {
   AIScreeningSummaryCard,
   ClinicalAssessmentCard,
   ClinicalDecisionCard,
+  ClinicalProfileSummaryCard,
+  ClinicalRandomForestModelCard,
   ComparisonCard,
   FollowUpCarePlanCard,
   KeyEvidenceCard,
+  PsychosocialFactorsCard,
 } from '../components/ClinicalReviewCards.jsx';
 import {
   ExportClinicalNoteModal,
@@ -519,6 +522,15 @@ export function ClinicalReviewPage({ reviewSubmitter = submitClinicalReview }) {
               }}
               validationErrors={validationErrors}
             />
+          </div>
+        )}
+
+        {/* Two-Stage Clinical Assessment & ML Model Row: Stage 1 Profile | Stage 2 Psychosocial | Random Forest ML */}
+        {activeMother && (
+          <div className="miora-review-row-3" aria-label="Two-Stage Clinical Assessment and Tabular Model Analysis">
+            <ClinicalProfileSummaryCard mother={activeMother} />
+            <PsychosocialFactorsCard screening={activeScreening} />
+            <ClinicalRandomForestModelCard screening={activeScreening} />
           </div>
         )}
 

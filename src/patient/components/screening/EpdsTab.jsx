@@ -100,10 +100,19 @@ export function EpdsTab({ onCompleted }) {
       riskTier = 'moderate';
     }
 
+    let storedPsychosocial = null;
+    try {
+      const rawPs = localStorage.getItem('aanchal_psychosocial_answers');
+      if (rawPs) {
+        storedPsychosocial = JSON.parse(rawPs);
+      }
+    } catch (e) {}
+
     const payload = {
       total_score: totalScore,
       risk_classification: riskTier,
       q10_safety_alert: hasQ10Alert,
+      psychosocial_answers: storedPsychosocial || undefined,
       answers: answers.map((optIdx, i) => ({
         question_id: questions[i].id,
         question_number: questions[i].question_number,
@@ -116,9 +125,20 @@ export function EpdsTab({ onCompleted }) {
 
     try {
       // Call existing API contract
-      await saveScreeningSession(payload).catch((err) => {
+      const apiResponse = await saveScreeningSession(payload).catch((err) => {
         console.warn('Backend screening persistence note:', err.message);
+        return null;
       });
+
+      // If backend returned clinical_model_prediction, store locally for immediate display
+      if (apiResponse?.screening?.clinical_model_prediction) {
+        try {
+          localStorage.setItem(
+            'aanchal_clinical_model_prediction',
+            JSON.stringify(apiResponse.screening.clinical_model_prediction)
+          );
+        } catch (e) {}
+      }
 
       // Save to client storage for cross-tab and doctor sync
       const resultData = {

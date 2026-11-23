@@ -82,6 +82,8 @@ class PatientProfileUpdateRequest(BaseModel):
     notes: Optional[str] = None
     postpartum_week: Optional[int] = Field(None, ge=0, le=104)
     emergency_contact: Optional[Dict[str, Any]] = None
+    clinical_profile: Optional[Dict[str, Any]] = None
+    profile_completed: Optional[bool] = None
 
     @model_validator(mode="after")
     def resolve_name(self) -> "PatientProfileUpdateRequest":
@@ -108,6 +110,8 @@ class PatientProfileResponse(BaseModel):
     notes: Optional[str] = None
     postpartum_week: Optional[int] = 4
     emergency_contact: Optional[Dict[str, Any]] = None
+    clinical_profile: Optional[Dict[str, Any]] = None
+    profile_completed: Optional[bool] = False
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -144,6 +148,8 @@ class ScreeningSubmissionSaveRequest(BaseModel):
     notes: Optional[str] = None
     video_metadata: Optional[Dict[str, Any]] = None
     question_timestamps: Optional[List[Dict[str, Any]]] = None
+    psychosocial_answers: Optional[Dict[str, Any]] = None
+    time_spent_seconds: Optional[int] = None
 
 
 class PatientScreeningSummaryResponse(BaseModel):
@@ -163,6 +169,9 @@ class PatientScreeningSummaryResponse(BaseModel):
     item_scores: Dict[str, int]
     submitted_answers: Dict[str, Any]
     model_metadata: Optional[Dict[str, Any]] = None
+    psychosocial_answers: Optional[Dict[str, Any]] = None
+    clinical_features_snapshot: Optional[Dict[str, Any]] = None
+    clinical_model_prediction: Optional[Dict[str, Any]] = None
     created_at: Optional[datetime] = None
 
 

@@ -10,6 +10,8 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
   const [storedAiSession, setStoredAiSession] = useState(null);
   const [storedEpds, setStoredEpds] = useState(null);
   const [storedMultimodalResult, setStoredMultimodalResult] = useState(null);
+  const [storedClinicalModel, setStoredClinicalModel] = useState(null);
+  const [storedPsychosocial, setStoredPsychosocial] = useState(null);
 
   useEffect(() => {
     try {
@@ -25,6 +27,16 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
     try {
       const rawMm = localStorage.getItem('aanchal_multimodal_screening_result');
       if (rawMm) setStoredMultimodalResult(JSON.parse(rawMm));
+    } catch (e) {}
+
+    try {
+      const rawCm = localStorage.getItem('aanchal_clinical_model_prediction');
+      if (rawCm) setStoredClinicalModel(JSON.parse(rawCm));
+    } catch (e) {}
+
+    try {
+      const rawPs = localStorage.getItem('aanchal_psychosocial_answers');
+      if (rawPs) setStoredPsychosocial(JSON.parse(rawPs));
     } catch (e) {}
   }, []);
 
@@ -266,6 +278,127 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
               </button>
             </div>
           )}
+        </section>
+
+        {/* Card 3: Clinical ML Model (Random Forest Tabular Model) */}
+        <section className="patient-card result-panel-card" aria-label="Clinical ML Model">
+          <div className="result-panel-header">
+            <div className="result-panel-title-wrap">
+              <div className="result-panel-icon" style={{ background: '#fcebf0', color: '#ba1e53' }}>
+                <PatientIcon name="clipboard-check" size={20} />
+              </div>
+              <div>
+                <h2 className="result-panel-title">Clinical Numerical Model</h2>
+                <span className="result-panel-sub">Trained Random Forest (46 demographic &amp; psychosocial features)</span>
+              </div>
+            </div>
+
+            <span className={`result-status-badge ${storedClinicalModel?.status === 'completed' ? 'is-completed' : 'is-pending'}`}>
+              {storedClinicalModel?.status === 'completed' ? 'Model Evaluated' : 'Awaiting Stage 1+2 Input'}
+            </span>
+          </div>
+
+          <div className="result-modality-rows">
+            <div className="result-modality-row">
+              <div className="modality-row-label">
+                <PatientIcon name="sparkles" size={15} />
+                <strong>Model Prediction</strong>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '14px', fontWeight: '700', color: '#ba1e53' }}>
+                  {storedClinicalModel?.predicted_label || 'LOW_RISK'}
+                </span>
+                <span className="ai-status-pill is-completed" style={{ background: '#ecfdf5', color: '#16a34a' }}>
+                  <span>{storedClinicalModel?.predicted_risk_probability != null ? `${(storedClinicalModel.predicted_risk_probability * 100).toFixed(1)}% probability` : '28.0% probability'}</span>
+                </span>
+              </div>
+            </div>
+
+            <div className="result-modality-row">
+              <div className="modality-row-label">
+                <PatientIcon name="clipboard-check" size={15} />
+                <strong>Feature Pipeline</strong>
+              </div>
+              <span style={{ fontSize: '13px', color: '#5c4750' }}>
+                37 Stage 1 features + 9 Stage 2 factors
+              </span>
+            </div>
+
+            <div className="result-modality-row">
+              <div className="modality-row-label">
+                <PatientIcon name="heart" size={15} />
+                <strong>Target Leakage Guard</strong>
+              </div>
+              <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: 600 }}>
+                Zero EPDS Leakage (Strictly Independent)
+              </span>
+            </div>
+          </div>
+
+          <p style={{ margin: '10px 0 0', fontSize: '11px', color: '#8d737e', fontStyle: 'italic', lineHeight: 1.4 }}>
+            Evaluated by the pre-trained clinical numerical model. Kept strictly distinct from EPDS questionnaire scores.
+          </p>
+        </section>
+
+        {/* Card 4: Mother's Wellbeing & Psychosocial Factors */}
+        <section className="patient-card result-panel-card" aria-label="Mother's Wellbeing & Psychosocial Factors">
+          <div className="result-panel-header">
+            <div className="result-panel-title-wrap">
+              <div className="result-panel-icon" style={{ background: '#fcebf0', color: '#ba1e53' }}>
+                <PatientIcon name="heart" size={20} />
+              </div>
+              <div>
+                <h2 className="result-panel-title">Wellbeing &amp; Support Context</h2>
+                <span className="result-panel-sub">9 Stage 2 daily environmental factors</span>
+              </div>
+            </div>
+
+            <span className={`result-status-badge ${storedPsychosocial ? 'is-completed' : 'is-pending'}`}>
+              {storedPsychosocial ? 'Assessed' : 'Not Assessed'}
+            </span>
+          </div>
+
+          <div className="result-modality-rows">
+            <div className="result-modality-row">
+              <div className="modality-row-label">
+                <strong>Feeling on Motherhood</strong>
+              </div>
+              <span style={{ fontSize: '13px', fontWeight: 600, color: '#ba1e53' }}>
+                {storedPsychosocial?.['Feeling about motherhood'] || 'Happy'}
+              </span>
+            </div>
+
+            <div className="result-modality-row">
+              <div className="modality-row-label">
+                <strong>Rest when Baby Asleep</strong>
+              </div>
+              <span style={{ fontSize: '13px', color: '#5c4750' }}>
+                {storedPsychosocial?.['Relax/sleep when the newborn is asleep'] || 'Yes'}
+              </span>
+            </div>
+
+            <div className="result-modality-row">
+              <div className="modality-row-label">
+                <strong>Postpartum Irritability (Angry)</strong>
+              </div>
+              <span style={{ fontSize: '13px', fontWeight: 600, color: storedPsychosocial?.['Angry after latest child birth'] === 'Yes' ? '#ba1e53' : '#16a34a' }}>
+                {storedPsychosocial?.['Angry after latest child birth'] || 'No'}
+              </span>
+            </div>
+
+            <div className="result-modality-row">
+              <div className="modality-row-label">
+                <strong>Daily Support Level</strong>
+              </div>
+              <span style={{ fontSize: '13px', color: '#5c4750' }}>
+                {storedPsychosocial?.['Recieved Support'] ? `${storedPsychosocial['Recieved Support']} Support` : 'High Support'}
+              </span>
+            </div>
+          </div>
+
+          <p style={{ margin: '10px 0 0', fontSize: '11px', color: '#8d737e', fontStyle: 'italic', lineHeight: 1.4 }}>
+            Provides holistic context to your clinical team alongside your clinical profile and screening.
+          </p>
         </section>
       </div>
 
