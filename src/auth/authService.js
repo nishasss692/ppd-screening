@@ -186,7 +186,12 @@ export async function authenticate({ email, password, selectedRole }) {
           authenticatedAt: new Date().toISOString(),
         };
         backendRedirectUrl =
-          data.redirect_url || (resolvedRole === 'doctor' ? '/mothers' : '/patient/dashboard');
+          data.redirect_url ||
+          (resolvedRole === 'doctor'
+            ? '/mothers'
+            : resolvedRole === 'family'
+              ? '/family/moments'
+              : '/patient/dashboard');
       }
     } else if (response.status === 401 || response.status === 403) {
       const err = await response.json().catch(() => ({}));
@@ -316,7 +321,12 @@ export async function authenticate({ email, password, selectedRole }) {
 
   return {
     user: authenticatedUser,
-    redirectUrl: accountRole === 'doctor' ? '/mothers' : '/patient/dashboard',
+    redirectUrl:
+      accountRole === 'doctor'
+        ? '/mothers'
+        : accountRole === 'family'
+          ? '/family/moments'
+          : '/patient/dashboard',
   };
 }
 
@@ -453,6 +463,11 @@ export async function registerAccount({ name, email, password, role, patientEmai
 
   return {
     user: newUser,
-    redirectUrl: normRole === 'doctor' ? '/mothers' : '/patient/dashboard',
+    redirectUrl:
+      normRole === 'doctor'
+        ? '/mothers'
+        : normRole === 'family'
+          ? '/family/moments'
+          : '/patient/dashboard',
   };
 }
