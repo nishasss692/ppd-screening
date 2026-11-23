@@ -489,3 +489,54 @@ export async function submitMultimodalScreening(formData) {
   return response.json();
 }
 
+/**
+ * Retrieve public hospital directory from GET /api/hospitals.
+ */
+export async function fetchHospitals() {
+  const url = `${getApiBase()}/api/hospitals`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${response.status}: Failed to fetch hospital directory`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Retrieve public doctor directory from GET /api/doctors.
+ * Supports optional filters: { location, specialization }.
+ */
+export async function fetchDoctors(filters = {}) {
+  const params = new URLSearchParams();
+  if (filters.location) {
+    params.append('location', filters.location);
+  }
+  if (filters.specialization) {
+    params.append('specialization', filters.specialization);
+  }
+  const queryString = params.toString();
+  const url = `${getApiBase()}/api/doctors${queryString ? `?${queryString}` : ''}`;
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${response.status}: Failed to fetch doctor directory`);
+  }
+
+  return response.json();
+}
+
+
