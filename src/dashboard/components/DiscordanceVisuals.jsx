@@ -266,15 +266,6 @@ export function DiscordanceResultCard({ discordance, overallRisk }) {
       </div>
 
       <p className="miora-disc-result-desc">{discordance.explanation}</p>
-
-      <div className="miora-disc-separate-metric">
-        <span>Overall Postpartum Risk (Separate):</span>
-        <strong>
-          {overallRisk.available
-            ? `${overallRisk.category} (${overallRisk.score.toFixed(2)})`
-            : 'Pending'}
-        </strong>
-      </div>
     </section>
   );
 }

@@ -223,7 +223,7 @@ function TrendTooltip({ active, payload }) {
 }
 
 export function RiskTrendCard({ history }) {
-  const hasHistory = Array.isArray(history) && history.length > 0;
+  const hasHistory = Array.isArray(history) && history.length > 1;
 
   return (
     <section className="miora-card miora-results-card" aria-labelledby="risk-trend-title">

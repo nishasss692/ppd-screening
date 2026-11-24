@@ -197,11 +197,6 @@ export function DoctorResultsReportsTab({ defaultMotherId }) {
                   <small>Assessment date: {activeMother.lastScreeningDate}</small>
                 </div>
               </div>
-              {activeMother.carePlan && (
-                <div className="doc-clinical-note-box" style={{ marginTop: 12 }}>
-                  <strong>Recommended Care Plan:</strong> {activeMother.carePlan}
-                </div>
-              )}
             </div>
           </div>
         </section>

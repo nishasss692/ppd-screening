@@ -129,7 +129,6 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <RiskBadge risk={activeMother.risk} />
               <StatusBadge status={activeMother.status} />
             </div>
           </div>

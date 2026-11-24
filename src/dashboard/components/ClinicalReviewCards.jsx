@@ -14,7 +14,14 @@ function toneClass(tone) {
   return 'is-muted';
 }
 
-export function AIScreeningSummaryCard({ summaryRows }) {
+export function AIScreeningSummaryCard({ summary, motherId }) {
+  const modMap = summary?.discordanceAnalysis?.modalityRows
+    ? Object.fromEntries(summary.discordanceAnalysis.modalityRows.map((r) => [r.key, r]))
+    : {};
+
+  const voiceStatus = modMap.voice?.isCompleted ? 'Completed' : 'Unavailable';
+  const videoStatus = modMap.video?.isCompleted ? 'Completed' : 'Unavailable';
+
   return (
     <section
       className="miora-card miora-review-card"
@@ -29,26 +36,50 @@ export function AIScreeningSummaryCard({ summaryRows }) {
             AI Screening Summary
           </h2>
         </div>
+        <span className="miora-review-score-pill is-low">
+          Recorded
+        </span>
       </div>
 
       <div className="miora-review-summary-list">
-        {summaryRows.map((row) => (
-          <div key={row.key} className="miora-review-summary-row">
-            <div className="miora-review-summary-left">
-              <span className="miora-modality-mini-badge" aria-hidden="true">
-                <DashboardIcon name={row.icon} size={15} strokeWidth={1.7} />
-              </span>
-              <span className="miora-review-summary-label">{row.label}</span>
-            </div>
-            <span className={`miora-review-score-pill ${toneClass(row.tone)}`}>
-              {row.value}
-            </span>
-          </div>
-        ))}
+        <div className="miora-review-summary-row">
+          <span className="miora-review-summary-label">Session Status</span>
+          <strong>Screening session recorded &amp; analyzed</strong>
+        </div>
+        <div className="miora-review-summary-row">
+          <span className="miora-review-summary-label">Voice Channel</span>
+          <span>{voiceStatus}</span>
+        </div>
+        <div className="miora-review-summary-row">
+          <span className="miora-review-summary-label">Facial Channel</span>
+          <span>{videoStatus}</span>
+        </div>
+        <div className="miora-review-summary-row">
+          <span className="miora-review-summary-label">Detailed Outcome</span>
+          <span>Documented in Maternal Screening Results</span>
+        </div>
       </div>
 
-      <p className="miora-review-helper-caption">
-        Screening indicator scores only; not diagnostic probabilities.
+      <div style={{ marginTop: '12px' }}>
+        <a
+          href={motherId ? `/results/${motherId}` : '/results'}
+          className="miora-btn-secondary"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '12.5px',
+            padding: '6px 12px',
+            textDecoration: 'none',
+          }}
+        >
+          <DashboardIcon name="externalLink" size={13} />
+          <span>View Primary Results</span>
+        </a>
+      </div>
+
+      <p className="miora-review-helper-caption" style={{ marginTop: '10px' }}>
+        Independent clinician assessment required. Doctor evaluation remains independent of AI screening indicators.
       </p>
     </section>
   );
@@ -214,11 +245,6 @@ export function ComparisonCard({ summary, clinicianRisk }) {
         <div className="miora-review-compare-box is-ai">
           <span className="miora-review-compare-caption">AI Assessment</span>
           <strong>{summary.aiRisk}</strong>
-          <small>
-            {summary.combinedScore !== null
-              ? `(${summary.combinedScore.toFixed(2)})`
-              : '(Pending)'}
-          </small>
         </div>
 
         <span className="miora-review-compare-arrow" aria-hidden="true">

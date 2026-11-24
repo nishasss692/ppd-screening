@@ -479,10 +479,10 @@ export function ClinicalReviewPage({ reviewSubmitter = submitClinicalReview }) {
           </section>
         )}
 
-        {/* Row 1: AI Screening Summary | Key Evidence | Clinical Assessment */}
+        {/* Row 1: AI Screening Reference | Key Evidence | Clinical Assessment */}
         {summary && (
           <div className="miora-review-row-3">
-            <AIScreeningSummaryCard summaryRows={summary.summaryRows} />
+            <AIScreeningSummaryCard summary={summary} motherId={activeMother?.id} />
             <KeyEvidenceCard evidenceItems={summary.evidenceItems} />
             <ClinicalAssessmentCard
               reviewNotes={formState.reviewNotes}
