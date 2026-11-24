@@ -47,6 +47,7 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                 <th>Audio Model</th>
                 <th>Video Model</th>
                 <th>Text Model</th>
+                <th>Clinical Model</th>
                 <th>Multimodal Fusion</th>
                 <th>Action</th>
               </tr>
@@ -76,6 +77,9 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                       ) : (
                         <span className="doc-rec-badge is-pending">Pending</span>
                       )}
+                    </td>
+                    <td>
+                      <span className="ai-status-pill is-pending">Awaiting integration</span>
                     </td>
                     <td>
                       <span className="ai-status-pill is-pending">Awaiting integration</span>
@@ -255,15 +259,55 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
               </div>
             </div>
 
-            {/* Panel 4: Multimodal Screening Assessment */}
+            {/* Panel 4: Clinical Analysis */}
+            <div className="doc-modality-panel">
+              <div className="doc-panel-head">
+                <div className="doc-panel-icon" style={{ background: '#fcebf0', color: '#ba1e53' }}>
+                  <DashboardIcon name="document" size={17} />
+                </div>
+                <div>
+                  <h3>Clinical Analysis</h3>
+                  <small>46 obstetric &amp; psychosocial predictors</small>
+                </div>
+              </div>
+              <div className="doc-panel-body">
+                <div className="ai-status-pill is-pending" style={{ marginBottom: 10 }}>
+                  <span className="ai-status-dot" />
+                  <span>Awaiting model integration</span>
+                </div>
+                <div className="doc-feature-list">
+                  <div className="doc-feature-item">
+                    <span>Model Architecture:</span>
+                    <em>Random Forest Classifier</em>
+                  </div>
+                  <div className="doc-feature-item">
+                    <span>Predictor Dimensionality:</span>
+                    <em>46 Survey Covariates</em>
+                  </div>
+                  <div className="doc-feature-item">
+                    <span>Clinical Risk Score:</span>
+                    <em>Awaiting model integration</em>
+                  </div>
+                  <div className="doc-feature-item">
+                    <span>Key Risk Indicators:</span>
+                    <em>Parity, Social Support, PHQ-2</em>
+                  </div>
+                </div>
+                <div className="doc-clinical-note-box">
+                  <strong>Clinical Profile:</strong> Standardized survey covariates evaluated against trained Random Forest baseline.
+                </div>
+              </div>
+            </div>
+
+            {/* Panel 5: Four-Modality Late Fusion Screening Assessment */}
             <div className="doc-modality-panel is-multimodal">
               <div className="doc-panel-head">
                 <div className="doc-panel-icon" style={{ background: '#ba1e53', color: '#ffffff' }}>
                   <DashboardIcon name="activity" size={17} />
                 </div>
                 <div>
-                  <h3>Multimodal Screening</h3>
-                  <small>Acoustic–linguistic–visual fusion</small>
+                  <h3>Four-Modality Late Fusion</h3>
+                  <small>Clinical–acoustic–linguistic–visual stacking</small>
                 </div>
               </div>
               <div className="doc-panel-body">
@@ -272,7 +316,7 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                   <span>Awaiting model integration</span>
                 </div>
                 <p style={{ fontSize: 13, color: '#66535c', lineHeight: 1.5, margin: '0 0 12px 0' }}>
-                  Cross-modal predictive fusion will synthesize acoustic prosody, facial dynamics, and linguistic features once the backend ML inference server is deployed.
+                  Late fusion meta-classifier synthesizes predictions across all four pipelines (Clinical Numerical, Audio Prosody, Video Dynamics, Narrative Text) via learned logistic stacking.
                 </p>
                 <div className="doc-feature-list">
                   <div className="doc-feature-item">

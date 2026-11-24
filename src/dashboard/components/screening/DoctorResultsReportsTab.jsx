@@ -181,12 +181,16 @@ export function DoctorResultsReportsTab({ defaultMotherId }) {
                   <span className="ai-status-pill is-pending">Awaiting model integration</span>
                 </div>
                 <div className="doc-box-row">
-                  <span>Multimodal Fusion:</span>
+                  <span>Clinical Analysis:</span>
+                  <span className="ai-status-pill is-pending">Awaiting model integration</span>
+                </div>
+                <div className="doc-box-row">
+                  <span>Four-Modality Stacking Fusion:</span>
                   <span className="ai-status-pill is-pending">Awaiting model integration</span>
                 </div>
               </div>
               <p style={{ margin: '12px 0 0 0', fontSize: 12, color: '#8d737e' }}>
-                All audio, video, and text feature extractors will populate here upon backend endpoint deployment.
+                All clinical, audio, video, and text feature extractors will populate here upon backend endpoint deployment.
               </p>
             </div>
 
@@ -206,8 +210,8 @@ export function DoctorResultsReportsTab({ defaultMotherId }) {
                     {(activeMother.epdsScore ?? 11) >= 13
                       ? 'Elevated Depressive Symptoms (≥13)'
                       : (activeMother.epdsScore ?? 11) >= 10
-                      ? 'Mild Distress Category (10–12)'
-                      : 'Low Risk Category (0–9)'}
+                        ? 'Mild Distress Category (10–12)'
+                        : 'Low Risk Category (0–9)'}
                   </strong>
                   <small>Assessment date: {activeMother.lastScreeningDate}</small>
                 </div>

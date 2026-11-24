@@ -467,3 +467,110 @@ def test_endpoint_full_multimodal_analysis(test_client, sample_audio_features, s
         assert "disclaimer" in resp
     finally:
         app.dependency_overrides.pop(get_current_user, None)
+
+
+def test_four_modality_service_fusion(sample_audio_features, sample_video_features):
+    """Verify learned 4-modality meta-classifier evaluates cleanly when clinical data is combined."""
+    svc = ThreeModalityInferenceService()
+    svc.startup()
+
+    clinical_data = {
+        "Age": 28,
+        "Number of the latest pregnancy": 1,
+        "Residence": "Urban",
+        "Education Level": "Graduate",
+        "Marital status": "Married",
+        "Relationship with husband": "Good",
+        "Relationship with the newborn": "Good",
+        "Feeling about motherhood": "Positive",
+        "Recieved Support": "Yes",
+        "Need for Support": "Low",
+    }
+
+    t_res = svc.predict_text("I feel overwhelmed and fatigued after childbirth.")
+    a_res = svc.predict_audio(sample_audio_features)
+    v_res = svc.predict_video(sample_video_features)
+    c_res = svc.predict_clinical(clinical_data, mother_id="test-mother-001")
+
+    assert c_res.status == "completed"
+    assert c_res.score is not None
+    assert 0.0 <= c_res.score <= 1.0
+    assert c_res.model_version == "clinical_random_forest_v1"
+
+    fusion = svc.predict_fusion(t_res, a_res, v_res, c_res)
+    assert fusion["fusion_status"] == "completed"
+    assert fusion["fusion_method"] == "learned_stacking_four_modality"
+    assert fusion["fusion_score"] is not None
+    assert 0.0 <= fusion["fusion_score"] <= 1.0
+    assert "clinical" in fusion["fusion_weights"]
+    assert "audio" in fusion["fusion_weights"]
+    assert "text" in fusion["fusion_weights"]
+    assert "video" in fusion["fusion_weights"]
+    assert "intercept" in fusion["fusion_weights"]
+
+
+def test_endpoint_four_modality_analysis(test_client, sample_audio_features, sample_video_features):
+    """Verify complete 4-modality pipeline execution on POST /api/screenings/multimodal/analyze."""
+    fake_doctor = User(
+        id=uuid.uuid4(),
+        email="doctor@test.com",
+        full_name="Dr. Test",
+        role="doctor",
+        is_active=True,
+    )
+    from backend.services.auth_service import get_current_user
+    app.dependency_overrides[get_current_user] = lambda: fake_doctor
+
+    clinical_data = {
+        "Age": 29,
+        "Number of the latest pregnancy": 2,
+        "Residence": "Urban",
+        "Education Level": "Postgraduate",
+        "Marital status": "Married",
+        "Monthly income before latest pregnancy": "High",
+        "Current monthly income": "High",
+        "Relationship with husband": "Good",
+        "Relationship with the newborn": "Good",
+        "Feeling about motherhood": "Positive",
+        "Recieved Support": "Yes",
+        "Need for Support": "Low",
+        "Depression before pregnancy (PHQ2)": "No",
+        "Depression during pregnancy (PHQ2)": "No",
+    }
+
+    try:
+        res = test_client.post(
+            "/api/screenings/multimodal/analyze",
+            headers={"Authorization": "Bearer fake_token"},
+            data={
+                "mother_id": str(uuid.uuid4()),
+                "consent_confirmed": "true",
+                "text_content": "I feel exhausted, irritable, and cannot sleep well.",
+                "audio_features": json.dumps(sample_audio_features),
+                "video_features": json.dumps(sample_video_features),
+                "clinical_features": json.dumps(clinical_data),
+            },
+        )
+        assert res.status_code == 200
+        resp = res.json()
+        assert resp["status"] == "completed"
+        assert resp["clinical_score"] is not None
+        assert 0.0 <= resp["clinical_score"] <= 1.0
+        assert resp["text_score"] is not None
+        assert resp["audio_score"] is not None
+        assert resp["video_score"] is not None
+        assert resp["fusion_score"] is not None
+        assert resp["fusion_status"] == "completed"
+        assert resp["fusion_method"] == "learned_stacking_four_modality"
+        assert resp["modality_status"] == {
+            "text": "completed",
+            "audio": "completed",
+            "video": "completed",
+            "clinical": "completed",
+        }
+        assert "clinical" in resp["modalities"]
+        assert resp["model_version"] == "stage1_four_modality_v1"
+        assert "screening_id" in resp
+        assert "disclaimer" in resp
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
