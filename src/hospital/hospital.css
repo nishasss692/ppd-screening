@@ -983,7 +983,105 @@
   color: var(--hosp-teal);
 }
 
+/* ==========================================================================
+   Mobile-First Responsiveness (Tablet & Smartphone)
+   ========================================================================== */
+@media (max-width: 920px) {
+  .hosp-layout-shell {
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .hosp-sidebar {
+    width: 100%;
+    padding: 14px 16px;
+    box-sizing: border-box;
+  }
+
+  .hosp-sidebar-brand {
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+  }
+
+  .hosp-nav-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .hosp-nav-link {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .hosp-sidebar-footer {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 12px;
+    margin-top: 10px;
+  }
+
+  .hosp-top-header {
+    height: auto;
+    min-height: 52px;
+    padding: 10px 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .hosp-content-body {
+    padding: 20px 16px;
+  }
+
+  .hosp-metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .hosp-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+
+  .hosp-table {
+    min-width: 600px;
+  }
+}
+
+@media (max-width: 520px) {
+  .hosp-content-body {
+    padding: 14px 12px;
+  }
+
+  .hosp-metrics-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .hosp-top-header-title {
+    font-size: 16px;
+  }
+
+  .hosp-sidebar-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .hosp-user-info-box {
+    text-align: center;
+  }
+
+  .hosp-metric-card {
+    padding: 16px;
+  }
+}
+
 @media print {
+
   .hosp-sidebar,
   .hosp-breadcrumb-bar,
   .hosp-filter-bar,

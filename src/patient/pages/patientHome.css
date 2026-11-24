@@ -321,9 +321,17 @@
     max-width: 190px;
   }
 
-  .aanchal-primary-btn {
+  .aanchal-hero-action {
+    width: 100%;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .aanchal-primary-btn,
+  .aanchal-secondary-btn {
     width: 100%;
     justify-content: center;
+    padding: 0.95rem 1.5rem;
   }
 
   .aanchal-hero-visual {

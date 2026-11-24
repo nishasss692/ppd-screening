@@ -248,40 +248,31 @@ export function CreateAccountScreen() {
 
       <div className="login-container create-account-container">
         {/* ================================================================
-            Left Section – Branding and Introduction
+            Left Section – Clinical Branding & Overview
             ================================================================ */}
         <section className="login-left-col create-account-left-col" aria-label="AANCHAL registration overview">
           <div className="login-left-top">
             {/* Upper-left branding */}
             <div className="login-branding create-account-branding">
               <Link to="/" className="login-logo-link" aria-label="AANCHAL Home">
-                <BrandWordmark height={46} />
+                <BrandWordmark height={40} />
               </Link>
 
-              {/* Exact Tagline */}
-              <p className="login-tagline create-account-tagline">
-                Maternal Emotional<br />
-                Intelligence
-              </p>
+              <div className="login-clinical-badge">
+                <span className="login-badge-dot" aria-hidden="true" />
+                <span className="login-tagline create-account-tagline">
+                  Maternal Emotional<br />Intelligence
+                </span>
+              </div>
 
-              {/* Thin, subtle raspberry-pink divider */}
               <div className="login-brand-divider create-account-divider" aria-hidden="true" />
             </div>
 
-            {/* Main Editorial Heading */}
+            {/* Main Heading — Moderate Size, Clean Sans-Serif */}
             <h1 className="login-heading create-account-heading">
-              Create Your<br />
-              <em className="create-account-italic">AANCHAL Account</em>
+              Create Your AANCHAL Account
             </h1>
-
-            {/* Supporting Copy */}
-            <p className="login-subtext create-account-subtext">
-              Join AANCHAL to screen, understand and get personalised support for your postpartum wellbeing.
-            </p>
           </div>
-
-          {/* Mother and Baby Illustration in normal flex flow (never overlaps text) */}
-          
         </section>
 
         {/* ================================================================

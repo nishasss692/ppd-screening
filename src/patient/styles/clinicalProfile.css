@@ -243,3 +243,96 @@
   color: #9B1C1C;
   border: 1px solid #F8B4B4;
 }
+
+/* ==========================================================================
+   Mobile-First Responsiveness (Tablet & Smartphone)
+   ========================================================================== */
+@media (max-width: 768px) {
+  .clinical-profile-shell {
+    padding: 16px 14px 48px;
+    max-width: 100%;
+  }
+
+  .clinical-profile-banner {
+    padding: 20px 18px;
+    border-radius: 14px;
+    margin-bottom: 18px;
+  }
+
+  .clinical-profile-title {
+    font-size: 22px;
+  }
+
+  .clinical-privacy-card {
+    padding: 14px 16px;
+    font-size: 13px;
+    margin-bottom: 18px;
+  }
+
+  .clinical-form-card {
+    padding: 20px 16px;
+    border-radius: 14px;
+    margin-bottom: 18px;
+  }
+
+  .clinical-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .clinical-tabs-nav {
+    gap: 6px;
+    padding-bottom: 6px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .clinical-tab-btn {
+    padding: 8px 14px;
+    font-size: 12.5px;
+  }
+
+  .clinical-bottom-actions {
+    flex-direction: column-reverse;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .clinical-btn-primary,
+  .clinical-btn-secondary {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 480px) {
+  .clinical-profile-shell {
+    padding: 12px 10px 40px;
+  }
+
+  .clinical-profile-banner {
+    padding: 16px 14px;
+    border-radius: 12px;
+  }
+
+  .clinical-profile-title {
+    font-size: 19px;
+  }
+
+  .clinical-form-card {
+    padding: 16px 12px;
+    border-radius: 12px;
+  }
+
+  .clinical-tab-btn {
+    padding: 7px 11px;
+    font-size: 12px;
+  }
+
+  .clinical-input,
+  .clinical-select {
+    padding: 9px 12px;
+    font-size: 13px;
+  }
+}
+
