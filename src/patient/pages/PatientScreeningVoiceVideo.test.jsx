@@ -164,10 +164,10 @@ describe('AANCHAL — Conversational AI Screening with Compulsory Video', () => 
     // Heading and Description
     expect(screen.getByRole('heading', { level: 1, name: /AI Screening/i })).toBeInTheDocument();
 
-    // Compulsory Video Notice
+    // Consent Notice
     expect(screen.getByText(/Compulsory Video & Audio Recording/i)).toBeInTheDocument();
     expect(
-      screen.getByText(/Continuous video and audio recording is a/i)
+      screen.getByText(/Continuous audio and video recording is required for this screening/i)
     ).toBeInTheDocument();
 
     const consentCheckbox = screen.getByRole('checkbox', {
