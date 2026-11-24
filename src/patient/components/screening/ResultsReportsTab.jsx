@@ -222,10 +222,24 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
                   <PatientIcon name="activity" size={15} />
                   <strong>Clinical Analysis</strong>
                 </div>
-                <span className="ai-status-pill is-pending">
-                  <span className="ai-status-dot" />
-                  <span>Awaiting model integration</span>
-                </span>
+                {storedClinicalModel?.status === 'completed' ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#ba1e53' }}>
+                      {storedClinicalModel.predicted_risk_probability != null
+                        ? `${Math.round(storedClinicalModel.predicted_risk_probability * 100)}%`
+                        : storedClinicalModel.predicted_label || 'Completed'}
+                    </span>
+                    <span className="ai-status-pill is-completed" style={{ background: '#ecfdf5', color: '#16a34a' }}>
+                      <span className="ai-status-dot" style={{ background: '#16a34a' }} />
+                      <span>{storedClinicalModel.predicted_label ? `Evaluated (${storedClinicalModel.predicted_label})` : 'Active Model'}</span>
+                    </span>
+                  </div>
+                ) : (
+                  <span className="ai-status-pill is-pending">
+                    <span className="ai-status-dot" />
+                    <span>Awaiting Stage 1+2 Input</span>
+                  </span>
+                )}
               </div>
 
               <div className="result-modality-row is-fusion">
@@ -339,14 +353,30 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
                 <PatientIcon name="sparkles" size={15} />
                 <strong>Model Prediction</strong>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '14px', fontWeight: '700', color: '#ba1e53' }}>
-                  {storedClinicalModel?.predicted_label || 'LOW_RISK'}
-                </span>
-                <span className="ai-status-pill is-completed" style={{ background: '#ecfdf5', color: '#16a34a' }}>
-                  <span>{storedClinicalModel?.predicted_risk_probability != null ? `${(storedClinicalModel.predicted_risk_probability * 100).toFixed(1)}% probability` : '28.0% probability'}</span>
-                </span>
-              </div>
+              {storedClinicalModel?.status === 'completed' ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '700', color: '#ba1e53' }}>
+                    {storedClinicalModel.predicted_label || 'COMPLETED'}
+                  </span>
+                  <span className="ai-status-pill is-completed" style={{ background: '#ecfdf5', color: '#16a34a' }}>
+                    <span>
+                      {storedClinicalModel.predicted_risk_probability != null
+                        ? `${(storedClinicalModel.predicted_risk_probability * 100).toFixed(1)}% probability`
+                        : 'Evaluated'}
+                    </span>
+                  </span>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '13px', color: '#8d737e', fontStyle: 'italic' }}>
+                    Pending Assessment
+                  </span>
+                  <span className="ai-status-pill is-pending">
+                    <span className="ai-status-dot" />
+                    <span>Awaiting Stage 1+2 Input</span>
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="result-modality-row">

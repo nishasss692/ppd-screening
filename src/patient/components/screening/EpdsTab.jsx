@@ -116,9 +116,11 @@ export function EpdsTab({ onCompleted }) {
       answers: answers.map((optIdx, i) => ({
         question_id: questions[i].id,
         question_number: questions[i].question_number,
+        selected_index: optIdx,
         selected_option: optIdx,
         score: questions[i].response_options[optIdx].score,
         response_text: questions[i].response_options[optIdx].label,
+        raw_response: questions[i].response_options[optIdx].label,
       })),
       completed_at: new Date().toISOString(),
     };
