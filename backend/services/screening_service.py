@@ -197,12 +197,12 @@ from backend.services.clinical_service import (
     clinical_service,
     get_clinical_service,
 )
-from backend.services.text_ner_service import (
-    TextNERService,
-    get_text_ner_service,
-    text_ner_service,
+from backend.services.three_modality_service import (
+    ThreeModalityInferenceService,
+    three_modality_service,
 )
-from pipelines.text_ner.inference import TextNERPredictor
+
+MAX_SAFE_TEXT_LENGTH: int = 10000
 
 logger = logging.getLogger("ppd.screening_orchestrator")
 
@@ -254,14 +254,14 @@ class ScreeningOrchestrationService:
     def __init__(
         self,
         clinical_svc: Optional[ClinicalScreeningService] = None,
-        text_svc: Optional[TextNERService] = None,
+        text_svc: Optional[ThreeModalityInferenceService] = None,
         audio_svc: Optional[AudioScreeningService] = None,
         mother_val: Optional[MotherValidator] = None,
         fusion_eng: Optional[MultimodalFusionEngine] = None,
         elig_val: Optional[EligibilityValidator] = None,
     ) -> None:
         self.clinical_service: ClinicalScreeningService = clinical_svc or clinical_service
-        self.text_ner_service: TextNERService = text_svc or text_ner_service
+        self.text_service: ThreeModalityInferenceService = text_svc or three_modality_service
         self.audio_service: AudioScreeningService = audio_svc or audio_service
         self.mother_validator: MotherValidator = mother_val or MotherValidator()
         self.fusion_engine: MultimodalFusionEngine = (
@@ -353,10 +353,10 @@ class ScreeningOrchestrationService:
                     detail="Text narrative content or files_text is required when text modality is requested.",
                 )
 
-            if len(raw_text) > TextNERPredictor.MAX_SAFE_CHARACTER_LIMIT:
+            if len(raw_text) > MAX_SAFE_TEXT_LENGTH:
                 raise HTTPException(
                     status_code=422,
-                    detail=f"Text input exceeds safe maximum limit of {TextNERPredictor.MAX_SAFE_CHARACTER_LIMIT} characters.",
+                    detail=f"Text input exceeds safe maximum limit of {MAX_SAFE_TEXT_LENGTH} characters.",
                 )
 
         # 4. Validate Mother Registration / Existence in Database (404)
@@ -432,48 +432,37 @@ class ScreeningOrchestrationService:
                 model_version=None,
             )
 
-        # 8. Biomedical Text NER Modality
+        # 8. Synthetic Narrative Text Modality
         text_result: TextModalityResult
         if modalities.text:
-            # Execute entity extraction
             try:
-                ner_out = self.text_ner_service.extract_entities(raw_text)
-                text_result = TextModalityResult(
-                    status="completed",
-                    processing_type="biomedical_ner",
-                    entities=[e.model_dump() for e in ner_out.entities],
-                    total_entities_detected=ner_out.total_entities_detected,
-                    processed_character_count=ner_out.processed_character_count,
-                    model_version=ner_out.model_version,
-                )
-            except HTTPException as exc:
-                logger.warning(
-                    "Text NER service returned HTTP error during orchestration: status=%d, detail=%s",
-                    exc.status_code,
-                    exc.detail,
-                )
-                status_label = "unavailable" if exc.status_code == 503 else "failed"
-                text_result = TextModalityResult(
-                    status=status_label,
-                    processing_type="biomedical_ner",
-                    error=str(exc.detail),
-                )
+                pred = self.text_service.predict_text(raw_text)
+                if pred.status == "completed":
+                    text_result = TextModalityResult(
+                        status="completed",
+                        processing_type="synthetic_text_risk",
+                        risk_score=pred.score,
+                        predicted_class=pred.predicted_class,
+                        processed_character_count=len(raw_text) if raw_text else 0,
+                        model_version=pred.model_version,
+                    )
+                else:
+                    text_result = TextModalityResult(
+                        status=pred.status,
+                        processing_type="synthetic_text_risk",
+                        error=pred.error,
+                    )
             except Exception as exc:
-                logger.error(
-                    "Unexpected text NER extraction error during orchestration: %s",
-                    exc,
-                    exc_info=True,
-                )
+                logger.error("Unexpected text classification error during orchestration: %s", exc, exc_info=True)
                 text_result = TextModalityResult(
                     status="failed",
-                    processing_type="biomedical_ner",
-                    error="Biomedical entity extraction failed due to an internal error.",
+                    processing_type="synthetic_text_risk",
+                    error="Synthetic text classification failed due to an internal error.",
                 )
         else:
             text_result = TextModalityResult(
                 status="not_requested",
                 processing_type=None,
-                entities=[],
             )
 
         # 6. Audio Modality (Experimental Synthetic Baseline / Research Pathway)
@@ -645,7 +634,7 @@ def get_mother_validator() -> MotherValidator:
 
 def get_screening_service(
     clinical_svc: ClinicalScreeningService = Depends(get_clinical_service),
-    text_svc: TextNERService = Depends(get_text_ner_service),
+    text_svc: ThreeModalityInferenceService = Depends(lambda: three_modality_service),
     audio_svc: AudioScreeningService = Depends(get_audio_service),
     mother_val: MotherValidator = Depends(get_mother_validator),
     fusion_eng: MultimodalFusionEngine = Depends(get_fusion_engine),

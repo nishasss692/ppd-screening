@@ -2,7 +2,7 @@
 
 Exposes:
 - POST /api/screenings/analyze: Multipart/form-data endpoint orchestrating clinical numerical,
-  biomedical text NER, and acoustic/visual screening inputs without fabricating predictions.
+  narrative text screening, and acoustic/visual screening inputs without fabricating predictions.
 """
 
 from datetime import datetime, timezone
@@ -38,8 +38,8 @@ router = APIRouter(
     summary="Analyze multimodal screening inputs for postpartum depression risk",
     description=(
         "Central multimodal analysis orchestrator accepting multipart/form-data. "
-        "Coordinates validated 46-feature clinical numerical ML screening, biomedical "
-        "text entity extraction (Text NER), and safely reports unavailable statuses for "
+        "Coordinates validated 46-feature clinical numerical ML screening, narrative "
+        "text risk classification, and safely reports unavailable statuses for "
         "unimplemented audio and video models. Preserves partial completion states when "
         "individual modalities fail."
     ),
@@ -89,7 +89,7 @@ async def analyze_screening(
     ),
     text_content: Optional[str] = Form(
         None,
-        description="Alternative direct narrative text string for text NER",
+        description="Alternative direct narrative text string for text screening",
     ),
     service: ScreeningOrchestrationService = Depends(get_screening_service),
 ) -> ScreeningAnalysisResponse:

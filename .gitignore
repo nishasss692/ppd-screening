@@ -64,9 +64,6 @@ models/*
 !models/.gitkeep
 !models/clinical_numerical/
 !models/clinical_numerical/**
-!models/text_ner/
-!models/text_ner/**
-models/text_ner/**/*.joblib
 
 # Specific multimodal model artifacts
 !models/text_model/

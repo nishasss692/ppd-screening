@@ -61,7 +61,7 @@ EXPECTED_AUDIO_FEATURES: List[str] = [
 class AudioScreeningService:
     """Singleton service for audio acoustic screening inference, validation, and lifecycle management.
 
-    Follows the architectural patterns of ClinicalScreeningService and TextNERService:
+    Follows the architectural patterns of ClinicalScreeningService:
     - Thread-safe lazy or startup initialization.
     - Explicit is_loaded and is_available lifecycle readiness properties.
     - Safe handling of missing model checkpoints without crashing application startup.

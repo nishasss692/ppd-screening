@@ -5,8 +5,8 @@ MIORA Postpartum Depression Screening Research Prototype.
 Responsibilities:
 1. Ingest structured single-modality outputs (clinical, text, audio, video).
 2. Validate modality statuses ('completed', 'unavailable', 'failed', 'not_requested').
-3. Distinguish true risk-predictive modalities from non-predictive extraction tasks (Text NER).
-4. Strictly reject combining incompatible outputs or treating entity confidence as risk probabilities.
+3. Ingest predictive modalities (clinical, text, audio, video).
+4. Strictly reject combining incompatible outputs or fabricating missing data.
 5. Track underlying model versions across all contributing branches.
 6. Evaluate whether late fusion is scientifically justified and technically possible (requiring >= 2 predictive modalities).
 7. Perform cross-modal discordance analysis with transparent explanations when data is insufficient.
@@ -93,8 +93,7 @@ class DiscordanceAnalyzer:
     It is NOT a clinically validated diagnostic cut-off and must be calibrated against
     prospective multi-site clinical trial cohorts.
 
-    Requires at least two comparable calibrated risk probabilities. Never compares
-    Text NER entity confidence with clinical risk probability.
+    Requires at least two comparable calibrated risk probabilities.
     """
 
     DEFAULT_DISCORDANCE_THRESHOLD: float = 0.25
@@ -225,10 +224,7 @@ class NonNegativeStackingFusionStrategy(BaseFusionStrategy):
     """Canonical late fusion strategy using non-negative stacking weights.
 
     Learned from 640 Out-Of-Fold (OOF) cross-validation training participants.
-    In live screening, the text modality performs biomedical entity recognition (Text NER),
-    which is strictly non-predictive. The offline 2% text weight from synthetic narrative
-    vignettes is disabled (set to 0.0) so entity extraction confidence is never treated as
-    a PPD risk probability.
+    Text modality utilizes the synthetic narrative classifier (TF-IDF + Logistic Regression).
     Dynamically re-normalizes weights across available predictive modalities without
     fabricating missing values or activating unvalidated arbitrary weights.
     """
@@ -414,8 +410,25 @@ class MultimodalFusionEngine:
             )
 
         elif modality == ModalityType.TEXT.value:
-            # Text NER extracts biomedical entity spans. It does NOT produce a PPD risk probability.
-            # Enforce strict scientific boundary: never treat span confidence as PPD risk probability.
+            # Synthetic narrative text classifier produces risk_score (0.0 - 1.0)
+            prob = dict_data.get("risk_score") if dict_data.get("risk_score") is not None else dict_data.get("probability")
+            if prob is not None and isinstance(prob, (int, float)) and 0.0 <= prob <= 1.0:
+                pred_class = dict_data.get("predicted_class")
+                if pred_class is None:
+                    pred_class = 1 if prob >= 0.5 else 0
+                return ModalityCandidate(
+                    modality=modality,
+                    status=status,
+                    probability=float(prob),
+                    predicted_class=int(pred_class),
+                    model_version=dict_data.get("model_version", "text_sgd_logistic_v1"),
+                    is_predictive=True,
+                    is_available=True,
+                    metadata={
+                        "processing_type": dict_data.get("processing_type", "synthetic_text_risk"),
+                        "processed_character_count": dict_data.get("processed_character_count"),
+                    },
+                )
             return ModalityCandidate(
                 modality=modality,
                 status=status,
@@ -423,10 +436,9 @@ class MultimodalFusionEngine:
                 predicted_class=None,
                 model_version=dict_data.get("model_version"),
                 is_predictive=False,
-                is_available=True,
+                is_available=(status == "completed"),
                 metadata={
-                    "processing_type": dict_data.get("processing_type", "biomedical_ner"),
-                    "total_entities_detected": dict_data.get("total_entities_detected", 0),
+                    "processing_type": dict_data.get("processing_type", "synthetic_text_risk"),
                 },
             )
 

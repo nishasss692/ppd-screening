@@ -178,18 +178,15 @@ def test_discordance_threshold_configurable_and_contract():
 
 
 # ---------------------------------------------------------------------------
-# 6. Text NER Confidence Strictly Not Treated as PPD Risk Probability
+# 6. Text Payload Without Risk Score Not Treated as PPD Risk Probability
 # ---------------------------------------------------------------------------
-def test_text_ner_confidence_never_treated_as_ppd_probability():
-    """Verify Text NER entity extraction confidence is strictly rejected as a PPD probability."""
+def test_text_without_risk_score_never_treated_as_ppd_probability():
+    """Verify text payload without risk score is strictly rejected as a PPD probability."""
     engine = MultimodalFusionEngine()
     text_payload = {
         "status": "completed",
-        "processing_type": "biomedical_ner",
-        "entities": [
-            {"text": "depression", "label": "MMLite", "confidence": 0.9999},
-        ],
-        "total_entities_detected": 1,
+        "processing_type": "text_general",
+        "processed_character_count": 50,
     }
     candidate = engine.extract_candidate("text", text_payload)
     assert candidate.is_predictive is False
