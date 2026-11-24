@@ -121,7 +121,18 @@ export const DEFAULT_SCREENING = {
 
 export const INITIAL_NOTIFICATIONS = [];
 
-export const INITIAL_CONSULTATIONS = [];
+export const INITIAL_CONSULTATIONS = [
+  {
+    id: 'c-101',
+    doctorName: 'Dr. Elena Rostova',
+    role: 'Perinatal Psychiatry Lead',
+    date: '20 Nov 2026',
+    time: '11:00 AM',
+    status: 'Scheduled',
+    type: 'Telehealth Video',
+    clinic: 'AANCHAL Maternal Care Unit',
+  },
+];
 
 export const DEFAULT_CARE_PLAN = {
   duration: '2 Weeks',

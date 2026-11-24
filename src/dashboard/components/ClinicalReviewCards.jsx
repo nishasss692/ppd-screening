@@ -573,9 +573,6 @@ export function ClinicalRandomForestModelCard({ screening }) {
 
   const riskLabel = pred?.predicted_label || pred?.risk_category || 'LOW_RISK';
   const isHigh = riskLabel === 'HIGH_RISK' || riskLabel === 'ELEVATED';
-  const probPercent = pred?.predicted_risk_probability != null
-    ? `${(pred.predicted_risk_probability * 100).toFixed(1)}%`
-    : '27.9%';
 
   return (
     <section className="miora-card miora-review-card" aria-labelledby="clinical-ml-model-title">
@@ -586,9 +583,9 @@ export function ClinicalRandomForestModelCard({ screening }) {
           </span>
           <div>
             <h2 id="clinical-ml-model-title" className="miora-card-title">
-              Clinical ML Model (Random Forest)
+              Clinical Risk Model Assessment
             </h2>
-            <span style={{ fontSize: '11px', color: '#718096' }}>46-Feature Tabular Pipeline</span>
+            <span style={{ fontSize: '11px', color: '#718096' }}>Background Obstetric &amp; Psychosocial Profile</span>
           </div>
         </div>
         <span className={`miora-review-score-pill ${isHigh ? 'is-high' : 'is-low'}`}>
@@ -598,32 +595,24 @@ export function ClinicalRandomForestModelCard({ screening }) {
 
       <div style={{ background: '#fdf8fa', border: '1px solid #f6d1dd', borderRadius: '8px', padding: '12px 14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '12px', fontWeight: 600, color: '#5c4750' }}>Predicted Risk Probability:</span>
-          <span style={{ fontSize: '18px', fontWeight: 700, color: '#ba1e53' }}>{probPercent}</span>
-        </div>
-        <div style={{ marginTop: 6, display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#718096' }}>
-          <span>Classification: <strong>{isHigh ? 'High Risk' : 'Low Risk'}</strong></span>
-          <span>Features: <strong>46/46 evaluated</strong></span>
+          <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#5c4750' }}>Clinical Assessment:</span>
+          <span style={{ fontSize: '15px', fontWeight: 700, color: '#ba1e53' }}>{isHigh ? 'Elevated Risk' : 'Low Risk'}</span>
         </div>
       </div>
 
-      <div className="miora-review-summary-list" style={{ marginTop: '4px' }}>
+      <div className="miora-review-summary-list" style={{ marginTop: '8px' }}>
         <div className="miora-review-summary-row">
-          <span className="miora-review-summary-label">Model Pipeline</span>
-          <span>Pre-trained RandomForestClassifier</span>
+          <span className="miora-review-summary-label">Primary Contributing Factor</span>
+          <span style={{ fontWeight: 600 }}>Postpartum Irritability</span>
         </div>
         <div className="miora-review-summary-row">
-          <span className="miora-review-summary-label">Target Leakage Protection</span>
-          <span style={{ color: '#16a34a', fontWeight: 600 }}>Zero EPDS Leakage</span>
-        </div>
-        <div className="miora-review-summary-row">
-          <span className="miora-review-summary-label">Top Predictive Feature</span>
-          <span>Postpartum Irritability (25.62%)</span>
+          <span className="miora-review-summary-label">Profile Context</span>
+          <span>Obstetric &amp; Psychosocial Factors</span>
         </div>
       </div>
 
       <p className="miora-review-helper-caption">
-        Independent tabular risk score based on 37 Stage 1 + 9 Stage 2 features. Never merged into EPDS.
+        Clinical risk indication evaluated from maternal onboarding and daily environment.
       </p>
     </section>
   );

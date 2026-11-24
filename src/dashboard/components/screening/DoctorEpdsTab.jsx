@@ -61,12 +61,9 @@ export function DoctorEpdsTab({ defaultMotherId }) {
       <section className="dash-card doc-screening-table-card" aria-label="Authorized Patients EPDS Directory">
         <div className="doc-table-header">
           <div>
-            <h2 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#2b1b22', fontWeight: 600 }}>
+            <h2 style={{ margin: 0, fontSize: '16px', color: '#2b1b22', fontWeight: 600 }}>
               Authorized Patient EPDS Cohort
             </h2>
-            <p style={{ margin: 0, fontSize: '12.5px', color: '#66535c' }}>
-              Select a mother to review itemized 10-question responses and clinical risk stratification.
-            </p>
           </div>
         </div>
 
