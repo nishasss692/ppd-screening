@@ -11,6 +11,7 @@ export function AnalysisPreviewCard({
   onRetry,
 }) {
   const modalities = [
+    { key: 'clinical', label: 'Clinical' },
     { key: 'text', label: 'Text' },
     { key: 'voice', label: 'Voice' },
     { key: 'video', label: 'Video' },
@@ -119,9 +120,9 @@ export function AnalysisPreviewCard({
             <div className="miora-contrib-list">
               {modalities.map((mod) => {
                 const value = analysisResult.modalityContributions?.[mod.key];
-                const isSelected = selectedModalities.includes(mod.key);
-                const isAvailable = availableModalities[mod.key];
-                const hasValue = typeof value === 'number' && isSelected && isAvailable;
+                const isSelected = selectedModalities.includes(mod.key) || mod.key === 'clinical';
+                const isAvailable = availableModalities[mod.key] ?? true;
+                const hasValue = typeof value === 'number' && (mod.key === 'clinical' || (isSelected && isAvailable));
                 return (
                   <div key={mod.key} className="miora-contrib-row">
                     <span className="miora-contrib-label">{mod.label}</span>

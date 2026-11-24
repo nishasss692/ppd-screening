@@ -17,6 +17,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 import logging
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import BaseModel
@@ -332,6 +333,97 @@ class WeightedAverageFusionStrategy(BaseFusionStrategy):
         )
 
 
+class LearnedFourModalityStackingStrategy(BaseFusionStrategy):
+    """Four-modality stacking strategy using the Stage 1 trained meta-classifier.
+
+    Trained on 640 Out-Of-Fold (OOF) cross-validation predictions across
+    Clinical, Audio, Text, and Video modalities.
+    When all 4 predictive modalities are present, executes the serialized meta-learner.
+    When a subset of >= 2 modalities is present, dynamically re-weights across
+    available modalities without fabricating missing features.
+    """
+
+    def __init__(
+        self,
+        meta_learner_path: Optional[Union[str, Path]] = None,
+        fallback_weights: Optional[Dict[str, float]] = None,
+    ) -> None:
+        from pathlib import Path
+        import joblib
+
+        default_path = (
+            Path(__file__).resolve().parent.parent.parent
+            / "models"
+            / "fusion"
+            / "fusion_meta_learner.joblib"
+        )
+        self.meta_learner_path = Path(meta_learner_path or default_path)
+        self.fallback_weights = fallback_weights or {
+            "clinical": 0.40,
+            "text": 0.20,
+            "audio": 0.20,
+            "video": 0.20,
+        }
+        self._meta_learner = None
+        if self.meta_learner_path.is_file():
+            try:
+                self._meta_learner = joblib.load(self.meta_learner_path)
+            except Exception as exc:
+                logger.warning("Could not load 4-modality meta-learner from %s: %s", self.meta_learner_path, exc)
+
+    def combine(
+        self,
+        candidates: List[ModalityCandidate],
+    ) -> Tuple[float, str, Optional[int], Dict[str, float]]:
+        """Combine predictive modalities using 4-modality meta-learner or dynamic reweighting."""
+        predictive = {c.modality: c.probability for c in candidates if c.is_predictive and c.probability is not None}
+        if len(predictive) < 2:
+            raise ValueError(f"LearnedFourModalityStackingStrategy requires >= 2 predictive modalities, got {len(predictive)}.")
+
+        # Full 4-modality execution
+        if (
+            len(predictive) == 4
+            and all(m in predictive for m in ["clinical", "audio", "text", "video"])
+            and self._meta_learner is not None
+        ):
+            try:
+                X_input = np.array(
+                    [[predictive["clinical"], predictive["audio"], predictive["text"], predictive["video"]]],
+                    dtype=float,
+                )
+                p_fuse = float(self._meta_learner.predict_proba(X_input)[0, 1])
+                combined_score = round(float(np.clip(p_fuse, 0.0, 1.0)), 4)
+                coefs = getattr(self._meta_learner, "coef_", [[0.4, 0.2, 0.2, 0.2]])[0]
+                total_coef = sum(abs(c) for c in coefs) or 1.0
+                contributions = {
+                    "clinical": round(abs(float(coefs[0])) / total_coef, 4),
+                    "audio": round(abs(float(coefs[1])) / total_coef, 4),
+                    "text": round(abs(float(coefs[2])) / total_coef, 4),
+                    "video": round(abs(float(coefs[3])) / total_coef, 4),
+                }
+            except Exception as exc:
+                logger.error("4-modality meta-learner execution failed, falling back to weighted: %s", exc)
+                combined_score = None
+
+        if not locals().get("combined_score"):
+            # Dynamically re-normalize weights over available predictive modalities
+            raw_weights = {m: self.fallback_weights.get(m, 1.0) for m in predictive}
+            total_weight = sum(raw_weights.values()) or 1.0
+            contributions = {m: round(w / total_weight, 4) for m, w in raw_weights.items()}
+            combined_score = round(float(sum(predictive[m] * contributions[m] for m in predictive)), 4)
+
+        if combined_score >= 0.70:
+            risk_category = "HIGH_RISK"
+        elif combined_score >= 0.40:
+            risk_category = "MODERATE_RISK"
+        else:
+            risk_category = "LOW_RISK"
+
+        epds_equivalent = min(30, max(0, int(round(combined_score * 30))))
+        return combined_score, risk_category, epds_equivalent, contributions
+
+
+
 class MultimodalFusionEngine:
     """Central engine orchestrating multimodal fusion and cross-modal discordance analysis.
 
@@ -442,26 +534,70 @@ class MultimodalFusionEngine:
                 },
             )
 
-        elif modality in (ModalityType.AUDIO.value, ModalityType.VIDEO.value):
-            # Audio and video inference classifiers are not yet trained in this prototype phase.
+        elif modality == ModalityType.AUDIO.value:
+            prob = dict_data.get("risk_score") if dict_data.get("risk_score") is not None else dict_data.get("probability")
+            if prob is None:
+                prob = dict_data.get("score")
             prediction = dict_data.get("prediction")
-            if prediction and isinstance(prediction, dict):
-                prob = prediction.get("predicted_risk_probability")
-                if prob is not None and isinstance(prob, (int, float)) and 0.0 <= prob <= 1.0:
-                    return ModalityCandidate(
-                        modality=modality,
-                        status=status,
-                        probability=float(prob),
-                        model_version=dict_data.get("model_version"),
-                        is_predictive=True,
-                        is_available=True,
-                        metadata=dict_data,
-                    )
+            if prob is None and prediction and isinstance(prediction, dict):
+                prob = prediction.get("predicted_risk_probability") or prediction.get("probability") or prediction.get("risk_score") or prediction.get("score")
 
-            # Not predictive / fixture-only
+            if prob is not None and isinstance(prob, (int, float)) and 0.0 <= prob <= 1.0:
+                pred_class = dict_data.get("predicted_class")
+                if pred_class is None and prediction and isinstance(prediction, dict):
+                    pred_class = prediction.get("predicted_class")
+                if pred_class is None:
+                    pred_class = 1 if prob >= 0.5 else 0
+                return ModalityCandidate(
+                    modality=modality,
+                    status=status,
+                    probability=float(prob),
+                    predicted_class=int(pred_class),
+                    risk_category=dict_data.get("risk_category") or (prediction.get("risk_category") if isinstance(prediction, dict) else None),
+                    model_version=dict_data.get("model_version", "audio_logistic_regression_v1"),
+                    is_predictive=True,
+                    is_available=True,
+                    metadata=dict_data,
+                )
+
             return ModalityCandidate(
                 modality=modality,
-                status="unavailable",
+                status=status if status in ("unavailable", "failed", "not_requested") else "unavailable",
+                is_predictive=False,
+                is_available=False,
+                model_version=dict_data.get("model_version"),
+                metadata=dict_data,
+            )
+
+        elif modality == ModalityType.VIDEO.value:
+            prob = dict_data.get("risk_score") if dict_data.get("risk_score") is not None else dict_data.get("probability")
+            if prob is None:
+                prob = dict_data.get("score")
+            prediction = dict_data.get("prediction")
+            if prob is None and prediction and isinstance(prediction, dict):
+                prob = prediction.get("predicted_risk_probability") or prediction.get("probability") or prediction.get("risk_score") or prediction.get("score")
+
+            if prob is not None and isinstance(prob, (int, float)) and 0.0 <= prob <= 1.0:
+                pred_class = dict_data.get("predicted_class")
+                if pred_class is None and prediction and isinstance(prediction, dict):
+                    pred_class = prediction.get("predicted_class")
+                if pred_class is None:
+                    pred_class = 1 if prob >= 0.5 else 0
+                return ModalityCandidate(
+                    modality=modality,
+                    status=status,
+                    probability=float(prob),
+                    predicted_class=int(pred_class),
+                    risk_category=dict_data.get("risk_category") or (prediction.get("risk_category") if isinstance(prediction, dict) else None),
+                    model_version=dict_data.get("model_version", "video_statistical_baseline_v1"),
+                    is_predictive=True,
+                    is_available=True,
+                    metadata=dict_data,
+                )
+
+            return ModalityCandidate(
+                modality=modality,
+                status=status if status in ("unavailable", "failed", "not_requested") else "unavailable",
                 is_predictive=False,
                 is_available=False,
                 model_version=dict_data.get("model_version"),
