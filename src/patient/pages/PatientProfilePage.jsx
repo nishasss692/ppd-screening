@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { usePatient } from '../context/PatientContext.jsx';
+import { fetchClinicalProfile } from '../services/patientApiService.js';
 import { PatientIcon } from '../components/PatientIcons.jsx';
 import './profileSettings.css';
 
 export function PatientProfilePage() {
   const { patient, updatePatientProfile } = usePatient();
+  const [clinicalData, setClinicalData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     fullName: patient?.fullName || '',
@@ -18,6 +20,24 @@ export function PatientProfilePage() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadClinical() {
+      try {
+        const res = await fetchClinicalProfile();
+        if (mounted && res && res.clinical_profile) {
+          setClinicalData(res.clinical_profile);
+        }
+      } catch (err) {
+        // Fall back gracefully to defaults
+      }
+    }
+    loadClinical();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (patient) {
@@ -73,17 +93,8 @@ export function PatientProfilePage() {
       </div>
 
       {/* Page Header */}
-      <div className="patient-page-banner">
-        <div className="miora-dash-eyebrow">
-          <span>PATIENT PROFILE</span>
-          <span className="miora-dash-eyebrow-line" aria-hidden="true" />
-        </div>
-        <h1 className="miora-dash-title patient-page-heading">
-          Maternal Profile &amp; <em>Preferences</em>
-        </h1>
-        <p className="miora-dash-subtitle patient-page-subheading">
-          Manage your personal profile, postpartum recovery timeline, and emergency care contacts. All details persist directly in PostgreSQL.
-        </p>
+      <div className="patient-profile-header-banner">
+        <h1 className="patient-profile-page-heading">Patient Profile</h1>
       </div>
 
       {saveSuccess && (
@@ -98,33 +109,7 @@ export function PatientProfilePage() {
         </div>
       )}
 
-      {/* Clinical Profile Stage 1 Banner Card */}
-      <div className="patient-card" style={{ marginBottom: 20, padding: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, background: '#fff', border: '1px solid #fed7e2' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 12, background: '#fcebf0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ba1e53', flexShrink: 0 }}>
-            <PatientIcon name="clipboard-check" size={24} />
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--patient-ink, #2d3748)' }}>
-                Stage 1 — Clinical &amp; Demographic Profile
-              </h2>
-              <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, background: '#fef3c7', color: '#92400e' }}>
-                Health &amp; Obstetric Record
-              </span>
-            </div>
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: '#718096' }}>
-              Demographic, obstetric and background details used for maternal risk assessment. Editable at any time.
-            </p>
-          </div>
-        </div>
-        <NavLink to="/patient/clinical-profile" className="patient-btn-primary" style={{ padding: '8px 18px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-          <span>View &amp; Edit Clinical Profile</span>
-          <PatientIcon name="arrow-right" size={15} />
-        </NavLink>
-      </div>
-
-      {/* Main Profile Card */}
+      {/* Main Personal Profile Card */}
       <div className="patient-profile-card">
         <div className="patient-profile-user-row">
           <div className="patient-profile-avatar-large">
@@ -234,6 +219,10 @@ export function PatientProfilePage() {
               <strong className="patient-profile-info-val">{patient?.phone || 'Not provided'}</strong>
             </div>
             <div className="patient-profile-info-item">
+              <span className="patient-profile-info-label">Postpartum Stage</span>
+              <strong className="patient-profile-info-val">Week {patient?.postpartumWeek || 4} Postpartum</strong>
+            </div>
+            <div className="patient-profile-info-item">
               <span className="patient-profile-info-label">Emergency Contact</span>
               <strong className="patient-profile-info-val">
                 {patient?.emergencyContact?.name
@@ -241,14 +230,95 @@ export function PatientProfilePage() {
                   : 'Not registered'}
               </strong>
             </div>
-            <div className="patient-profile-info-item">
-              <span className="patient-profile-info-label">Account Status</span>
-              <strong className="patient-profile-info-val is-status">
-                Active (Connected to PostgreSQL)
-              </strong>
-            </div>
           </div>
         )}
+      </div>
+
+      {/* Clinical Profile Section - Professional Medical Information Layout */}
+      <div className="patient-profile-card clinical-info-section">
+        <div className="clinical-info-header">
+          <div>
+            <h2 className="clinical-info-title">Clinical &amp; Background Profile</h2>
+            <p className="clinical-info-desc">
+              Structured clinical parameters, obstetric history, and household context for medical care evaluation.
+            </p>
+          </div>
+          <NavLink to="/patient/clinical-profile" className="patient-btn-secondary clinical-action-btn">
+            <span>View &amp; Edit Clinical Profile</span>
+            <PatientIcon name="arrow-right" size={15} />
+          </NavLink>
+        </div>
+
+        <div className="clinical-sections-grid">
+          {/* Sub-section 1: Demographics & Household */}
+          <div className="clinical-sub-card">
+            <h3 className="clinical-sub-heading">Demographics &amp; Household</h3>
+            <div className="clinical-details-list">
+              <div className="clinical-detail-row">
+                <span className="clinical-detail-label">Residence</span>
+                <span className="clinical-detail-val">{clinicalData?.['Residence'] || 'City'}</span>
+              </div>
+              <div className="clinical-detail-row">
+                <span className="clinical-detail-label">Education</span>
+                <span className="clinical-detail-val">{clinicalData?.['Education Level'] || 'University'}</span>
+              </div>
+              <div className="clinical-detail-row">
+                <span className="clinical-detail-label">Marital Status</span>
+                <span className="clinical-detail-val">{clinicalData?.['Marital status'] || 'Married'}</span>
+              </div>
+              <div className="clinical-detail-row">
+                <span className="clinical-detail-label">Family Type</span>
+                <span className="clinical-detail-val">{clinicalData?.['Family type'] || 'Nuclear'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Sub-section 2: Obstetric & Delivery History */}
+          <div className="clinical-sub-card">
+            <h3 className="clinical-sub-heading">Obstetric &amp; Delivery History</h3>
+            <div className="clinical-details-list">
+              <div className="clinical-detail-row">
+                <span className="clinical-detail-label">Delivery Mode</span>
+                <span className="clinical-detail-val">{clinicalData?.['Delivery mode'] || 'Normal'}</span>
+              </div>
+              <div className="clinical-detail-row">
+                <span className="clinical-detail-label">Previous Pregnancies</span>
+                <span className="clinical-detail-val">{clinicalData?.['Previous pregnancies'] || '1'}</span>
+              </div>
+              <div className="clinical-detail-row">
+                <span className="clinical-detail-label">Pregnancy Complications</span>
+                <span className="clinical-detail-val">{clinicalData?.['Pregnancy complications'] || 'None'}</span>
+              </div>
+              <div className="clinical-detail-row">
+                <span className="clinical-detail-label">Gestational Age</span>
+                <span className="clinical-detail-val">{clinicalData?.['Gestational age at delivery'] || 'Term (37–41 weeks)'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Sub-section 3: Newborn & Postpartum Care */}
+          <div className="clinical-sub-card">
+            <h3 className="clinical-sub-heading">Newborn &amp; Postpartum Care</h3>
+            <div className="clinical-details-list">
+              <div className="clinical-detail-row">
+                <span className="clinical-detail-label">Baby's Health Status</span>
+                <span className="clinical-detail-val">{clinicalData?.["Baby's health status"] || 'Healthy'}</span>
+              </div>
+              <div className="clinical-detail-row">
+                <span className="clinical-detail-label">Feeding Method</span>
+                <span className="clinical-detail-val">{clinicalData?.['Feeding method'] || 'Exclusive Breastfeeding'}</span>
+              </div>
+              <div className="clinical-detail-row">
+                <span className="clinical-detail-label">Rest &amp; Sleep</span>
+                <span className="clinical-detail-val">{clinicalData?.['Sleep quality'] || 'Adequate rest'}</span>
+              </div>
+              <div className="clinical-detail-row">
+                <span className="clinical-detail-label">Care Support</span>
+                <span className="clinical-detail-val">{clinicalData?.['Family support level'] || 'Family support present'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

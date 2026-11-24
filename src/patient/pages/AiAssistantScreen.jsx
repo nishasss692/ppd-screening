@@ -1177,17 +1177,6 @@ export function AiAssistantScreen() {
                   </button>
                 )}
 
-                <span className={`companion-status-indicator ${robotStateClass}`}>
-                  <span className="companion-online-dot" />
-                  {isListening
-                    ? 'Listening...'
-                    : isTyping
-                      ? 'Thinking...'
-                      : isSpeaking
-                        ? 'Speaking...'
-                        : 'Online • Ready'}
-                </span>
-
                 <button
                   type="button"
                   className="companion-holo-ctrl-btn"
@@ -1518,22 +1507,6 @@ export function AiAssistantScreen() {
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
-
-            {/* Bottom 3 Feature Pills (SMART · ADAPTIVE · SECURE) */}
-            <div className="companion-holo-pills" aria-label="AI Assistant capabilities">
-              <div className="companion-holo-pill">
-                <span className="companion-holo-pill-icon" aria-hidden="true">{Icons.brain}</span>
-                <span>SMART</span>
-              </div>
-              <div className="companion-holo-pill">
-                <span className="companion-holo-pill-icon" aria-hidden="true">{Icons.adaptive}</span>
-                <span>ADAPTIVE</span>
-              </div>
-              <div className="companion-holo-pill">
-                <span className="companion-holo-pill-icon" aria-hidden="true">{Icons.shieldCheck}</span>
-                <span>SECURE</span>
               </div>
             </div>
           </div>

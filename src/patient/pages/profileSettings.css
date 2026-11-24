@@ -57,9 +57,22 @@
   flex: 1;
 }
 
+.patient-profile-header-banner {
+  margin-bottom: 8px;
+}
+
+.patient-profile-page-heading {
+  font-family: var(--patient-font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--patient-ink, #2d3748);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
 .patient-profile-name {
-  font-family: var(--patient-font-serif);
-  font-size: 22px;
+  font-family: var(--patient-font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  font-size: 20px;
   font-weight: 600;
   color: var(--patient-ink);
   margin: 0 0 4px;
@@ -205,4 +218,133 @@
   background: var(--patient-danger-bg);
   color: var(--patient-danger-text);
   border: 1px solid var(--patient-danger-border);
+}
+
+/* ==========================================================================
+   Clinical & Background Information Section (Integrated Medical Layout)
+   ========================================================================== */
+.clinical-info-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.clinical-info-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  border-bottom: 1px solid var(--patient-blush-border, #fed7e2);
+  padding-bottom: 18px;
+}
+
+.clinical-info-title {
+  font-family: var(--patient-font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--patient-ink, #2d3748);
+  margin: 0 0 4px;
+}
+
+.clinical-info-desc {
+  font-size: 13px;
+  color: var(--patient-muted, #718096);
+  margin: 0;
+  max-width: 600px;
+}
+
+.clinical-action-btn {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  border-radius: var(--patient-radius-sm, 8px);
+  white-space: nowrap;
+}
+
+.clinical-sections-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.clinical-sub-card {
+  background: #fdfafb;
+  border: 1px solid #f3e2e8;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.clinical-sub-heading {
+  font-family: var(--patient-font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--patient-brand-rose-deep, #ba1e53);
+  margin: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed #eed6df;
+}
+
+.clinical-details-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.clinical-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 12.5px;
+}
+
+.clinical-detail-label {
+  color: #718096;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.clinical-detail-val {
+  color: var(--patient-ink, #2d3748);
+  font-weight: 600;
+  text-align: right;
+  word-break: break-word;
+}
+
+@media (max-width: 860px) {
+  .clinical-sections-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .patient-profile-card,
+  .patient-settings-card {
+    padding: 20px 16px;
+  }
+
+  .patient-profile-info-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .clinical-info-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .clinical-action-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }

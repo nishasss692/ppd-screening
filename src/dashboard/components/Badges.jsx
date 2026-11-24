@@ -32,6 +32,7 @@ export function RiskBadge({ risk, showDot = false }) {
 }
 
 export function TrendBadge({ value, tone = 'positive', direction = 'up' }) {
+  if (!value) return null;
   const arrow = direction === 'down' ? '↓' : '↑';
   return (
     <span className={`miora-trend miora-trend-${tone}`}>
