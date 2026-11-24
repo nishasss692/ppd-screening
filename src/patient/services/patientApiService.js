@@ -102,15 +102,56 @@ export async function updateMedicalHistory(historyData) {
 /**
  * Persist completed EPDS screening to PostgreSQL via POST /api/patients/me/screenings.
  */
-export async function saveScreeningSession(answers, notes = '', videoMetadata = null, questionTimestamps = null, psychosocialAnswers = null) {
+export async function saveScreeningSession(
+  answersOrPayload,
+  notes = '',
+  videoMetadata = null,
+  questionTimestamps = null,
+  psychosocialAnswers = null
+) {
   const url = `${getApiBase()}/api/patients/me/screenings`;
-  const payload = {
-    answers,
-    notes,
-    video_metadata: videoMetadata || undefined,
-    question_timestamps: questionTimestamps || undefined,
-    psychosocial_answers: psychosocialAnswers || undefined,
-  };
+  let payload;
+
+  if (
+    answersOrPayload &&
+    typeof answersOrPayload === 'object' &&
+    !Array.isArray(answersOrPayload)
+  ) {
+    const rawAnswers = answersOrPayload.answers || [];
+    const normalizedAnswers = Array.isArray(rawAnswers)
+      ? rawAnswers.map((a) => ({
+          question_id: a.question_id,
+          selected_index: a.selected_index ?? a.selected_option ?? a.score ?? 0,
+          selected_option: a.selected_option ?? a.selected_index ?? a.score ?? 0,
+          raw_response: a.raw_response ?? a.response_text ?? '',
+        }))
+      : [];
+    payload = {
+      answers: normalizedAnswers,
+      notes: answersOrPayload.notes || notes || undefined,
+      video_metadata: answersOrPayload.video_metadata || videoMetadata || undefined,
+      question_timestamps:
+        answersOrPayload.question_timestamps || questionTimestamps || undefined,
+      psychosocial_answers:
+        answersOrPayload.psychosocial_answers || psychosocialAnswers || undefined,
+    };
+  } else {
+    const rawAnswers = Array.isArray(answersOrPayload) ? answersOrPayload : [];
+    const normalizedAnswers = rawAnswers.map((a) => ({
+      question_id: a.question_id,
+      selected_index: a.selected_index ?? a.selected_option ?? a.score ?? 0,
+      selected_option: a.selected_option ?? a.selected_index ?? a.score ?? 0,
+      raw_response: a.raw_response ?? a.response_text ?? '',
+    }));
+    payload = {
+      answers: normalizedAnswers,
+      notes: notes || undefined,
+      video_metadata: videoMetadata || undefined,
+      question_timestamps: questionTimestamps || undefined,
+      psychosocial_answers: psychosocialAnswers || undefined,
+    };
+  }
+
   const response = await fetch(url, {
     method: 'POST',
     headers: getHeaders(),
