@@ -21,12 +21,12 @@ import {
 const PatientContext = createContext(null);
 
 export const DEFAULT_PATIENT = {
-  id: 'P-101',
-  name: 'Amara',
-  fullName: 'Amara Wilson',
-  email: 'amara@miora.health',
-  avatarInitials: 'A',
-  postpartumWeek: 4,
+  id: '',
+  name: 'Patient',
+  fullName: 'Patient',
+  email: '',
+  avatarInitials: 'P',
+  postpartumWeek: 0,
 };
 
 export const DEFAULT_SCREENING = {
@@ -119,22 +119,7 @@ export const DEFAULT_SCREENING = {
   ],
 };
 
-export const INITIAL_NOTIFICATIONS = [
-  {
-    id: 'n-1',
-    title: 'Screening Report Available',
-    message: 'Your AI screening report is ready to review and download.',
-    date: '17 Nov 2026',
-    read: false,
-  },
-  {
-    id: 'n-2',
-    title: 'Consultation Reminder',
-    message: 'Follow-up with Dr. Elena Rostova is recommended within 7 days.',
-    date: '16 Nov 2026',
-    read: false,
-  },
-];
+export const INITIAL_NOTIFICATIONS = [];
 
 export const INITIAL_CONSULTATIONS = [
   {
@@ -146,17 +131,6 @@ export const INITIAL_CONSULTATIONS = [
     status: 'Scheduled',
     type: 'Telehealth Video',
     clinic: 'AANCHAL Maternal Care Unit',
-  },
-  {
-    id: 'c-100',
-    doctorName: 'Dr. Elena Rostova',
-    role: 'Perinatal Psychiatry Lead',
-    date: '03 Nov 2026',
-    time: '02:30 PM',
-    status: 'Completed',
-    type: 'Audio Consult',
-    clinic: 'AANCHAL Maternal Care Unit',
-    summary: 'Reviewed postpartum baseline and sleep hygiene support.',
   },
 ];
 

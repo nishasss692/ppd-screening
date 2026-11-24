@@ -73,9 +73,10 @@ describe('AiAssistantScreen — Voice Assistant Integration', () => {
     expect(screen.getByLabelText(/AANCHAL AI Assistant Hologram|Miora AI Assistant Hologram/i)).toBeInTheDocument();
     expect(screen.getByAltText(/AANCHAL AI Assistant|Miora AI Assistant/i)).toBeInTheDocument();
     expect(screen.getByText(/How can I help support you today\?/i)).toBeInTheDocument();
-    expect(screen.getByText('SMART')).toBeInTheDocument();
-    expect(screen.getByText('ADAPTIVE')).toBeInTheDocument();
-    expect(screen.getByText('SECURE')).toBeInTheDocument();
+    expect(screen.queryByText('SMART')).not.toBeInTheDocument();
+    expect(screen.queryByText('ADAPTIVE')).not.toBeInTheDocument();
+    expect(screen.queryByText('SECURE')).not.toBeInTheDocument();
+    expect(screen.queryByText('Online • Ready')).not.toBeInTheDocument();
     expect(screen.queryByText('Your Mood Today')).not.toBeInTheDocument();
     expect(screen.queryByText('How I Can Help')).not.toBeInTheDocument();
     expect(screen.queryByText('Quick Resources')).not.toBeInTheDocument();

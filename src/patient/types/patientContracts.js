@@ -3,12 +3,12 @@
  */
 
 export const DEFAULT_PATIENT = {
-  id: 'P-101',
-  name: 'Amara',
-  fullName: 'Amara Wilson',
-  email: 'amara@miora.health',
-  avatarInitials: 'A',
-  postpartumWeek: 4,
+  id: '',
+  name: 'Patient',
+  fullName: 'Patient',
+  email: '',
+  avatarInitials: 'P',
+  postpartumWeek: 0,
 };
 
 export const DEFAULT_SCREENING_CONTRACT = {

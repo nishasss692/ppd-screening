@@ -5,21 +5,18 @@ import { DashboardIcon } from '../components/DashboardIcon.jsx';
 import { RiskBadge } from '../components/Badges.jsx';
 import {
   ModalityAnalysisCard,
-  MultimodalSummaryCard,
   OverallRiskCard,
   RiskTrendCard,
 } from '../components/ResultsChartsAndVisuals.jsx';
 import {
   ExportReportModal,
   ShareCaseModal,
-  SupportResourcesModal,
 } from '../components/ResultsModals.jsx';
 
 export function ResultsPage() {
   const {
     mothers,
     screenings,
-    updateMotherStatus,
     shareCaseHandoff,
   } = useClinicalData();
   const { motherId } = useParams();
@@ -27,8 +24,6 @@ export function ResultsPage() {
 
   const [exportOpen, setExportOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
-  const [resourcesOpen, setResourcesOpen] = useState(false);
-  const [followUpNotice, setFollowUpNotice] = useState('');
 
   const activeScreening = useMemo(() => {
     if (motherId) {
@@ -46,14 +41,7 @@ export function ResultsPage() {
   }, [mothers, activeScreening]);
 
   const handleSelectSession = (nextMotherId) => {
-    setFollowUpNotice('');
     navigate(`/results/${nextMotherId}`);
-  };
-
-  const handleScheduleFollowUp = () => {
-    if (!activeScreening) return;
-    updateMotherStatus(activeScreening.motherId, 'Follow-up');
-    setFollowUpNotice(`7-day follow-up scheduled for ${activeScreening.motherId}`);
   };
 
   if (motherId && !activeScreening) {
@@ -93,40 +81,15 @@ export function ResultsPage() {
   return (
     <div className="miora-command-shell">
       <div className="miora-command-frame">
-        {/* Flowing Blush Header Waves */}
-        <svg
-          className="miora-header-ribbon miora-mothers-ribbon"
-          viewBox="0 0 640 160"
-          fill="none"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          <defs>
-            <linearGradient id="resultsWaveGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#fbdbe2" stopOpacity="0" />
-              <stop offset="50%" stopColor="#f8c9d5" stopOpacity="0.45" />
-              <stop offset="100%" stopColor="#fce8ec" stopOpacity="0.16" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M0 135 C 150 128, 225 42, 395 48 C 515 52, 565 88, 640 24 L 640 160 L 0 160 Z"
-            fill="url(#resultsWaveGrad)"
-          />
-        </svg>
-
         {/* Page Header */}
         <section className="miora-dash-header" aria-labelledby="results-page-heading">
           <div className="miora-dash-header-copy">
             <div className="miora-dash-eyebrow">
               <span>SCREENING RESULTS</span>
-              <span className="miora-dash-eyebrow-line" aria-hidden="true" />
             </div>
             <h1 id="results-page-heading" className="miora-dash-title">
-              Maternal Screening <em>Results</em>
+              Maternal Screening Results
             </h1>
-            <p className="miora-dash-subtitle">
-              Multimodal analysis of the screening session with risk assessment and key insights.
-            </p>
           </div>
 
           <div className="miora-results-header-actions">
@@ -245,6 +208,7 @@ export function ResultsPage() {
           </section>
         )}
 
+        {/* Row 1: Overall Risk Assessment | Modality-wise Analysis */}
         {/* EPDS Question 10 Deterministic Crisis Alert Banner */}
         {Boolean(
           activeScreening?.q10SafetyAlert?.triggered ||
@@ -292,10 +256,9 @@ export function ResultsPage() {
 
         {/* Row 1: Overall Risk Assessment | Modality-wise Analysis | Multimodal Summary */}
         {activeScreening && (
-          <div className="miora-results-row-3">
+          <div className="miora-results-row-2">
             <OverallRiskCard screening={activeScreening} />
             <ModalityAnalysisCard modalities={activeScreening.modalities} />
-            <MultimodalSummaryCard screening={activeScreening} />
           </div>
         )}
 
@@ -363,76 +326,6 @@ export function ResultsPage() {
             </section>
           </div>
         )}
-
-        {/* Recommended Next Steps */}
-        {activeScreening && (
-          <section
-            className="miora-card miora-next-steps-bar"
-            aria-labelledby="recommended-next-steps-title"
-          >
-            <div className="miora-next-steps-label">
-              <span className="miora-card-icon" aria-hidden="true">
-                <DashboardIcon name="calendar" size={20} strokeWidth={1.65} />
-              </span>
-              <h2 id="recommended-next-steps-title" className="miora-quick-title">
-                Recommended Next Steps
-              </h2>
-            </div>
-
-            <div className="miora-next-steps-cards">
-              <button
-                type="button"
-                className="miora-next-step-card"
-                onClick={handleScheduleFollowUp}
-              >
-                <span className="miora-next-step-icon" aria-hidden="true">
-                  <DashboardIcon name="calendar" size={19} strokeWidth={1.65} />
-                </span>
-                <span className="miora-next-step-copy">
-                  <strong>Schedule follow-up in 7 days</strong>
-                  <small>Update mother status &amp; queue check-in</small>
-                </span>
-              </button>
-
-              <button
-                type="button"
-                className="miora-next-step-card"
-                onClick={() => navigate('/clinical-review')}
-              >
-                <span className="miora-next-step-icon" aria-hidden="true">
-                  <DashboardIcon name="users" size={19} strokeWidth={1.65} />
-                </span>
-                <span className="miora-next-step-copy">
-                  <strong>Consider brief clinical review</strong>
-                  <small>Inspect discordance &amp; multimodal notes</small>
-                </span>
-              </button>
-
-              <button
-                type="button"
-                className="miora-next-step-card"
-                onClick={() => setResourcesOpen(true)}
-              >
-                <span className="miora-next-step-icon" aria-hidden="true">
-                  <DashboardIcon name="heart" size={19} strokeWidth={1.65} />
-                </span>
-                <span className="miora-next-step-copy">
-                  <strong>Provide support resources</strong>
-                  <small>View approved helplines &amp; care guides</small>
-                </span>
-              </button>
-            </div>
-          </section>
-        )}
-
-        {followUpNotice && (
-          <div className="miora-live-feedback-row miora-results-feedback">
-            <div className="miora-draft-pill" role="status">
-              <DashboardIcon name="check" size={14} />
-              <span>{followUpNotice}</span>
-            </div>
-          </div>
-        )}
       </div>
 
       <ExportReportModal
@@ -447,12 +340,6 @@ export function ResultsPage() {
         onClose={() => setShareOpen(false)}
         screening={activeScreening}
         onShare={shareCaseHandoff}
-      />
-
-      <SupportResourcesModal
-        isOpen={resourcesOpen}
-        onClose={() => setResourcesOpen(false)}
-        motherId={activeScreening?.motherId || 'Mother'}
       />
     </div>
   );

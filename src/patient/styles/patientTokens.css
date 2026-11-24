@@ -4,11 +4,11 @@
    ========================================================================== */
 
 :root {
-  /* Typography - exact same as Doctor Dashboard */
-  --serif: 'Playfair Display', Georgia, serif;
-  --sans: 'DM Sans', Arial, sans-serif;
-  --patient-font-serif: var(--serif, 'Playfair Display', Georgia, serif);
-  --patient-font-sans: var(--sans, 'DM Sans', Arial, sans-serif);
+  /* Typography - exact same clean sans-serif across all views */
+  --sans: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --serif: var(--sans);
+  --patient-font-serif: var(--sans);
+  --patient-font-sans: var(--sans);
 
   /* Color Palette */
   --patient-ink: #271218;

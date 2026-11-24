@@ -29,22 +29,6 @@ export function DoctorResultsReportsTab({ defaultMotherId }) {
 
   return (
     <div className="doctor-results-reports-shell" aria-label="Clinician Results & Reports Overview">
-      {/* Clinician Overview Banner */}
-      <section className="dash-card doc-screening-intro-card">
-        <div className="doc-screening-intro-copy">
-          <div className="miora-dash-eyebrow">
-            <span>UNIFIED CLINICAL ASSESSMENT REPOSITORY</span>
-            <span className="miora-dash-eyebrow-line" aria-hidden="true" />
-          </div>
-          <h2 className="miora-dash-title" style={{ margin: '4px 0 8px 0', fontSize: '20px' }}>
-            Results &amp; Reports — Clinician Portfolio
-          </h2>
-          <p className="miora-dash-subtitle" style={{ margin: 0, fontSize: '13.5px' }}>
-            Access complete multimodal AI screening states, EPDS score histories, and downloadable clinical summary PDFs.
-          </p>
-        </div>
-      </section>
-
       {/* Toast Notice */}
       {toastMessage && (
         <div className="patient-notice-banner is-success" role="status" style={{ marginBottom: 16 }}>
@@ -56,12 +40,9 @@ export function DoctorResultsReportsTab({ defaultMotherId }) {
       <section className="dash-card doc-screening-table-card" aria-label="Patient Assessment History Table">
         <div className="doc-table-header">
           <div>
-            <h2 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#2b1b22', fontWeight: 600 }}>
+            <h2 style={{ margin: 0, fontSize: '16px', color: '#2b1b22', fontWeight: 600 }}>
               Authorized Patient Assessment History
             </h2>
-            <p style={{ margin: 0, fontSize: '12.5px', color: '#66535c' }}>
-              Select a record to inspect the complete diagnostic assessment portfolio and export clinical notes.
-            </p>
           </div>
         </div>
 
@@ -216,11 +197,6 @@ export function DoctorResultsReportsTab({ defaultMotherId }) {
                   <small>Assessment date: {activeMother.lastScreeningDate}</small>
                 </div>
               </div>
-              {activeMother.carePlan && (
-                <div className="doc-clinical-note-box" style={{ marginTop: 12 }}>
-                  <strong>Recommended Care Plan:</strong> {activeMother.carePlan}
-                </div>
-              )}
             </div>
           </div>
         </section>

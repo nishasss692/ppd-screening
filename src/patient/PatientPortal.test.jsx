@@ -150,9 +150,9 @@ describe('Miora Patient Portal Visual Refinement & Six Screens', () => {
     const resultsTab = screen.getByRole('tab', { name: /Results & Reports/i });
     fireEvent.click(resultsTab);
 
-    // Displays Results & Reports with pending/awaiting integration states
+    // Displays Results & Reports with pending states
     expect(screen.getByRole('heading', { level: 1, name: /Results & Reports/i })).toBeInTheDocument();
-    expect(screen.getAllByText(/Awaiting model integration/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Pending/i).length).toBeGreaterThan(0);
 
     // Consultation card is permanently accessible immediately below assessment cards
     const consultCard = screen.getByTestId('results-consultation-card');
@@ -168,9 +168,10 @@ describe('Miora Patient Portal Visual Refinement & Six Screens', () => {
 
     // Holographic AI Assistant stage (replaces legacy mood/help/resources cards)
     expect(screen.getByLabelText(/(AANCHAL|Miora) AI Assistant Hologram/i)).toBeInTheDocument();
-    expect(screen.getByText('SMART')).toBeInTheDocument();
-    expect(screen.getByText('ADAPTIVE')).toBeInTheDocument();
-    expect(screen.getByText('SECURE')).toBeInTheDocument();
+    expect(screen.queryByText('SMART')).not.toBeInTheDocument();
+    expect(screen.queryByText('ADAPTIVE')).not.toBeInTheDocument();
+    expect(screen.queryByText('SECURE')).not.toBeInTheDocument();
+    expect(screen.queryByText('Online • Ready')).not.toBeInTheDocument();
     expect(screen.queryByText('Your Mood Today')).not.toBeInTheDocument();
     expect(screen.queryByText('How I Can Help')).not.toBeInTheDocument();
     expect(screen.queryByText('Quick Resources')).not.toBeInTheDocument();

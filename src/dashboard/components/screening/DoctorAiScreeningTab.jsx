@@ -26,12 +26,9 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
       <section className="dash-card doc-screening-table-card" aria-label="Authorized Patients AI Screening Directory">
         <div className="doc-table-header">
           <div>
-            <h2 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#2b1b22', fontWeight: 600 }}>
+            <h2 style={{ margin: 0, fontSize: '16px', color: '#2b1b22', fontWeight: 600 }}>
               Authorized Patient Screening Cohort
             </h2>
-            <p style={{ margin: 0, fontSize: '12.5px', color: '#66535c' }}>
-              Select a mother to inspect detailed audio, video, text, and multimodal fusion indicators.
-            </p>
           </div>
         </div>
 
@@ -44,9 +41,9 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                 <th>Screening Date</th>
                 <th>Session Status</th>
                 <th>Recording Status</th>
+                <th>Text Model</th>
                 <th>Audio Model</th>
                 <th>Video Model</th>
-                <th>Text Model</th>
                 <th>Clinical Model</th>
                 <th>Multimodal Fusion</th>
                 <th>Action</th>
@@ -73,22 +70,22 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                     </td>
                     <td>
                       {hasRecording ? (
-                        <span className="doc-rec-badge is-recorded">Captured</span>
+                        <span className="doc-rec-badge is-recorded">Completed</span>
                       ) : (
                         <span className="doc-rec-badge is-pending">Pending</span>
                       )}
                     </td>
                     <td>
-                      <span className="ai-status-pill is-pending">Awaiting integration</span>
+                      <span className="ai-status-pill is-pending">Pending <span className="sr-only">Awaiting model integration</span></span>
                     </td>
                     <td>
-                      <span className="ai-status-pill is-pending">Awaiting integration</span>
+                      <span className="ai-status-pill is-pending">Pending <span className="sr-only">Awaiting model integration</span></span>
                     </td>
                     <td>
-                      <span className="ai-status-pill is-pending">Awaiting integration</span>
+                      <span className="ai-status-pill is-pending">Pending <span className="sr-only">Awaiting model integration</span></span>
                     </td>
                     <td>
-                      <span className="ai-status-pill is-pending">Awaiting integration</span>
+                      <span className="ai-status-pill is-pending">Pending <span className="sr-only">Awaiting model integration</span></span>
                     </td>
                     <td>
                       <span className="ai-status-pill is-pending">Awaiting integration</span>
@@ -132,7 +129,6 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <RiskBadge risk={activeMother.risk} />
               <StatusBadge status={activeMother.status} />
             </div>
           </div>

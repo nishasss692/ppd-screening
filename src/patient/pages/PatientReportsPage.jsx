@@ -45,26 +45,7 @@ export function PatientReportsPage() {
         // Fallback to initial seed
       }
       if (mounted) {
-        setPatientReports([
-          {
-            id: 'rep-seed-001',
-            report_code: 'REP-2026-001',
-            doctor_name: 'Dr. Elena Rostova',
-            doctor_specialization: 'Perinatal Psychiatry Lead',
-            hospital_name: "Apollo Women's Hospital",
-            consultation_date: '20 Nov 2026',
-            summary:
-              'During your consultation on 20 Nov 2026, Dr. Elena Rostova reviewed your emotional wellbeing and discussed your sleep challenges and low mood. We agreed on a gentle, supportive plan focused on getting more continuous rest and daily relaxation.',
-            medications_instructions:
-              'Continue your regular daily vitamins. Magnesium glycinate (200mg) before bed can help relax your body for sleep.',
-            recommendations:
-              'Practice your 4-7-8 breathing exercises daily. Ask your partner or family to help take over one nighttime feed so you can get at least 5 hours of unbroken sleep.',
-            followup_instructions:
-              'Your next check-in is scheduled for 11 Dec 2026 at 11:00 AM. If you feel overwhelmed before then, please message us or reach out anytime.',
-            next_followup_date: '11 Dec 2026 at 11:00 AM',
-            submitted_at: '20 Nov 2026',
-          },
-        ]);
+        setPatientReports([]);
       }
     }
     fetchReports();

@@ -783,8 +783,476 @@
 .aanchal-results-reports-shell {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
   width: 100%;
+  font-family: var(--sans, 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+}
+
+/* ── Primary Simple Screening Outcome Card ── */
+.simple-screening-outcome-card {
+  padding: 24px 28px;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #ebdcd7;
+  box-shadow: 0 4px 16px rgba(186, 30, 83, 0.03);
+}
+
+.simple-screening-outcome-card.is-higher-risk {
+  border-left: 5px solid #a82952;
+  background: linear-gradient(135deg, #ffffff 0%, #fdf7f9 100%);
+}
+
+.simple-screening-outcome-card.is-lower-risk {
+  border-left: 5px solid #2e8b57;
+  background: linear-gradient(135deg, #ffffff 0%, #f5faf7 100%);
+}
+
+.outcome-card-header {
+  margin-bottom: 12px;
+}
+
+.outcome-title-wrap {
+  flex: 1;
+}
+
+.outcome-eyebrow {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #7a5e69;
+  margin-bottom: 6px;
+}
+
+.outcome-main-heading {
+  margin: 0;
+  font-size: clamp(17px, 2.2vw, 21px);
+  font-weight: 700;
+  color: #271218;
+  line-height: 1.35;
+  letter-spacing: -0.012em;
+}
+
+.outcome-main-description {
+  margin: 0 0 16px 0;
+  font-size: 14.5px;
+  color: #4a3840;
+  line-height: 1.6;
+}
+
+/* ── Professional Consultation Box inside Outcome ── */
+.outcome-consultation-box {
+  margin: 16px 0;
+  padding: 18px 20px;
+  background: #fff8fa;
+  border: 1px solid #f2d8e2;
+  border-radius: 12px;
+}
+
+.outcome-consult-heading {
+  margin: 0 0 6px 0;
+  font-size: 15.5px;
+  font-weight: 700;
+  color: #271218;
+  letter-spacing: -0.01em;
+}
+
+.outcome-consult-description {
+  margin: 0 0 14px 0;
+  font-size: 13.5px;
+  color: #4a3840;
+  line-height: 1.55;
+}
+
+.outcome-consult-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.outcome-find-doctor-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  background: #ba1e53;
+  color: #ffffff;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.outcome-find-doctor-btn:hover {
+  background: #a01844;
+}
+
+/* Mandatory Screening Disclaimer Box */
+.screening-result-disclaimer-box {
+  background: #faf6f7;
+  border: 1px solid #ebdcd7;
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+
+.screening-result-disclaimer-box p {
+  margin: 0;
+  font-size: 13px;
+  color: #5c4750;
+  line-height: 1.55;
+}
+
+.screening-result-disclaimer-box strong {
+  color: #271218;
+}
+
+/* ── Simplified 3-Column Assessment Grid ── */
+.results-simplified-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.results-clean-card {
+  padding: 22px 24px;
+  background: #ffffff;
+  border: 1px solid #f2d9e0;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 12px rgba(186, 30, 83, 0.03);
+}
+
+.clean-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.clean-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.clean-card-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #271218;
+}
+
+.clean-card-sub {
+  display: block;
+  font-size: 12px;
+  color: #8d737e;
+  margin-top: 2px;
+}
+
+.clean-card-badge {
+  margin-left: auto;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.clean-card-badge.is-completed {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.clean-card-badge.is-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.clean-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.epds-clean-score-display {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  background: #fdf5f8;
+  border: 1px solid #f6d1dd;
+  border-radius: 10px;
+}
+
+.epds-score-number {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  background: #ba1e53;
+  color: #ffffff;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.score-primary {
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.score-denom {
+  font-size: 9.5px;
+  opacity: 0.85;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.epds-score-status-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.epds-score-status-text strong {
+  font-size: 14px;
+  color: #271218;
+}
+
+.epds-date-stamp {
+  font-size: 12px;
+  color: #8d737e;
+}
+
+.clean-card-explanation {
+  margin: 0;
+  font-size: 13px;
+  color: #5c4750;
+  line-height: 1.5;
+}
+
+.clean-card-footer {
+  margin-top: auto;
+  padding-top: 8px;
+}
+
+.clean-card-hint {
+  font-size: 12px;
+  color: #8d737e;
+  font-weight: 500;
+}
+
+.clean-card-empty {
+  padding: 24px 12px;
+  text-align: center;
+}
+
+.clean-card-empty p {
+  margin: 0 0 14px 0;
+  font-size: 13.5px;
+  color: #8d737e;
+}
+
+/* AI Session Recorded UI */
+.ai-session-recorded-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #15803d;
+  font-weight: 600;
+}
+
+.recorded-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #16a34a;
+}
+
+.ai-components-status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.ai-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  background: #fcf7f9;
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: #4a3840;
+}
+
+.ai-status-text {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ai-status-text.is-ok {
+  color: #15803d;
+}
+
+.ai-status-text.is-pending {
+  color: #b45309;
+}
+
+/* Wellbeing & Support summary */
+.psychosocial-summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.psychosocial-summary-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  background: #fcf7f9;
+  border-radius: 8px;
+}
+
+.summary-label {
+  font-size: 12.5px;
+  color: #5c4750;
+}
+
+.summary-value {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #ba1e53;
+}
+
+/* ── History Table & Mobile Cards ── */
+.patient-history-status {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.patient-history-status.is-completed {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+@media (max-width: 640px) {
+  .results-summary-table thead {
+    display: none;
+  }
+
+  .results-summary-table,
+  .results-summary-table tbody,
+  .results-summary-table tr,
+  .results-summary-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .results-summary-table tr {
+    background: #fdf8fa;
+    border: 1px solid #f2d9e0;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+
+  .results-summary-table td {
+    padding: 6px 0;
+    border: none;
+  }
+}
+
+/* ── Calm, Accessible Emergency Support Section at Bottom ── */
+.results-emergency-support-card {
+  padding: 22px 26px;
+  background: #faf6f7;
+  border: 1px solid #ebdcd7;
+  border-radius: 14px;
+}
+
+.emergency-support-title {
+  margin: 0 0 6px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #271218;
+  letter-spacing: -0.01em;
+}
+
+.emergency-support-desc {
+  margin: 0 0 14px 0;
+  font-size: 13.5px;
+  color: #5c4750;
+  line-height: 1.55;
+}
+
+.emergency-support-helplines {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.emergency-helpline-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 18px;
+  background: #ffffff;
+  border: 1px solid #ebdcd7;
+  border-radius: 10px;
+  flex-wrap: wrap;
+}
+
+.helpline-meta strong {
+  display: block;
+  font-size: 14px;
+  color: #271218;
+}
+
+.helpline-meta span {
+  display: block;
+  font-size: 12px;
+  color: #7a5e69;
+  margin-top: 2px;
+}
+
+.patient-btn-helpline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ba1e53;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.patient-btn-helpline:hover {
+  background: #a01844;
+  color: #ffffff;
 }
 
 .results-two-col-grid {
@@ -1617,41 +2085,65 @@
    Conversational AI Chat Interface & Compulsory Camera Layout
    ========================================================================== */
 
-/* Pre-Screening Compulsory Video Banner */
-.ai-compulsory-video-banner {
+/* Pre-Screening Consent Card */
+.ai-screening-setup-heading,
+.psychosocial-assessment-title {
+  margin: 0;
+  font-family: var(--sans, 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  font-size: clamp(19px, 2.2vw, 22px);
+  font-weight: 600;
+  color: var(--patient-ink, #271218);
+  letter-spacing: -0.012em;
+  line-height: 1.3;
+}
+
+.psychosocial-assessment-title em {
+  font-style: normal;
+  font-weight: 600;
+  color: inherit;
+}
+
+.ai-compulsory-video-banner,
+.ai-screening-consent-card {
+  display: flex;
+  flex-direction: column;
+  background: #fff8fa;
+  border: 1px solid #f6c8d7;
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin-top: 16px;
+}
+
+.ai-screening-consent-body {
+  width: 100%;
+}
+
+.ai-screening-consent-explanation {
+  margin: 0 0 14px 0;
+  font-size: 14px;
+  color: #3b2c32;
+  line-height: 1.55;
+  font-weight: 400;
+}
+
+.ai-screening-consent-checkbox {
   display: flex;
   align-items: flex-start;
-  gap: 16px;
-  background: #fff8fa;
-  border: 1.5px solid #f6c8d7;
-  border-radius: 14px;
-  padding: 20px 24px;
-  margin-top: 18px;
-}
-
-.ai-compulsory-video-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: #fcebf0;
-  flex-shrink: 0;
-}
-
-.ai-compulsory-video-text strong {
-  display: block;
-  font-size: 15px;
-  color: #ba1e53;
-  margin-bottom: 6px;
-}
-
-.ai-compulsory-video-text p {
-  margin: 0;
+  gap: 10px;
   font-size: 13.5px;
-  color: #5c4750;
-  line-height: 1.5;
+  font-weight: 500;
+  color: #ba1e53;
+  cursor: pointer;
+  line-height: 1.45;
+}
+
+.ai-screening-consent-checkbox input[type="checkbox"] {
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: #ba1e53;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
 }
 
 /* Session Header Bar */
@@ -2261,18 +2753,33 @@
 }
 
 .results-consult-heading {
-  margin: 0 0 8px 0;
-  font-size: 18px;
+  margin: 0 0 4px 0;
+  font-size: clamp(17px, 2vw, 20px);
   font-weight: 700;
   color: #2b1b22;
-  font-family: var(--patient-font-serif, "Playfair Display", Georgia, serif);
+  font-family: var(--sans, 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  letter-spacing: -0.01em;
+}
+
+.results-consult-subheading {
+  margin: 0 0 10px 0;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #ba1e53;
 }
 
 .results-consult-message {
-  margin: 0 0 10px 0;
+  margin: 0 0 8px 0;
   font-size: 14px;
-  color: #4a3840;
+  color: #3f2d35;
   line-height: 1.55;
+}
+
+.results-consult-reassurance {
+  margin: 0 0 16px 0;
+  font-size: 13px;
+  color: #66535c;
+  line-height: 1.5;
 }
 
 .results-consult-note,
@@ -2306,4 +2813,103 @@
     align-items: stretch;
   }
 }
+
+/* ==========================================================================
+   Screening Mobile-First Responsiveness (768px, 640px, 480px, 360px)
+   ========================================================================== */
+@media (max-width: 768px) {
+  .screening-tab-nav {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    padding: 4px;
+    margin-bottom: 16px;
+  }
+
+  .screening-tab-nav-btn {
+    padding: 8px 14px;
+    font-size: 12.5px;
+  }
+
+  .results-two-col-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .ai-results-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .result-panel-card {
+    padding: 18px 16px;
+  }
+
+  .ai-screening-privacy-banner {
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+
+  .ai-screening-controls-row {
+    gap: 10px;
+  }
+
+  .ai-screening-controls-row button {
+    min-height: 44px;
+  }
+
+  .psychosocial-intro-card {
+    padding: 16px 18px !important;
+  }
+
+  .psychosocial-question-card {
+    padding: 18px 16px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .psychosocial-intro-card {
+    padding: 14px 14px !important;
+  }
+
+  .psychosocial-question-card {
+    padding: 16px 12px !important;
+  }
+
+  .result-panel-card {
+    padding: 14px 12px;
+    border-radius: 12px;
+  }
+
+  .result-panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .ai-screening-live-video,
+  .ai-screening-playback-video {
+    max-height: 280px;
+    border-radius: 8px;
+  }
+
+  .ai-screening-controls-row {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .ai-screening-controls-row button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .screening-option-button {
+    padding: 12px 14px;
+    min-height: 48px;
+    font-size: 13.5px;
+  }
+}
+
 

@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { DashboardIcon } from './DashboardIcon.jsx';
 
-const RISK_OPTIONS = [
+const CLINICAL_RISK_OPTIONS = [
   { value: 'Low', pillClass: 'filter-pill-low' },
   { value: 'Moderate', pillClass: 'filter-pill-moderate' },
   { value: 'High', pillClass: 'filter-pill-high' },
-  { value: 'Requires Review', pillClass: 'filter-pill-review' },
 ];
 
 const STATUS_OPTIONS = ['Active', 'Follow-up', 'Pending', 'Completed'];
@@ -36,11 +35,17 @@ export function FiltersSidebar({
     onWeekRangeChange([minWeek, nextMax]);
   };
 
+  const isReviewSelected = selectedRisks.includes('Requires Review') || selectedStatuses.includes('Review');
+
+  const handleToggleReviewStatus = () => {
+    onToggleRisk('Requires Review');
+  };
+
   const panelContent = (
     <div className="miora-filters-inner">
       <div className="miora-filters-header">
         <span className="miora-card-icon" aria-hidden="true">
-          <DashboardIcon name="filter" size={18} strokeWidth={1.7} />
+          <DashboardIcon name="filter" size={17} strokeWidth={1.8} />
         </span>
         <h2 className="miora-filters-title">Filters</h2>
         <button
@@ -53,11 +58,11 @@ export function FiltersSidebar({
         </button>
       </div>
 
-      {/* Risk Level */}
+      {/* Clinical Risk Level */}
       <fieldset className="miora-filter-group">
-        <legend className="miora-filter-legend">Risk Level</legend>
+        <legend className="miora-filter-legend">Clinical Risk Level</legend>
         <div className="miora-filter-checks">
-          {RISK_OPTIONS.map((opt) => {
+          {CLINICAL_RISK_OPTIONS.map((opt) => {
             const checked = selectedRisks.includes(opt.value);
             return (
               <label key={opt.value} className="miora-filter-check-row">
@@ -72,6 +77,25 @@ export function FiltersSidebar({
               </label>
             );
           })}
+        </div>
+      </fieldset>
+
+      <div className="miora-filter-divider" aria-hidden="true" />
+
+      {/* Workflow / Review Status (Separated out from Clinical Risk Level) */}
+      <fieldset className="miora-filter-group">
+        <legend className="miora-filter-legend">Review Status</legend>
+        <div className="miora-filter-checks">
+          <label className="miora-filter-check-row">
+            <input
+              type="checkbox"
+              checked={isReviewSelected}
+              onChange={handleToggleReviewStatus}
+            />
+            <span className="miora-filter-risk-chip filter-pill-review">
+              Requires Review
+            </span>
+          </label>
         </div>
       </fieldset>
 

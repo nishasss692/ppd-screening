@@ -59,11 +59,9 @@ describe('Miora Screen 08: Clinical Review & Assessment', () => {
 
     // Row 1A: AI Screening Summary
     expect(screen.getByRole('heading', { name: 'AI Screening Summary' })).toBeInTheDocument();
-    expect(screen.getByText('0.62 (Moderate)')).toBeInTheDocument();
-    expect(screen.getByText('0.81 (High)')).toBeInTheDocument();
-    expect(screen.getByText('0.66')).toBeInTheDocument();
-    expect(screen.getByText('0.60')).toBeInTheDocument();
-    expect(screen.getByText('0.58')).toBeInTheDocument();
+    expect(screen.getByText('Screening session recorded & analyzed')).toBeInTheDocument();
+    expect(screen.getByText('Documented in Maternal Screening Results')).toBeInTheDocument();
+    expect(screen.getByText('View Primary Results')).toBeInTheDocument();
 
     // Row 1B: Key Evidence
     expect(screen.getByRole('heading', { name: 'Key Evidence' })).toBeInTheDocument();
@@ -163,7 +161,7 @@ describe('Miora Screen 08: Clinical Review & Assessment', () => {
       expect(screen.getByRole('status')).toHaveTextContent(/Clinical review finalized for M-108/i);
     });
     expect(screen.getByText('Clinical Review Finalized')).toBeInTheDocument();
-    expect(screen.getByText('0.62 (Moderate)')).toBeInTheDocument();
+    expect(screen.getByText('Moderate Risk')).toBeInTheDocument();
   });
 
   it('supports Previous Results modal, Export Clinical Note PDF download, and honest partial modality states', () => {

@@ -121,22 +121,14 @@ export function ClinicalProfilePage() {
           <span>Profile</span>
         </NavLink>
         <span className="medhist-breadcrumb-sep" aria-hidden="true">&rsaquo;</span>
-        <span className="medhist-breadcrumb-current">Stage 1 Clinical Profile</span>
+        <span className="medhist-breadcrumb-current">Clinical Profile</span>
       </div>
 
       {/* Header Banner */}
       <div className="clinical-profile-banner">
-        <div className="miora-dash-eyebrow">
-          <span>STAGE 1 DATA COLLECTION</span>
-          <span className="miora-dash-eyebrow-line" aria-hidden="true" />
-        </div>
         <h1 className="clinical-profile-title">
-          Maternal Clinical &amp; <em>Background Profile</em>
+          Maternal Clinical Background Profile
         </h1>
-        <p className="clinical-profile-subtitle">
-          This comprehensive health profile supplies the demographic, medical, and obstetric context
-          evaluated by AANCHAL&apos;s clinical record screening model. Complete once; update anytime.
-        </p>
       </div>
 
       {/* Privacy Notice */}

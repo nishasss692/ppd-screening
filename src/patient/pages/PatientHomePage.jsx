@@ -40,6 +40,10 @@ export function PatientHomePage() {
                   loading="eager"
                   decoding="async"
                   onError={(e) => {
+                    const picture = e.currentTarget.closest('picture');
+                    if (picture) {
+                      picture.querySelectorAll('source').forEach((s) => s.remove());
+                    }
                     if (e.currentTarget.src !== AANCHAL_LOGO_DATA_URI) {
                       e.currentTarget.src = AANCHAL_LOGO_DATA_URI;
                     }
@@ -94,6 +98,10 @@ export function PatientHomePage() {
                 loading="eager"
                 decoding="async"
                 onError={(e) => {
+                  const picture = e.currentTarget.closest('picture');
+                  if (picture) {
+                    picture.querySelectorAll('source').forEach((s) => s.remove());
+                  }
                   if (e.currentTarget.src !== HERO_MOTHER_DATA_URI) {
                     e.currentTarget.src = HERO_MOTHER_DATA_URI;
                   }

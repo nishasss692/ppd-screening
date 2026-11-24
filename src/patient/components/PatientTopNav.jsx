@@ -66,7 +66,7 @@ export const PATIENT_NAV_ITEMS = [
   },
 ];
 
-export function PatientTopNav() {
+export function PatientTopNav({ onToggleMobile }) {
   const location = useLocation();
   const navigate = useNavigate();
   const {
@@ -97,33 +97,12 @@ export function PatientTopNav() {
     };
   }, []);
 
-  const isItemActive = (item) => {
-    return item.matchPaths.some((p) => {
-      if (p === '/patient/dashboard' || p === '/patient/home' || p === '/patient') {
-        return (
-          location.pathname === '/patient/dashboard' ||
-          location.pathname === '/patient/home' ||
-          location.pathname === '/patient'
-        );
-      }
-      if (p === '/patient/reports' || p === '/reports') {
-        return (
-          location.pathname === '/patient/reports' ||
-          location.pathname === '/patient/my-reports' ||
-          location.pathname === '/reports' ||
-          location.pathname === '/my-reports'
-        );
-      }
-      return location.pathname.startsWith(p);
-    });
-  };
-
   const unreadNotifs = notifications.filter((n) => !n.read);
   const unreadCount = unreadNotifs.length;
 
-  const patientName = patient?.name || 'Amara';
+  const patientName = patient?.name || 'Patient';
   const patientInitials =
-    patient?.avatarInitials || (patientName ? patientName[0].toUpperCase() : 'A');
+    patient?.avatarInitials || (patientName ? patientName[0].toUpperCase() : 'P');
 
   const handleSignOut = async () => {
     setOpenMenu(null);
@@ -133,55 +112,40 @@ export function PatientTopNav() {
     navigate('/login');
   };
 
+  const getBreadcrumbTitle = () => {
+    if (location.pathname.startsWith('/patient/screening')) return 'Screening';
+    if (location.pathname.startsWith('/patient/ai-assistant')) return 'AI Assistant';
+    if (location.pathname.startsWith('/patient/support-space')) return 'Support Space';
+    if (location.pathname.startsWith('/patient/profile')) return 'Profile';
+    if (location.pathname.startsWith('/patient/clinical-profile')) return 'Clinical Profile';
+    if (location.pathname.startsWith('/patient/settings')) return 'Settings';
+    if (location.pathname.startsWith('/patient/reports')) return 'Reports & Records';
+    return 'Home';
+  };
+
   return (
     <header className="dash-topnav patient-topnav" ref={navRef} role="banner">
       <div className="dash-topnav-inner patient-topnav-inner">
-        {/* Brand Group */}
-        <div className="dash-brand-group patient-brand-group">
-          <Link
-            to="/"
-            className="dash-brand-link patient-brand-link"
-            aria-label="AANCHAL Home"
-            onClick={() => setOpenMenu(null)}
+        {/* Left: Mobile Hamburger Toggle + Breadcrumbs */}
+        <div className="dash-header-left patient-header-left">
+          <button
+            type="button"
+            className="dash-top-hamburger patient-top-hamburger"
+            aria-label="Toggle navigation menu"
+            onClick={onToggleMobile}
           >
-            <BrandWordmark />
-          </Link>
+            <DashboardIcon name="menu" size={20} />
+          </button>
+
+          <nav className="dash-header-breadcrumb patient-header-breadcrumb" aria-label="Breadcrumb">
+            <span className="dash-breadcrumb-root">AANCHAL Patient</span>
+            <span className="dash-breadcrumb-sep" aria-hidden="true">/</span>
+            <span className="dash-breadcrumb-current">{getBreadcrumbTitle()}</span>
+          </nav>
         </div>
 
-        {/* Desktop Navigation Links */}
-        <nav
-          className="dash-nav-links patient-nav-links"
-          role="navigation"
-          aria-label="Patient Portal Navigation"
-        >
-          {PATIENT_NAV_ITEMS.map((item) => {
-            const active = isItemActive(item);
-            return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={`dash-nav-link patient-nav-link ${active ? 'is-active' : ''}`}
-              >
-                <span>{item.label}</span>
-              </NavLink>
-            );
-          })}
-        </nav>
-
-        {/* Right Utilities: Assistant, Notifications, Avatar, Mobile Menu Button */}
+        {/* Right Utilities: Notifications, Avatar */}
         <div className="dash-nav-utilities patient-nav-utilities">
-          {/* AI Assistant sparkle button matching Doctor Dashboard Copilot */}
-          <div className="dash-utility-wrap patient-utility-wrap">
-            <Link
-              to="/patient/ai-assistant"
-              className="dash-icon-btn patient-icon-btn"
-              aria-label="AANCHAL AI Assistant"
-              title="AANCHAL AI Assistant"
-            >
-              <DashboardIcon name="sparkle" size={17} strokeWidth={1.8} />
-            </Link>
-          </div>
-
           {/* Notifications Dropdown */}
           <div className="dash-utility-wrap patient-utility-wrap">
             <button
@@ -222,7 +186,7 @@ export function PatientTopNav() {
 
                 <div className="patient-notif-list">
                   {notifications.length === 0 ? (
-                    <div className="patient-notif-empty">No new notifications</div>
+                    <div className="patient-notif-empty">No notifications yet</div>
                   ) : (
                     notifications.slice(0, 5).map((n) => (
                       <div
@@ -317,75 +281,8 @@ export function PatientTopNav() {
               </div>
             )}
           </div>
-
-          {/* Mobile Hamburger Menu Toggle */}
-          <button
-            type="button"
-            className="patient-mobile-menu-btn"
-            aria-label="Toggle navigation menu"
-            aria-expanded={openMenu === 'mobile'}
-            onClick={() => setOpenMenu((prev) => (prev === 'mobile' ? null : 'mobile'))}
-          >
-            {openMenu === 'mobile' ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            ) : (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="3" y1="12" x2="21" y2="12" />
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <line x1="3" y1="18" x2="21" y2="18" />
-              </svg>
-            )}
-          </button>
         </div>
       </div>
-
-      {/* Mobile Drawer */}
-      {openMenu === 'mobile' && (
-        <nav
-          className="patient-mobile-drawer"
-          role="navigation"
-          aria-label="Mobile patient navigation"
-        >
-          {PATIENT_NAV_ITEMS.map((item) => {
-            const active = isItemActive(item);
-            return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={`patient-mobile-link ${active ? 'is-active' : ''}`}
-                onClick={() => setOpenMenu(null)}
-              >
-                <PatientIcon name={item.icon} size={17} className="patient-mobile-icon" />
-                <span>{item.label}</span>
-              </NavLink>
-            );
-          })}
-          <div className="patient-mobile-divider" />
-          <NavLink
-            to="/patient/settings"
-            className="patient-mobile-link"
-            onClick={() => setOpenMenu(null)}
-          >
-            <PatientIcon name="settings" size={17} className="patient-mobile-icon" />
-            <span>Settings</span>
-          </NavLink>
-          <button
-            type="button"
-            className="patient-mobile-link is-signout"
-            onClick={handleSignOut}
-          >
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <polyline points="16 17 21 12 16 7" />
-              <line x1="21" y1="12" x2="9" y2="12" />
-            </svg>
-            <span>Sign Out</span>
-          </button>
-        </nav>
-      )}
     </header>
   );
 }

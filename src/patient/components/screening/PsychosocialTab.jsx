@@ -181,21 +181,13 @@ export function PsychosocialTab({ onContinueToEpds }) {
   return (
     <div className="aanchal-psychosocial-shell" aria-label="Mother's Wellbeing & Support Assessment">
       {/* Intro Header */}
-      <section className="patient-card" style={{ marginBottom: '20px', padding: '24px', background: '#fff' }}>
-        <div className="miora-dash-eyebrow">
-          <span>STAGE 2 SCREENING ASSESSMENT</span>
-          <span className="miora-dash-eyebrow-line" aria-hidden="true" />
-        </div>
-        <h2 className="patient-page-heading" style={{ fontSize: '20px', marginTop: 4 }}>
-          Mother&apos;s Wellbeing &amp; <em>Support Assessment</em>
+      <section className="patient-card psychosocial-intro-card" style={{ marginBottom: '16px', padding: '20px 24px', background: '#fff' }}>
+        <h2 className="psychosocial-assessment-title">
+          Mother&apos;s Wellbeing &amp; Support Assessment
         </h2>
-        <p className="patient-page-subheading" style={{ marginTop: 6, color: '#5c4750' }}>
-          Nine focused questions examining your daily emotional environment, relationships, and rest.
-          These answers are integrated with your clinical background into our verified clinical risk model.
-        </p>
 
         {/* Progress tracker */}
-        <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ flex: 1, height: 6, background: '#f5e8ed', borderRadius: 999, overflow: 'hidden' }}>
             <div
               style={{
@@ -213,12 +205,12 @@ export function PsychosocialTab({ onContinueToEpds }) {
       </section>
 
       {/* Active Question Card */}
-      <section className="patient-card" style={{ padding: '28px', background: '#fff', border: '1px solid #f6d1dd' }}>
+      <section className="patient-card psychosocial-question-card" style={{ padding: '24px 28px', background: '#fff', border: '1px solid #f6d1dd' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
           <span
             style={{
-              width: 32,
-              height: 32,
+              width: 30,
+              height: 30,
               borderRadius: '50%',
               background: '#fcebf0',
               color: '#ba1e53',
@@ -228,6 +220,7 @@ export function PsychosocialTab({ onContinueToEpds }) {
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
+              marginTop: 1,
             }}
           >
             {currentIdx + 1}
@@ -236,16 +229,11 @@ export function PsychosocialTab({ onContinueToEpds }) {
             <h3 style={{ margin: 0, fontSize: 17, fontWeight: 600, color: '#2d3748', lineHeight: 1.4 }}>
               {currentQ.title}
             </h3>
-            {currentQ.helper && (
-              <p style={{ margin: '6px 0 0', fontSize: 13, color: '#718096' }}>
-                {currentQ.helper}
-              </p>
-            )}
           </div>
         </div>
 
         {/* Options */}
-        <div style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
           {currentQ.options.map((opt) => {
             const isSelected = selectedValue === opt.value;
             return (
@@ -308,34 +296,8 @@ export function PsychosocialTab({ onContinueToEpds }) {
         </div>
       </section>
 
-      {/* Optional Qualitative Reflection Card */}
-      <section className="patient-card" style={{ marginTop: '20px', padding: '24px', background: '#fff' }}>
-        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#2d3748' }}>
-          Personal Reflection (Optional)
-        </h3>
-        <p style={{ margin: '4px 0 12px', fontSize: 13, color: '#718096' }}>
-          Any additional thoughts about your home, baby, or emotional climate. This text is reserved for your healthcare clinician and is kept strictly out of the statistical model.
-        </p>
-        <textarea
-          rows={3}
-          value={reflection}
-          onChange={(e) => setReflection(e.target.value)}
-          placeholder="e.g. My partner works long shifts; nighttime feeds are currently exhausting..."
-          style={{
-            width: '100%',
-            padding: '12px',
-            borderRadius: 8,
-            border: '1px solid #f0d5df',
-            fontFamily: 'inherit',
-            fontSize: 13.5,
-            color: '#2d3748',
-            resize: 'vertical',
-          }}
-        />
-      </section>
-
       {/* Completion & Continue to EPDS CTA */}
-      <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 16 }}>
+      <div style={{ marginTop: 20, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 16 }}>
         <span style={{ fontSize: 13, color: '#718096' }}>
           {isComplete ? 'All 9 questions completed.' : `${answeredCount} of 9 answered.`}
         </span>

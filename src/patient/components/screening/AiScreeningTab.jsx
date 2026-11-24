@@ -692,28 +692,17 @@ export function AiScreeningTab({ onContinueToEpds }) {
       <div className="aanchal-ai-screening-workspace" aria-label="AI Screening Pre-Check">
         <section className="patient-card ai-screening-intro-card">
           <div className="ai-screening-header">
-            <div className="miora-dash-eyebrow">
-              <span>AI SCREENING</span>
-              <span className="miora-dash-eyebrow-line" aria-hidden="true" />
-            </div>
-            <h2 className="miora-dash-title patient-page-heading" style={{ fontSize: '20px' }}>AI Screening Session Setup</h2>
-            <p className="miora-dash-subtitle patient-page-subheading">
-              A gentle conversational screening with the AANCHAL AI Assistant. Share your thoughts and experiences across 5 questions.
-            </p>
+            <h2 className="ai-screening-setup-heading">AI Screening Session Setup</h2>
           </div>
 
-          {/* Compulsory Video Notice Banner */}
-          <div className="ai-compulsory-video-banner" role="region" aria-label="Compulsory video recording requirement">
-            <div className="ai-compulsory-video-icon" aria-hidden="true">
-              <PatientIcon name="video" size={24} color="#ba1e53" />
-            </div>
-            <div className="ai-compulsory-video-text">
-              <strong>Compulsory Video &amp; Audio Recording</strong>
-              <p>
-                Continuous video and audio recording is a <strong>mandatory requirement</strong> for this screening.
-                Your live camera preview will remain visible throughout the 5-question conversation.
+          {/* Recording Consent Card */}
+          <div className="ai-compulsory-video-banner ai-screening-consent-card" role="region" aria-label="Screening recording consent">
+            <span className="sr-only">Compulsory Video &amp; Audio Recording</span>
+            <div className="ai-compulsory-video-text ai-screening-consent-body">
+              <p className="ai-screening-consent-explanation">
+                Continuous audio and video recording is required for this screening. Your live camera preview will remain visible throughout the conversation.
               </p>
-              <label className="ai-screening-consent-checkbox" style={{ marginTop: '12px' }}>
+              <label className="ai-screening-consent-checkbox">
                 <input
                   type="checkbox"
                   checked={consentGiven}

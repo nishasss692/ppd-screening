@@ -46,40 +46,15 @@ export function LiveScreeningPage() {
   return (
     <div className="miora-command-shell">
       <div className="miora-command-frame">
-        {/* Subtle Flowing Blush Header Waves */}
-        <svg
-          className="miora-header-ribbon miora-mothers-ribbon"
-          viewBox="0 0 640 160"
-          fill="none"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          <defs>
-            <linearGradient id="liveWaveGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#fbdbe2" stopOpacity="0" />
-              <stop offset="50%" stopColor="#f8c9d5" stopOpacity="0.45" />
-              <stop offset="100%" stopColor="#fce8ec" stopOpacity="0.16" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M0 135 C 150 128, 225 42, 395 48 C 515 52, 565 88, 640 24 L 640 160 L 0 160 Z"
-            fill="url(#liveWaveGrad)"
-          />
-        </svg>
-
         {/* Page Header (Clinician Review Mode — No Live Recording Controls or Session Timers) */}
         <section className="miora-dash-header" aria-labelledby="live-screening-heading">
           <div className="miora-dash-header-copy">
             <div className="miora-dash-eyebrow">
               <span>PATIENT SCREENING REVIEW</span>
-              <span className="miora-dash-eyebrow-line" aria-hidden="true" />
             </div>
             <h1 id="live-screening-heading" className="miora-dash-title">
-              Maternal Screening <em>Session</em>
+              Maternal Screening Session
             </h1>
-            <p className="miora-dash-subtitle">
-              Review completed patient AI Multimodal Screenings, Edinburgh Postnatal Depression Scale (EPDS) assessments, and clinical reports.
-            </p>
           </div>
         </section>
 

@@ -8,14 +8,29 @@
   --cream: #fdf8f4;
   --line: #ead9d9;
   --shell: min(92vw, 1160px);
-  --serif: 'Playfair Display', Georgia, serif;
+  --serif: var(--sans, 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
   --sans: 'DM Sans', Arial, sans-serif;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body { margin: 0; background: var(--cream); color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+html {
+  scroll-behavior: smooth;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+body {
+  margin: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+input, select, textarea, button {
+  max-width: 100%;
+}
 #app, .landing-root { position: relative; overflow-x: clip; min-height: 100vh; }
 .brand-header, main, .site-footer { position: relative; z-index: 1; }
 a { color: inherit; text-decoration: none; }

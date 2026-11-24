@@ -1,176 +1,151 @@
 import React from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { BrandWordmark } from '../../dashboard/components/BrandWordmark.jsx';
+import { DashboardIcon } from '../../dashboard/components/DashboardIcon.jsx';
 import { PatientIcon } from './PatientIcons.jsx';
-import '../styles/patientSidebar.css';
+import { usePatient } from '../context/PatientContext.jsx';
+import { getCurrentUser } from '../../auth/authService.js';
 
-const NAV_ITEMS = [
+export const PATIENT_SIDEBAR_ITEMS = [
   {
     to: '/patient/dashboard',
     matchPaths: ['/patient/dashboard', '/patient/home', '/patient'],
-    label: 'Dashboard',
+    label: 'Home',
     icon: 'home',
   },
   {
-    to: '/patient/medical-history',
-    matchPaths: ['/patient/medical-history', '/medical-history'],
-    label: 'Medical History',
-    icon: 'medical-history',
-  },
-  {
     to: '/patient/screening',
-    matchPaths: ['/patient/screening', '/screening', '/ai-screening', '/patient-screening', '/patient/ai-screening', '/screening-results', '/patient/screening/results'],
-    label: 'AI Screening',
-    icon: 'ai-screening',
+    matchPaths: [
+      '/patient/screening',
+      '/screening',
+      '/ai-screening',
+      '/patient-screening',
+      '/patient/ai-screening',
+      '/screening-results',
+      '/patient/screening/results',
+      '/patient/medical-history',
+      '/medical-history',
+      '/patient/reports',
+      '/reports',
+      '/patient/my-reports',
+      '/my-reports',
+    ],
+    label: 'Screening',
+    icon: 'clipboard-check',
   },
   {
     to: '/patient/ai-assistant',
     matchPaths: ['/patient/ai-assistant', '/ai-assistant', '/assistant', '/voice-assistant'],
     label: 'AI Assistant',
-    icon: 'ai-assistant',
-  },
-  {
-    to: '/patient/find-doctor',
-    matchPaths: ['/patient/find-doctor', '/patient/book-appointment'],
-    label: 'Find a Doctor',
-    icon: 'connect-doctor',
-  },
-  {
-    to: '/patient/connect-doctor',
-    matchPaths: ['/patient/connect-doctor', '/connect-doctor'],
-    label: 'Connect to a Doctor',
-    icon: 'connect-doctor',
-  },
-  {
-    to: '/patient/reports',
-    matchPaths: ['/patient/reports', '/patient/my-reports', '/reports', '/my-reports'],
-    label: 'My Reports',
-    icon: 'reports',
+    icon: 'sparkle',
   },
   {
     to: '/patient/support-space',
-    matchPaths: ['/patient/support-space', '/patient/moments', '/patient/community', '/community', '/mothers-circle'],
+    matchPaths: [
+      '/patient/support-space',
+      '/support-space',
+      '/patient/community',
+      '/community',
+      '/mothers-circle',
+      '/patient/mothers-circle',
+    ],
     label: 'Support Space',
-    icon: 'community',
+    icon: 'heart',
   },
-  {
-    to: '/patient/care-suggestions',
-    matchPaths: ['/patient/care-suggestions', '/care-suggestions', '/patient/suggestions'],
-    label: 'Care Suggestions',
-    icon: 'care-suggestions',
-  },
-];
-
-const FOOTER_ITEMS = [
   {
     to: '/patient/profile',
-    matchPaths: ['/patient/profile'],
+    matchPaths: ['/patient/profile', '/profile', '/patient/settings', '/settings'],
     label: 'Profile',
-    icon: 'profile',
-  },
-  {
-    to: '/patient/settings',
-    matchPaths: ['/patient/settings'],
-    label: 'Settings',
-    icon: 'settings',
+    icon: 'user',
   },
 ];
 
-export function PatientSidebar({ isMobileOpen, onCloseMobile }) {
+export function PatientSidebar({ mobileOpen = false, onCloseMobile }) {
   const location = useLocation();
+  const { patient } = usePatient();
+  const authUser = getCurrentUser();
 
-  const isItemActive = (item) => {
-    return item.matchPaths.some((p) => {
-      if (p === '/patient/dashboard' || p === '/patient/home' || p === '/patient') {
-        return location.pathname === '/patient/dashboard' || location.pathname === '/patient/home' || location.pathname === '/patient';
-      }
-      if (p === '/patient/reports' || p === '/reports') {
-        return location.pathname === '/patient/reports' || location.pathname === '/patient/my-reports' || location.pathname === '/reports' || location.pathname === '/my-reports';
-      }
-      return location.pathname.startsWith(p);
-    });
-  };
+  const patientName = patient?.fullName || patient?.name || authUser?.fullName || authUser?.name || 'Patient';
+  const patientInitials = patient?.avatarInitials || (patientName ? patientName[0]?.toUpperCase() : 'P');
+  const postpartumWeek = patient?.postpartumWeek || 1;
 
   return (
-    <aside
-      className={`patient-sidebar ${isMobileOpen ? 'is-mobile-open' : ''}`}
-      aria-label="Patient Portal Navigation"
-    >
-      <button
-        type="button"
-        className="patient-sidebar-close-btn"
-        onClick={onCloseMobile}
-        aria-label="Close navigation menu"
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18" />
-          <line x1="6" y1="6" x2="18" y2="18" />
-        </svg>
-      </button>
+    <>
+      {mobileOpen && (
+        <div
+          className="dash-sidebar-backdrop patient-sidebar-backdrop"
+          onClick={onCloseMobile}
+          aria-hidden="true"
+        />
+      )}
 
-      <div>
-        {/* Brand Header */}
-        <div className="patient-sidebar-brand">
-          <div className="patient-brand-row">
-            <Link
-              to="/"
-              className="patient-brand-link"
+      <aside className={`dash-sidebar patient-sidebar ${mobileOpen ? 'is-mobile-open' : ''}`} aria-label="Main patient navigation">
+        <div className="dash-sidebar-head">
+          <Link
+            to="/"
+            className="dash-brand-link"
+            aria-label="AANCHAL Home"
+            onClick={onCloseMobile}
+          >
+            <BrandWordmark />
+          </Link>
+          <span className="dash-sidebar-portal-tag patient-portal-tag">Patient</span>
+          {mobileOpen && (
+            <button
+              type="button"
+              className="dash-sidebar-close-btn"
+              aria-label="Close patient navigation"
               onClick={onCloseMobile}
-              aria-label="AANCHAL Home"
             >
-              <BrandWordmark />
-            </Link>
-            <div className="patient-brand-divider" aria-hidden="true" />
-            <div className="patient-brand-tagline">
-              Maternal Emotional<br />Intelligence
-            </div>
-          </div>
+              <DashboardIcon name="close" size={18} />
+            </button>
+          )}
         </div>
 
-        <div className="patient-sidebar-line" aria-hidden="true" />
-
-        {/* Primary Navigation Menu */}
-        <nav className="patient-sidebar-nav" aria-label="Main Navigation">
-          <p className="patient-nav-section-title">Patient Care</p>
-          {NAV_ITEMS.map((item) => {
-            const active = isItemActive(item);
-            return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={`patient-nav-link ${active ? 'is-active' : ''}`}
-                onClick={onCloseMobile}
-              >
-                <span className="patient-nav-icon">
-                  <PatientIcon name={item.icon} size={18} />
-                </span>
-                <span className="patient-nav-label">{item.label}</span>
-              </NavLink>
-            );
-          })}
+        <nav className="dash-sidebar-nav patient-sidebar-nav" aria-label="Patient Portal Navigation">
+          <div className="dash-sidebar-section-label">PATIENT NAVIGATION</div>
+          <ul className="dash-sidebar-list">
+            {PATIENT_SIDEBAR_ITEMS.map((item) => {
+              const extraActive = item.matchPaths?.some((p) =>
+                location.pathname.startsWith(p)
+              );
+              return (
+                <li key={item.to} className="dash-sidebar-item">
+                  <NavLink
+                    to={item.to}
+                    className={({ isActive }) =>
+                      `dash-sidebar-link ${isActive || extraActive ? 'is-active' : ''}`
+                    }
+                    onClick={onCloseMobile}
+                  >
+                    <span className="dash-sidebar-icon" aria-hidden="true">
+                      {item.icon === 'home' && <PatientIcon name="home" size={18} />}
+                      {item.icon === 'clipboard-check' && <PatientIcon name="clipboard-check" size={18} />}
+                      {item.icon === 'sparkle' && <DashboardIcon name="messageCircle" size={18} />}
+                      {item.icon === 'heart' && <DashboardIcon name="heart" size={18} />}
+                      {item.icon === 'user' && <PatientIcon name="user" size={18} />}
+                    </span>
+                    <span className="dash-sidebar-label">{item.label}</span>
+                  </NavLink>
+                </li>
+              );
+            })}
+          </ul>
         </nav>
-      </div>
 
-      {/* Footer Navigation (Profile, Settings) */}
-      <div className="patient-sidebar-footer">
-        {FOOTER_ITEMS.map((item) => {
-          const active = isItemActive(item);
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={`patient-nav-link ${active ? 'is-active' : ''}`}
-              onClick={onCloseMobile}
-            >
-              <span className="patient-nav-icon">
-                <PatientIcon name={item.icon} size={18} />
-              </span>
-              <span className="patient-nav-label">{item.label}</span>
-            </NavLink>
-          );
-        })}
-      </div>
-    </aside>
+        <div className="dash-sidebar-footer">
+          <div className="dash-sidebar-user-card">
+            <span className="dash-sidebar-avatar patient-sidebar-avatar" aria-hidden="true">
+              {patientInitials}
+            </span>
+            <div className="dash-sidebar-user-meta">
+              <strong className="dash-sidebar-user-name">{patientName}</strong>
+              <span className="dash-sidebar-user-role">Week {postpartumWeek} Postpartum</span>
+            </div>
+            <span className="dash-sidebar-status-dot" title="Active Account" aria-label="Active" />
+          </div>
+        </div>
+      </aside>
+    </>
   );
 }
-
