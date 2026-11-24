@@ -285,41 +285,31 @@ export function LoginScreen() {
 
       <div className="login-container">
         {/* ================================================================
-            Left Section – Branding and Illustration
+            Left Section – Clinical Branding & Enterprise Highlights
             ================================================================ */}
         <section className="login-left-col" aria-label="AANCHAL brand presentation">
           <div className="login-left-top">
             {/* Upper-left branding */}
             <div className="login-branding">
               <Link to="/" className="login-logo-link" aria-label="AANCHAL Home">
-                <BrandWordmark height={46} />
+                <BrandWordmark height={40} />
               </Link>
 
-              {/* Exact Tagline */}
-              <p className="login-tagline">
-                Maternal Emotional<br />
-                Intelligence
-              </p>
+              <div className="login-clinical-badge">
+                <span className="login-badge-dot" aria-hidden="true" />
+                <span className="login-tagline">
+                  Maternal Emotional<br />Intelligence
+                </span>
+              </div>
 
-              {/* Thin, subtle pink divider */}
               <div className="login-brand-divider" aria-hidden="true" />
             </div>
 
-            {/* Main Editorial Heading */}
+            {/* Main Heading — Moderate Size, Clean Sans-Serif */}
             <h1 className="login-heading">
-              Compassionate<br />
-              Support for Your<br />
-              <em>Postpartum Journey</em>
+              Compassionate Support for Your Postpartum Journey
             </h1>
-
-            {/* Supporting Copy */}
-            <p className="login-subtext">
-              Screen, understand and get personalised support for your emotional wellbeing.
-            </p>
           </div>
-
-          {/* Mother and Baby Illustration in normal flex flow (never overlaps text) */}
-          
         </section>
 
         {/* ================================================================
@@ -381,13 +371,19 @@ export function LoginScreen() {
                   ? 'Hospital Portal Sign In'
                   : activeTab === 'signin' ? 'Welcome Back' : 'Create Your Account'}
               </h2>
-              <p className="login-card-subtext">
-                {selectedRole === 'hospital'
-                  ? 'Sign in with your registered hospital email or organisation ID.'
-                  : activeTab === 'signin'
-                  ? 'Sign in to continue your AANCHAL journey.'
-                  : 'Join AANCHAL for compassionate, personalised support.'}
-              </p>
+              {selectedRole === 'hospital' ? (
+                <p className="login-card-subtext">
+                  Sign in with your registered hospital email or organisation ID.
+                </p>
+              ) : activeTab === 'signin' ? (
+                <p className="login-card-subtext sr-only">
+                  Sign in to continue your AANCHAL journey.
+                </p>
+              ) : (
+                <p className="login-card-subtext">
+                  Choose your role and get started with AANCHAL.
+                </p>
+              )}
             </header>
 
             {/* Alerts */}
@@ -548,69 +544,33 @@ export function LoginScreen() {
                 </div>
 
                 {/* Quick 1-Click Demo Fill */}
-                <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-                  <span style={{ fontSize: '12px', color: '#7a6870', fontWeight: '500' }}>Try Demo:</span>
+                <div className="login-demo-bar">
+                  <span className="login-demo-label">Try Demo:</span>
                   <button
                     type="button"
                     onClick={() => handleSelectDemo('patient')}
-                    style={{
-                      fontSize: '12px',
-                      padding: '4px 12px',
-                      background: selectedRole === 'patient' ? '#fdeaf0' : '#f5f5f7',
-                      color: selectedRole === 'patient' ? '#c73566' : '#555',
-                      border: '1px solid ' + (selectedRole === 'patient' ? '#f4a6c0' : '#dcdce0'),
-                      borderRadius: '16px',
-                      cursor: 'pointer',
-                      fontWeight: selectedRole === 'patient' ? '600' : '500',
-                    }}
+                    className={`login-demo-chip ${selectedRole === 'patient' ? 'is-active' : ''}`}
                   >
                     Patient (Amara)
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSelectDemo('doctor')}
-                    style={{
-                      fontSize: '12px',
-                      padding: '4px 12px',
-                      background: selectedRole === 'doctor' ? '#fdeaf0' : '#f5f5f7',
-                      color: selectedRole === 'doctor' ? '#c73566' : '#555',
-                      border: '1px solid ' + (selectedRole === 'doctor' ? '#f4a6c0' : '#dcdce0'),
-                      borderRadius: '16px',
-                      cursor: 'pointer',
-                      fontWeight: selectedRole === 'doctor' ? '600' : '500',
-                    }}
+                    className={`login-demo-chip ${selectedRole === 'doctor' ? 'is-active' : ''}`}
                   >
                     Doctor (Dr. Elena)
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSelectDemo('family')}
-                    style={{
-                      fontSize: '12px',
-                      padding: '4px 12px',
-                      background: selectedRole === 'family' ? '#fdeaf0' : '#f5f5f7',
-                      color: selectedRole === 'family' ? '#c73566' : '#555',
-                      border: '1px solid ' + (selectedRole === 'family' ? '#f4a6c0' : '#dcdce0'),
-                      borderRadius: '16px',
-                      cursor: 'pointer',
-                      fontWeight: selectedRole === 'family' ? '600' : '500',
-                    }}
+                    className={`login-demo-chip ${selectedRole === 'family' ? 'is-active' : ''}`}
                   >
                     Patient's Family (Raj)
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSelectDemo('hospital')}
-                    style={{
-                      fontSize: '12px',
-                      padding: '4px 12px',
-                      background: selectedRole === 'hospital' ? '#e6f4f1' : '#f5f5f7',
-                      color: selectedRole === 'hospital' ? '#0f3d3e' : '#555',
-                      border: '1px solid ' + (selectedRole === 'hospital' ? '#0d9488' : '#dcdce0'),
-                      borderRadius: '16px',
-                      cursor: 'pointer',
-                      fontWeight: selectedRole === 'hospital' ? '600' : '500',
-                    }}
+                    className={`login-demo-chip ${selectedRole === 'hospital' ? 'is-hospital-active' : ''}`}
                   >
                     Hospital (Apollo)
                   </button>
