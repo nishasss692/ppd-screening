@@ -136,9 +136,27 @@ class MedicalHistoryResponse(BaseModel):
 class ScreeningSessionAnswer(BaseModel):
     """Individual item answer for EPDS submission."""
 
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+
     question_id: str
-    selected_index: int = Field(..., ge=0, le=3)
+    selected_index: Optional[int] = Field(default=None, ge=0, le=3)
+    selected_option: Optional[int] = Field(default=None, ge=0, le=3)
+    score: Optional[int] = Field(default=None, ge=0, le=3)
     raw_response: Optional[str] = None
+    response_text: Optional[str] = None
+
+    @model_validator(mode="after")
+    def resolve_selected_index(self) -> "ScreeningSessionAnswer":
+        if self.selected_index is None:
+            if self.selected_option is not None:
+                self.selected_index = self.selected_option
+            elif self.score is not None:
+                self.selected_index = self.score
+            else:
+                self.selected_index = 0
+        if not self.raw_response and self.response_text:
+            self.raw_response = self.response_text
+        return self
 
 
 class ScreeningSubmissionSaveRequest(BaseModel):

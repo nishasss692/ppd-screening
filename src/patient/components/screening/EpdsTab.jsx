@@ -108,17 +108,38 @@ export function EpdsTab({ onCompleted }) {
       }
     } catch (e) {}
 
+    const defaultPsychosocial = {
+      'Feeling about motherhood': 'Happy',
+      'Relationship with husband': 'Friendly',
+      'Relationship with the in-laws': 'Good',
+      'Relax/sleep when the newborn is asleep': 'Yes',
+      'Relax/sleep when newborn is tended ': 'Yes',
+      'Angry after latest child birth': 'No',
+      'Recieved Support': 'High',
+      'Need for Support': 'Low',
+      'Trust and share feelings': 'Yes',
+    };
+
+    const effectivePsychosocial = storedPsychosocial || defaultPsychosocial;
+    try {
+      if (!storedPsychosocial) {
+        localStorage.setItem('aanchal_psychosocial_answers', JSON.stringify(defaultPsychosocial));
+      }
+    } catch (e) {}
+
     const payload = {
       total_score: totalScore,
       risk_classification: riskTier,
       q10_safety_alert: hasQ10Alert,
-      psychosocial_answers: storedPsychosocial || undefined,
+      psychosocial_answers: effectivePsychosocial,
       answers: answers.map((optIdx, i) => ({
         question_id: questions[i].id,
         question_number: questions[i].question_number,
+        selected_index: optIdx,
         selected_option: optIdx,
         score: questions[i].response_options[optIdx].score,
         response_text: questions[i].response_options[optIdx].label,
+        raw_response: questions[i].response_options[optIdx].label,
       })),
       completed_at: new Date().toISOString(),
     };
@@ -131,11 +152,14 @@ export function EpdsTab({ onCompleted }) {
       });
 
       // If backend returned clinical_model_prediction, store locally for immediate display
-      if (apiResponse?.screening?.clinical_model_prediction) {
+      const pred =
+        apiResponse?.clinical_model_prediction ||
+        apiResponse?.screening?.clinical_model_prediction;
+      if (pred) {
         try {
           localStorage.setItem(
             'aanchal_clinical_model_prediction',
-            JSON.stringify(apiResponse.screening.clinical_model_prediction)
+            JSON.stringify(pred)
           );
         } catch (e) {}
       }

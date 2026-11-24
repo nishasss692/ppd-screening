@@ -245,6 +245,7 @@ export function UploadAnalyzePage({ analyzer = submitMultimodalAnalysis }) {
           : null),
       discordanceDetected: Boolean(result.discordanceDetected),
       capturedModalities: {
+        clinical: typeof result.modalityContributions?.clinical === 'number',
         text: activeSelectedModalities.includes('text'),
         voice: activeSelectedModalities.includes('voice'),
         video: activeSelectedModalities.includes('video'),
@@ -252,6 +253,7 @@ export function UploadAnalyzePage({ analyzer = submitMultimodalAnalysis }) {
       preliminaryScore: result.combinedScore,
       modalityContributions: result.modalityContributions,
       indicators: result.indicators,
+      q10SafetyAlert: result.q10SafetyAlert || result.q10_safety_alert || null,
     });
 
     clearUploadDraft(activeMother.id);
@@ -365,6 +367,36 @@ export function UploadAnalyzePage({ analyzer = submitMultimodalAnalysis }) {
           onSelectMother={handleSelectMother}
           selectId="upload-mother-select"
         />
+
+        {/* Standalone Deterministic Crisis Alert Banner */}
+        {Boolean(analysisResult?.q10SafetyAlert?.triggered || analysisResult?.q10_safety_alert?.triggered) && (
+          <div
+            className="miora-card miora-crisis-alert-banner"
+            role="alert"
+            style={{
+              background: '#fff1f2',
+              border: '2px solid #e11d48',
+              borderRadius: '12px',
+              padding: '16px 20px',
+              marginBottom: '20px',
+              color: '#9f1239',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <DashboardIcon name="alertTriangle" size={24} style={{ color: '#e11d48', flexShrink: 0 }} />
+              <div>
+                <strong style={{ fontSize: '15px', color: '#881337', display: 'block', marginBottom: '4px' }}>
+                  URGENT CRISIS ALERT: EPDS Question 10 Positive (Thoughts of Self-Harm)
+                </strong>
+                <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.45 }}>
+                  Deterministic safety rule: Crisis alerts can never be overridden by AI predictions.
+                  Initiate immediate clinical safety protocol and connect with Tele-MANAS at
+                  <strong> 14416 </strong> or <strong> 1800-891-4416</strong>.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Two-Column Main Content Layout (48% / 52%) */}
         <div className="miora-upload-layout">
@@ -541,6 +573,55 @@ export function UploadAnalyzePage({ analyzer = submitMultimodalAnalysis }) {
                     </button>
                   );
                 })}
+              </div>
+
+              {/* Four-Modality Provenance & Benchmark Guardrails */}
+              <div
+                className="miora-pipeline-provenance-box"
+                style={{
+                  marginTop: '16px',
+                  paddingTop: '12px',
+                  borderTop: '1px solid #f3dce2',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '11px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                    fontWeight: 600,
+                    color: '#8d737e',
+                    marginBottom: '8px',
+                  }}
+                >
+                  Modalities Provenance &amp; Benchmark Guardrails
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    fontSize: '11.5px',
+                    color: '#55424d',
+                  }}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563eb' }} />
+                    <span><strong>Clinical (46 Covariates):</strong> Validated Survey Data (Random Forest)</span>
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#16a34a' }} />
+                    <span><strong>Text (NLP):</strong> Narrative Text (TF-IDF + Logistic Regression)</span>
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ea580c' }} />
+                    <span><strong>Voice (Audio DSP):</strong> 7-Feature Acoustic Vocal Biomarkers</span>
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#9333ea' }} />
+                    <span><strong>Video (Visual):</strong> 220-Feature Facial/Gaze Dynamics</span>
+                  </span>
+                </div>
               </div>
             </section>
 

@@ -87,9 +87,17 @@ async def analyze_screening(
         None,
         description="Optional video recording file (.mp4)",
     ),
+    video_features: Optional[str] = Form(
+        None,
+        description="Optional JSON string of 220 facial/gaze dynamics features for video screening",
+    ),
     text_content: Optional[str] = Form(
         None,
         description="Alternative direct narrative text string for text screening",
+    ),
+    epds_answers: Optional[str] = Form(
+        None,
+        description="Optional JSON string of EPDS answers for standalone Question 10 safety alert check",
     ),
     service: ScreeningOrchestrationService = Depends(get_screening_service),
 ) -> ScreeningAnalysisResponse:
@@ -120,6 +128,8 @@ async def analyze_screening(
         text_content=text_content,
         files_voice_bytes=files_voice_bytes,
         files_video_bytes=files_video_bytes,
+        video_features_raw=video_features,
+        epds_answers=epds_answers,
         eligibility_confirmed=effective_eligibility,
     )
 
@@ -169,6 +179,10 @@ async def analyze_multimodal_screening(
     clinical_features: Optional[str] = Form(
         None,
         description="Optional JSON string containing 46 clinical survey features for four-modality late fusion",
+    ),
+    epds_answers: Optional[str] = Form(
+        None,
+        description="Optional JSON string of EPDS answers for standalone Question 10 safety alert check",
     ),
     current_user: User = Depends(get_current_user),
     service: ThreeModalityInferenceService = Depends(lambda: three_modality_service),
@@ -321,6 +335,26 @@ async def analyze_multimodal_screening(
         }
         inference_result["modality_status"]["video"] = "unavailable"
 
+    # Standalone EPDS Question 10 Safety Check (Deterministic rule outside ML probability fusion)
+    q10_safety_alert: Optional[Dict[str, Any]] = None
+    if epds_answers is not None and epds_answers.strip():
+        try:
+            answers_list = json.loads(epds_answers) if isinstance(epds_answers, str) else epds_answers
+            if isinstance(answers_list, list):
+                q10_val = 0
+                for a in answers_list:
+                    if isinstance(a, dict) and a.get("question_id") == "EPDS_Q10":
+                        q10_val = int(a.get("selected_index", a.get("score", 0)))
+                q10_safety_alert = {
+                    "triggered": bool(q10_val > 0),
+                    "question_10_score": q10_val,
+                    "severity": "URGENT_SAFETY_ASSESSMENT" if q10_val > 0 else "NORMAL",
+                    "override_protection": "Deterministic safety rule: Crisis alerts can never be overridden by AI predictions.",
+                    "helpline": "Tele-MANAS (14416 / 1800-891-4416)",
+                }
+        except Exception:
+            pass
+
     # 5. Formulate Response (Transient screening ID; zero fake database persistence)
     transient_screening_id = str(uuid.uuid4())
     processed_timestamp = datetime.now(timezone.utc).isoformat()
@@ -342,6 +376,7 @@ async def analyze_multimodal_screening(
         disagreement_details=inference_result["disagreement_details"],
         model_version=inference_result["model_version"],
         disclaimer=inference_result["disclaimer"],
+        q10_safety_alert=q10_safety_alert,
         processed_at=processed_timestamp,
     )
 

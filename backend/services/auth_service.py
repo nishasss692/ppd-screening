@@ -267,6 +267,47 @@ def seed_default_users(db: Session) -> None:
     existing_patient = db.scalar(stmt)
     mother_stmt = select(Mother).where(Mother.email == patient_email)
     existing_mother = db.scalar(mother_stmt)
+
+    default_demo_profile = {
+        "Age": 28,
+        "Residence": "Urban",
+        "Education Level": "Graduate",
+        "Marital status": "Married",
+        "Occupation before latest pregnancy": "Private Job",
+        "Monthly income before latest pregnancy": "25000-50000",
+        "Occupation After Your Latest Childbirth": "Housewife",
+        "Current monthly income": "0",
+        "Husband's education level": "Graduate",
+        "Husband’s monthly income": "30000-60000",
+        "Addiction": "No",
+        "Family type": "Nuclear",
+        "Number of household members": "4-6",
+        "Total children": "1",
+        "Number of the latest pregnancy": 1,
+        "Age of immediate older children": "None",
+        "Disease before pregnancy": "None",
+        "History of pregnancy loss": "No",
+        "Pregnancy plan": "Planned",
+        "Regular checkups": "Regular",
+        "Pregnancy length": "Full Term",
+        "Mode of delivery": "Normal",
+        "Birth compliancy": "Yes",
+        "Diseases during pregnancy": "None",
+        "Major changes or losses during pregnancy": "No",
+        "Fear of pregnancy": "No",
+        "Depression before pregnancy (PHQ2)": "No",
+        "Depression during pregnancy (PHQ2)": "No",
+        "Age of newborn": "1-3 months",
+        "Gender of newborn": "Female",
+        "Breastfeed": "Exclusive",
+        "Newborn illness": "No",
+        "Worry about newborn": "No",
+        "Relationship with the newborn": "Warm",
+        "Relationship between father and newborn": "Warm",
+        "Abuse": "No",
+        "Feeling for regular activities": "Normal",
+    }
+
     if not existing_mother:
         existing_mother = Mother(
             name="Amara K.",
@@ -274,11 +315,17 @@ def seed_default_users(db: Session) -> None:
             phone="+91-98765-43210",
             age=28,
             pregnancy_type="singleton",
+            clinical_profile=default_demo_profile,
+            profile_completed=True,
             medical_history='{"prior_ppd_diagnosis": "yes", "notes": "Baseline postpartum checkup", "uploaded_files": [{"id": "default-ppd-report", "name": "PPD_Diagnosis_Report.pdf", "size": "1.2 MB", "type": "application/pdf"}]}',
             notes="Primary demo patient record.",
         )
         db.add(existing_mother)
         db.flush()
+    elif not existing_mother.clinical_profile or not existing_mother.profile_completed:
+        existing_mother.clinical_profile = default_demo_profile
+        existing_mother.profile_completed = True
+        db.commit()
 
     if not existing_patient:
         patient_user = User(

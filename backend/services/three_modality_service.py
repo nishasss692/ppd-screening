@@ -82,7 +82,7 @@ EXPECTED_AUDIO_FEATURES: List[str] = [
     "pause_ratio",
 ]
 EXPECTED_VIDEO_FEATURE_COUNT: int = 220
-DISAGREEMENT_THRESHOLD: float = 0.35
+DISAGREEMENT_THRESHOLD: float = 0.25
 MAX_TEXT_CHARACTERS: int = 10000
 
 DISCLAIMER_TEXT = (
@@ -691,12 +691,24 @@ class ThreeModalityInferenceService:
                 else:
                     fusion_status = "unavailable"
 
-            elif has_clinical and has_text:
-                # Direct Clinical + Text synthesis
-                fusion_score = round(float(0.7 * clinical_res.score + 0.3 * text_res.score), 4)
+            elif has_clinical:
+                available_scores = {"clinical": clinical_res.score}
+                if has_text:
+                    available_scores["text"] = text_res.score
+                if has_audio:
+                    available_scores["audio"] = audio_res.score
+                if has_video:
+                    available_scores["video"] = video_res.score
+
+                behavioral_keys = [k for k in available_scores if k != "clinical"]
+                beh_weight = 0.50 / len(behavioral_keys) if behavioral_keys else 0.0
+                fusion_weights = {"clinical": 0.50}
+                for bk in behavioral_keys:
+                    fusion_weights[bk] = round(beh_weight, 4)
+
+                fusion_score = round(float(sum(available_scores[k] * fusion_weights[k] for k in available_scores)), 4)
                 fusion_status = "completed"
-                fusion_method = "weighted_clinical_text"
-                fusion_weights = {"clinical": 0.7, "text": 0.3}
+                fusion_method = f"weighted_clinical_{'_'.join(behavioral_keys)}"
 
         elif completed_count == 1:
             fusion_status = "insufficient_data"
@@ -821,5 +833,7 @@ class ThreeModalityInferenceService:
         }
 
 
-# Global singleton instance
+# Global singleton instance and aliases for unified four-modality access
 three_modality_service = ThreeModalityInferenceService()
+FourModalityInferenceService = ThreeModalityInferenceService
+four_modality_service = three_modality_service

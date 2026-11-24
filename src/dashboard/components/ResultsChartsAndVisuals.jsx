@@ -89,11 +89,21 @@ export function OverallRiskCard({ screening }) {
 }
 
 export function ModalityAnalysisCard({ modalities }) {
-  const rows = [
+  const rows = [];
+  if (modalities?.clinical) {
+    rows.push({
+      key: 'clinical',
+      label: 'Clinical',
+      sub: '(Survey)',
+      icon: 'document',
+      data: modalities.clinical,
+    });
+  }
+  rows.push(
     { key: 'text', label: 'Text', sub: '(NLP)', icon: 'fileText', data: modalities?.text },
     { key: 'voice', label: 'Voice', sub: '(Acoustic)', icon: 'mic', data: modalities?.voice },
-    { key: 'video', label: 'Video', sub: '(Facial)', icon: 'video', data: modalities?.video },
-  ];
+    { key: 'video', label: 'Video', sub: '(Facial)', icon: 'video', data: modalities?.video }
+  );
 
   return (
     <section className="miora-card miora-results-card" aria-labelledby="modality-analysis-title">
@@ -155,10 +165,13 @@ export function ModalityAnalysisCard({ modalities }) {
 
 export function MultimodalSummaryCard({ screening }) {
   const mods = screening?.modalities || {};
+  const clinicalReady = mods.clinical?.status === 'completed';
   const textReady = mods.text?.status === 'completed';
   const voiceReady = mods.voice?.status === 'completed';
   const videoReady = mods.video?.status === 'completed';
-  const activeCount = [textReady, voiceReady, videoReady].filter(Boolean).length;
+  const hasClinical = Boolean(mods.clinical);
+  const activeCount = [hasClinical ? clinicalReady : null, textReady, voiceReady, videoReady].filter(Boolean).length;
+  const totalCount = hasClinical ? 4 : 3;
   const hasScore = typeof screening?.combinedScore === 'number';
 
   return (
@@ -177,15 +190,20 @@ export function MultimodalSummaryCard({ screening }) {
       <div className="miora-fusion-body">
         <div
           className="miora-venn-diagram"
-          aria-label={`${activeCount} of 3 modalities included in summary`}
+          aria-label={`${activeCount} of ${totalCount} modalities included in summary`}
         >
-          <div className={`miora-venn-circle is-top ${textReady ? 'is-active' : 'is-missing'}`}>
+          {hasClinical && (
+            <div className={`miora-venn-circle is-clinical ${clinicalReady ? 'is-active' : 'is-missing'}`} title="Clinical (46 Covariates)">
+              <DashboardIcon name="document" size={15} />
+            </div>
+          )}
+          <div className={`miora-venn-circle is-top ${textReady ? 'is-active' : 'is-missing'}`} title="Text (NLP)">
             <DashboardIcon name="fileText" size={16} />
           </div>
-          <div className={`miora-venn-circle is-left ${voiceReady ? 'is-active' : 'is-missing'}`}>
+          <div className={`miora-venn-circle is-left ${voiceReady ? 'is-active' : 'is-missing'}`} title="Voice (Acoustic)">
             <DashboardIcon name="mic" size={16} />
           </div>
-          <div className={`miora-venn-circle is-right ${videoReady ? 'is-active' : 'is-missing'}`}>
+          <div className={`miora-venn-circle is-right ${videoReady ? 'is-active' : 'is-missing'}`} title="Video (Dynamics)">
             <DashboardIcon name="video" size={16} />
           </div>
           <div className="miora-venn-core" aria-hidden="true">
@@ -199,7 +217,7 @@ export function MultimodalSummaryCard({ screening }) {
             {hasScore ? screening.combinedScore.toFixed(2) : 'Pending'}
           </strong>
           <RiskBadge risk={`${screening?.risk || 'Moderate'} Risk`} />
-          <span className="miora-fusion-count">{activeCount} of 3 modalities processed</span>
+          <span className="miora-fusion-count">{activeCount} of {totalCount} modalities processed</span>
         </div>
       </div>
     </section>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PatientIcon } from '../PatientIcons.jsx';
 import { usePatient } from '../../context/PatientContext.jsx';
+import { fetchPatientScreenings } from '../../services/patientApiService.js';
 
 export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
   const navigate = useNavigate();
@@ -38,6 +39,33 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
       const rawPs = localStorage.getItem('aanchal_psychosocial_answers');
       if (rawPs) setStoredPsychosocial(JSON.parse(rawPs));
     } catch (e) { }
+
+    // Synchronize latest screening from backend if not cached locally
+    fetchPatientScreenings()
+      .then((history) => {
+        if (Array.isArray(history) && history.length > 0) {
+          const latest = history[0];
+          if (latest.clinical_model_prediction && latest.clinical_model_prediction.status === 'completed') {
+            setStoredClinicalModel(latest.clinical_model_prediction);
+            try {
+              localStorage.setItem(
+                'aanchal_clinical_model_prediction',
+                JSON.stringify(latest.clinical_model_prediction)
+              );
+            } catch (e) {}
+          }
+          if (latest.psychosocial_answers) {
+            setStoredPsychosocial(latest.psychosocial_answers);
+            try {
+              localStorage.setItem(
+                'aanchal_psychosocial_answers',
+                JSON.stringify(latest.psychosocial_answers)
+              );
+            } catch (e) {}
+          }
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const hasEpds = Boolean(storedEpds || screening?.summary?.totalScore !== undefined);
