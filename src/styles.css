@@ -8,7 +8,7 @@
   --cream: #fdf8f4;
   --line: #ead9d9;
   --shell: min(92vw, 1160px);
-  --serif: 'Playfair Display', Georgia, serif;
+  --serif: var(--sans, 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
   --sans: 'DM Sans', Arial, sans-serif;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }

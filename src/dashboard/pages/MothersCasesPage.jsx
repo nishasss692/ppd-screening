@@ -175,46 +175,15 @@ export function MothersCasesPage() {
   return (
     <div className="miora-command-shell">
       <div className="miora-command-frame">
-        {/* Flowing Blush Header Waves */}
-        <svg
-          className="miora-header-ribbon miora-mothers-ribbon"
-          viewBox="0 0 640 160"
-          fill="none"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          <defs>
-            <linearGradient id="mothersWaveGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#fbdbe2" stopOpacity="0" />
-              <stop offset="50%" stopColor="#f8c9d5" stopOpacity="0.45" />
-              <stop offset="100%" stopColor="#fce8ec" stopOpacity="0.16" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M0 135 C 150 128, 225 42, 395 48 C 515 52, 565 88, 640 24 L 640 160 L 0 160 Z"
-            fill="url(#mothersWaveGrad1)"
-          />
-          <path
-            d="M70 155 C 210 110, 320 120, 445 70 C 535 34, 595 40, 640 15"
-            stroke="#f4b9c8"
-            strokeOpacity="0.45"
-            strokeWidth="1.5"
-          />
-        </svg>
-
         {/* Page Header */}
         <section className="miora-dash-header" aria-labelledby="mothers-cases-heading">
           <div className="miora-dash-header-copy">
             <div className="miora-dash-eyebrow">
-              <span>MOTHERS &amp; CASES</span>
-              <span className="miora-dash-eyebrow-line" aria-hidden="true" />
+              <span className="miora-dash-eyebrow-text">MOTHERS &amp; CASES</span>
             </div>
             <h1 id="mothers-cases-heading" className="miora-dash-title">
-              Mother Registry &amp; <em>Case Management</em>
+              Mother Registry &amp; Case Management
             </h1>
-            <p className="miora-dash-subtitle">
-              View, search and manage all registered mothers and their screening cases.
-            </p>
           </div>
 
           <div className="miora-dash-header-actions">
@@ -229,21 +198,17 @@ export function MothersCasesPage() {
           </div>
         </section>
 
-        {/* 4 Overview Statistics KPI Cards */}
+        {/* 4 Overview Statistics KPI Cards (Verified Real Data Only, No Fabricated Trends) */}
         <section className="miora-kpi-grid" aria-label="Registry overview statistics">
           <KpiCard
             icon="users"
             value={metrics.registeredMothers}
-            trend={metrics.trends.registeredMothers}
-            trendTone="positive"
             label="Total Mothers"
             onClick={handleClearFilters}
           />
           <KpiCard
             icon="clipboardCheck"
             value={metrics.activeCases}
-            trend={metrics.trends.screeningsCompleted}
-            trendTone="positive"
             label="Active Cases"
             onClick={() => {
               setSelectedRisks([]);
@@ -254,8 +219,6 @@ export function MothersCasesPage() {
           <KpiCard
             icon="clock"
             value={metrics.casesForReview}
-            trend={metrics.trends.casesForReview}
-            trendTone="attention"
             label="Follow-ups Due"
             onClick={() => {
               setSelectedRisks([]);
@@ -266,9 +229,6 @@ export function MothersCasesPage() {
           <KpiCard
             icon="shieldCheck"
             value={metrics.highRiskCases}
-            trend={metrics.trends.highRiskCases}
-            trendTone="positive"
-            trendDirection="down"
             label="High-Risk Cases"
             onClick={() => {
               setSelectedStatuses([]);
@@ -351,6 +311,7 @@ export function MothersCasesPage() {
                     <th scope="col">Last Screening</th>
                     <th scope="col">Risk Level</th>
                     <th scope="col">Case Status</th>
+                    <th scope="col">Next Follow-up</th>
                     <th scope="col" className="miora-registry-actions-col">
                       Actions
                     </th>
@@ -358,55 +319,80 @@ export function MothersCasesPage() {
                 </thead>
                 <tbody>
                   {paginatedMothers.length > 0 ? (
-                    paginatedMothers.map((item) => (
-                      <tr
-                        key={item.id}
-                        className="miora-registry-row"
-                        onClick={() => navigate(`/mothers/${item.id}`)}
-                      >
-                        <td className="miora-cell-id">{item.id}</td>
-                        <td>
-                          <div className="miora-mother-cell">
-                            <span className="miora-initials-avatar" aria-hidden="true">
-                              {item.avatarInitials}
-                            </span>
-                            <span className="miora-mother-initials">{item.initials}</span>
-                          </div>
-                        </td>
-                        <td className="miora-cell-week">Week {item.postpartumWeek}</td>
-                        <td className="miora-cell-date">{item.lastScreeningDate}</td>
-                        <td>
-                          <RiskBadge risk={item.risk} showDot />
-                        </td>
-                        <td>
-                          <StatusBadge status={item.status} showDot={false} />
-                        </td>
-                        <td className="miora-registry-actions-cell">
-                          <button
-                            type="button"
-                            className="miora-eye-btn"
-                            aria-label={`View profile for ${item.id}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/mothers/${item.id}`);
-                            }}
-                          >
-                            <DashboardIcon name="eye" size={16} strokeWidth={1.7} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                    paginatedMothers.map((item) => {
+                      const displayId =
+                        item.id.length > 15
+                          ? `${item.id.slice(0, 8)}...${item.id.slice(-5)}`
+                          : item.id;
+                      const actionLabel =
+                        item.status === 'Review' || item.status === 'Pending'
+                          ? 'Review Screening'
+                          : item.status === 'Follow-up'
+                            ? 'View Follow-up'
+                            : 'View Record';
+
+                      return (
+                        <tr
+                          key={item.id}
+                          className="miora-registry-row"
+                          onClick={() => navigate(`/mothers/${item.id}`)}
+                        >
+                          <td className="miora-cell-id" title={item.id} data-full-id={item.id}>
+                            {displayId}
+                          </td>
+                          <td>
+                            <div className="miora-mother-cell">
+                              <span className="miora-initials-avatar" aria-hidden="true">
+                                {item.avatarInitials}
+                              </span>
+                              <span className="miora-mother-initials">{item.initials}</span>
+                            </div>
+                          </td>
+                          <td className="miora-cell-week">Week {item.postpartumWeek}</td>
+                          <td className="miora-cell-date">{item.lastScreeningDate}</td>
+                          <td>
+                            <RiskBadge risk={item.risk} showDot />
+                          </td>
+                          <td>
+                            <StatusBadge status={item.status} showDot={false} />
+                          </td>
+                          <td className="miora-cell-followup">
+                            {item.nextFollowUp || item.nextFollowUpDate || 'Not scheduled'}
+                          </td>
+                          <td className="miora-registry-actions-cell">
+                            <button
+                              type="button"
+                              className="miora-action-pill-btn"
+                              aria-label={`View profile for ${item.id}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/mothers/${item.id}`);
+                              }}
+                            >
+                              <DashboardIcon name="eye" size={14} strokeWidth={1.8} />
+                              <span>{actionLabel}</span>
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
                   ) : (
                     <tr>
-                      <td colSpan={7} className="miora-registry-empty">
-                        No mothers match the current search or filters.{' '}
-                        <button
-                          type="button"
-                          className="miora-inline-reset"
-                          onClick={handleClearFilters}
-                        >
-                          Clear Filters
-                        </button>
+                      <td colSpan={8} className="miora-registry-empty">
+                        {mothers.length === 0 ? (
+                          'No registered mothers yet.'
+                        ) : (
+                          <>
+                            No mothers match the current search or filters.{' '}
+                            <button
+                              type="button"
+                              className="miora-inline-reset"
+                              onClick={handleClearFilters}
+                            >
+                              Clear Filters
+                            </button>
+                          </>
+                        )}
                       </td>
                     </tr>
                   )}

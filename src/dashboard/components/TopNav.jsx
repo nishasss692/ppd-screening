@@ -3,21 +3,21 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useClinicalData } from '../context/ClinicalContext.jsx';
 import { getCurrentUser } from '../../auth/authService.js';
 import { CLINICIAN_PROFILE } from '../data/mockClinicalData.js';
-import { BrandWordmark } from './BrandWordmark.jsx';
 import { DashboardIcon } from './DashboardIcon.jsx';
 import { RiskBadge, StatusBadge } from './Badges.jsx';
 import { DoctorAssistantPopover } from './DoctorAssistantPopover.jsx';
 
-const NAV_ITEMS = [
-  { label: 'Mothers & Cases', to: '/mothers' },
-  { label: 'Screening', to: '/live-screening', matchPaths: ['/live-screening', '/upload-analyze'] },
-  { label: 'Results', to: '/results' },
-  { label: 'Discordance', to: '/discordance' },
-  { label: 'Insights & Care', to: '/insights' },
-  { label: 'Clinical Review', to: '/clinical-review', matchPaths: ['/clinical-review', '/create-consultation-report', '/consultation-report'] },
-];
+const BREADCRUMB_MAP = {
+  '/mothers': 'Mothers & Cases',
+  '/live-screening': 'AI & EPDS Screening',
+  '/upload-analyze': 'Screening Upload & Analysis',
+  '/results': 'Clinical Results',
+  '/discordance': 'Discordance Analysis',
+  '/insights': 'Insights & Care Analytics',
+  '/clinical-review': 'Clinical Review & Finalization',
+};
 
-export function TopNav() {
+export function TopNav({ onToggleMobileNav }) {
   const { alerts, mothers, screenings, isLiveSynced } = useClinicalData();
   const navigate = useNavigate();
   const location = useLocation();
@@ -39,7 +39,7 @@ export function TopNav() {
           .toUpperCase()
       : CLINICIAN_PROFILE.initials);
 
-  const [openMenu, setOpenMenu] = useState(null); // 'search' | 'alerts' | 'profile' | 'mobile' | 'assistant'
+  const [openMenu, setOpenMenu] = useState(null); // 'search' | 'alerts' | 'profile'
   const [searchQuery, setSearchQuery] = useState('');
   const navRef = useRef(null);
   const searchInputRef = useRef(null);
@@ -74,7 +74,7 @@ export function TopNav() {
           (m) =>
             m.id.toLowerCase().includes(trimmedQuery) ||
             m.name.toLowerCase().includes(trimmedQuery) ||
-            m.reasonForReview.toLowerCase().includes(trimmedQuery)
+            m.reasonForReview?.toLowerCase().includes(trimmedQuery)
         )
         .slice(0, 5)
     : mothers.slice(0, 4);
@@ -83,44 +83,39 @@ export function TopNav() {
     ? screenings
         .filter(
           (s) =>
-            s.motherId.toLowerCase().includes(trimmedQuery) ||
-            s.id.toLowerCase().includes(trimmedQuery)
+            s.motherId?.toLowerCase().includes(trimmedQuery) ||
+            s.id?.toLowerCase().includes(trimmedQuery)
         )
         .slice(0, 3)
     : [];
 
+  const matchedPath = Object.keys(BREADCRUMB_MAP).find((p) =>
+    location.pathname.startsWith(p)
+  );
+  const currentPageTitle = matchedPath ? BREADCRUMB_MAP[matchedPath] : 'Mothers & Cases';
+
   return (
     <header className="dash-topnav" ref={navRef}>
       <div className="dash-topnav-inner">
-        <div className="dash-brand-group">
-          <Link
-            to="/mothers"
-            className="dash-brand-link"
-            aria-label="AANCHAL Clinician Portal"
+        {/* Left: Hamburger (mobile) + Breadcrumbs */}
+        <div className="dash-header-left">
+          <button
+            type="button"
+            className="dash-top-hamburger"
+            aria-label="Toggle navigation menu"
+            onClick={onToggleMobileNav}
           >
-            <BrandWordmark />
-          </Link>
+            <DashboardIcon name="menu" size={20} />
+          </button>
+
+          <nav className="dash-header-breadcrumb" aria-label="Breadcrumb">
+            <span className="dash-breadcrumb-root">AANCHAL Clinical</span>
+            <span className="dash-breadcrumb-sep" aria-hidden="true">/</span>
+            <span className="dash-breadcrumb-current">{currentPageTitle}</span>
+          </nav>
         </div>
 
-        <nav className="dash-nav-links" aria-label="Clinician workspace navigation">
-          {NAV_ITEMS.map((item) => {
-            const extraActive = item.matchPaths?.some((p) =>
-              location.pathname.startsWith(p)
-            );
-            return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={({ isActive }) =>
-                  `dash-nav-link ${isActive || extraActive ? 'is-active' : ''}`
-                }
-              >
-                {item.label}
-              </NavLink>
-            );
-          })}
-        </nav>
-
+        {/* Right: Search, Assistant, Notifications, Profile */}
         <div className="dash-nav-utilities">
           <div className="dash-utility-wrap">
             <button
@@ -320,35 +315,8 @@ export function TopNav() {
               </div>
             )}
           </div>
-
-          <button
-            type="button"
-            className="dash-mobile-menu-btn"
-            aria-label="Toggle navigation menu"
-            aria-expanded={openMenu === 'mobile'}
-            onClick={() => setOpenMenu((prev) => (prev === 'mobile' ? null : 'mobile'))}
-          >
-            <DashboardIcon name={openMenu === 'mobile' ? 'close' : 'menu'} size={20} />
-          </button>
         </div>
       </div>
-
-      {openMenu === 'mobile' && (
-        <nav className="dash-mobile-drawer" aria-label="Mobile clinician navigation">
-          {NAV_ITEMS.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                `dash-mobile-link ${isActive ? 'is-active' : ''}`
-              }
-              onClick={() => setOpenMenu(null)}
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-      )}
     </header>
   );
 }

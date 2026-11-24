@@ -163,41 +163,15 @@ export function DiscordancePage() {
   return (
     <div className="miora-command-shell">
       <div className="miora-command-frame">
-        {/* Flowing Blush Header Waves */}
-        <svg
-          className="miora-header-ribbon miora-mothers-ribbon"
-          viewBox="0 0 640 160"
-          fill="none"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          <defs>
-            <linearGradient id="discordanceWaveGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#fbdbe2" stopOpacity="0" />
-              <stop offset="50%" stopColor="#f8c9d5" stopOpacity="0.45" />
-              <stop offset="100%" stopColor="#fce8ec" stopOpacity="0.16" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M0 135 C 150 128, 225 42, 395 48 C 515 52, 565 88, 640 24 L 640 160 L 0 160 Z"
-            fill="url(#discordanceWaveGrad)"
-          />
-        </svg>
-
         {/* Page Header */}
         <section className="miora-dash-header" aria-labelledby="discordance-page-heading">
           <div className="miora-dash-header-copy">
             <div className="miora-dash-eyebrow">
               <span>DISCORDANCE ANALYSIS</span>
-              <span className="miora-dash-eyebrow-line" aria-hidden="true" />
             </div>
             <h1 id="discordance-page-heading" className="miora-dash-title">
-              Cross-Modal <em>Discordance</em>
+              Cross-Modal Discordance
             </h1>
-            <p className="miora-dash-subtitle">
-              Identify and explore differences between self-reported responses and other observed
-              signals.
-            </p>
           </div>
 
           <div className="miora-results-header-actions">

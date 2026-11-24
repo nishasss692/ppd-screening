@@ -309,40 +309,15 @@ export function ClinicalReviewPage({ reviewSubmitter = submitClinicalReview }) {
   return (
     <div className="miora-command-shell">
       <div className="miora-command-frame">
-        {/* Flowing Blush Header Waves */}
-        <svg
-          className="miora-header-ribbon miora-mothers-ribbon"
-          viewBox="0 0 640 160"
-          fill="none"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          <defs>
-            <linearGradient id="clinicalReviewWaveGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#fbdbe2" stopOpacity="0" />
-              <stop offset="50%" stopColor="#f8c9d5" stopOpacity="0.45" />
-              <stop offset="100%" stopColor="#fce8ec" stopOpacity="0.16" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M0 135 C 150 128, 225 42, 395 48 C 515 52, 565 88, 640 24 L 640 160 L 0 160 Z"
-            fill="url(#clinicalReviewWaveGrad)"
-          />
-        </svg>
-
         {/* Page Header */}
         <section className="miora-dash-header" aria-labelledby="clinical-review-heading">
           <div className="miora-dash-header-copy">
             <div className="miora-dash-eyebrow">
               <span>CLINICAL REVIEW</span>
-              <span className="miora-dash-eyebrow-line" aria-hidden="true" />
             </div>
             <h1 id="clinical-review-heading" className="miora-dash-title">
-              Clinical Review &amp; <em>Assessment</em>
+              Clinical Review &amp; Assessment
             </h1>
-            <p className="miora-dash-subtitle">
-              Review AI insights, record clinical assessment and finalize the care plan.
-            </p>
           </div>
 
           <div className="miora-results-header-actions">

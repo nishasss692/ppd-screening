@@ -36,7 +36,7 @@ export function BrandWordmark({ className = '', height = 36 }) {
       <span
         style={{
           display: 'none',
-          fontFamily: 'var(--font-serif, "Playfair Display", Georgia, serif)',
+          fontFamily: 'var(--sans, "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif)',
           letterSpacing: '0.04em',
           fontWeight: 700,
           color: '#ba1e53',
