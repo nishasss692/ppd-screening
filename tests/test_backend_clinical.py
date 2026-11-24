@@ -328,19 +328,13 @@ def test_existing_epds_endpoints_still_work(client: TestClient):
 
 
 # ---------------------------------------------------------------------------
-# 11. Existing Text NER endpoint still works or returns expected status
+# 11. Synthetic text model status endpoint works
 # ---------------------------------------------------------------------------
-def test_existing_text_ner_endpoint_still_works(client: TestClient):
-    """Verify POST /api/text-ner/extract is unaffected by clinical service addition."""
-    response = client.post(
-        "/api/text-ner/extract",
-        json={"text": "Patient reports severe sadness and lack of sleep."},
-    )
-    # The Text NER endpoint may return 200 if its model is present, or 503 if not trained
-    assert response.status_code in {200, 503}
-    if response.status_code == 200:
-        data = response.json()
-        assert "entities" in data
-        assert "total_entities_detected" in data
-        assert "processed_character_count" in data
+def test_synthetic_text_pipeline_status(client: TestClient):
+    """Verify synthetic text pipeline status in multimodal screening status endpoint."""
+    response = client.get("/api/screenings/multimodal/status")
+    assert response.status_code == 200
+    data = response.json()
+    assert "text" in data
+    assert data["text"]["status"] in {"ready", "unavailable"}
 

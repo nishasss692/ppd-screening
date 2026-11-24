@@ -2,7 +2,7 @@
 
 Verifies:
 1. Clinical-only screening workflow.
-2. Text-only screening workflow with biomedical NER extraction.
+2. Text-only screening workflow with synthetic narrative text model.
 3. Combined clinical and text multimodal screening.
 4. Missing consent rejection (HTTP 400).
 5. Invalid modalities rejection (HTTP 422).
@@ -15,14 +15,14 @@ Verifies:
 12. All requested modalities failure reports status='failed'.
 13. Mother existence validator interface validation.
 14. Complete response contract schema verification.
-15. Existing endpoints (clinical, EPDS, Text NER) remain operational without regressions.
+15. Existing endpoints (clinical, EPDS, multimodal status) remain operational without regressions.
 """
 
 from datetime import datetime
 import io
 import json
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 import pytest
 from fastapi.testclient import TestClient
 
@@ -34,15 +34,10 @@ from backend.services.screening_service import (
     ScreeningOrchestrationService,
     get_screening_service,
 )
-from backend.services.text_ner_service import TextNERService, text_ner_service
-from pipelines.text_ner.features import (
-    align_spans_to_bio,
-    extract_document_features,
-    tokenize_with_offsets,
+from backend.services.three_modality_service import (
+    ThreeModalityInferenceService,
+    three_modality_service,
 )
-from pipelines.text_ner.inference import TextNERPredictor
-from pipelines.text_ner.models import TextNERModel
-from pipelines.text_ner.parser import Document, EntitySpan
 
 
 def _get_valid_clinical_features() -> Dict[str, Any]:
@@ -97,37 +92,6 @@ def _get_valid_clinical_features() -> Dict[str, Any]:
     }
 
 
-def _create_fast_test_ner_service(tmp_path: Path) -> TextNERService:
-    """Build a functional TextNERService using a tiny deterministic model."""
-    samples = [
-        ("Severe postpartum depression and anxiety symptoms daily.", ["postpartum depression", "anxiety"]),
-        ("Doctor discussed therapy and support for mood changes.", ["therapy"]),
-    ]
-    X_dicts, y_tags = [], []
-    for idx, (text, kws) in enumerate(samples):
-        spans = [
-            EntitySpan(
-                id=f"T{idx}_{text.index(kw)}",
-                label="MMLite",
-                start=text.index(kw),
-                end=text.index(kw) + len(kw),
-                text=kw,
-            )
-            for kw in kws
-        ]
-        doc = Document(id=f"test_{idx}", group="Test", text=text, spans=spans)
-        tokens = tokenize_with_offsets(doc.text)
-        X_dicts.extend(extract_document_features(tokens))
-        y_tags.extend(align_spans_to_bio(tokens, doc.spans))
-
-    model = TextNERModel(classifier_type="sgd", loss="modified_huber", max_iter=100, random_state=42)
-    model.fit(X_dicts, y_tags)
-    ckpt = tmp_path / "tiny_ner.joblib"
-    model.save(ckpt)
-    predictor = TextNERPredictor(model_path=ckpt)
-    return TextNERService(predictor=predictor)
-
-
 @pytest.fixture(scope="module")
 def client() -> TestClient:
     """Create a TestClient with application lifespan active."""
@@ -136,9 +100,11 @@ def client() -> TestClient:
 
 
 @pytest.fixture
-def active_text_ner_service(tmp_path: Path) -> TextNERService:
-    """Provide a working TextNERService for tests requiring text entity extraction."""
-    return _create_fast_test_ner_service(tmp_path)
+def active_text_service() -> ThreeModalityInferenceService:
+    """Provide working ThreeModalityInferenceService for synthetic text model classification."""
+    if not three_modality_service.is_loaded:
+        three_modality_service.startup()
+    return three_modality_service
 
 
 # ---------------------------------------------------------------------------
@@ -180,12 +146,12 @@ def test_clinical_only_screening(client: TestClient):
 # ---------------------------------------------------------------------------
 def test_text_only_screening_with_file_upload(
     client: TestClient,
-    active_text_ner_service: TextNERService,
+    active_text_service: ThreeModalityInferenceService,
 ):
-    """Verify screening analysis requesting only the biomedical text NER modality via file upload."""
+    """Verify screening analysis requesting only the synthetic text modality via file upload."""
     orchestrator = ScreeningOrchestrationService(
         clinical_svc=clinical_service,
-        text_svc=active_text_ner_service,
+        text_svc=active_text_service,
     )
     app.dependency_overrides[get_screening_service] = lambda: orchestrator
     try:
@@ -208,8 +174,8 @@ def test_text_only_screening_with_file_upload(
 
         text_res = res["text"]
         assert text_res["status"] == "completed"
-        assert text_res["processing_type"] == "biomedical_ner"
-        assert isinstance(text_res["entities"], list)
+        assert text_res["processing_type"] == "synthetic_text_risk"
+        assert text_res["risk_score"] is not None
         assert text_res["processed_character_count"] > 0
 
         # Clinical was not requested
@@ -223,12 +189,12 @@ def test_text_only_screening_with_file_upload(
 # ---------------------------------------------------------------------------
 def test_clinical_and_text_together(
     client: TestClient,
-    active_text_ner_service: TextNERService,
+    active_text_service: ThreeModalityInferenceService,
 ):
-    """Verify multimodal analysis requesting both clinical numerical and text NER modalities."""
+    """Verify multimodal analysis requesting both clinical numerical and synthetic text modalities."""
     orchestrator = ScreeningOrchestrationService(
         clinical_svc=clinical_service,
-        text_svc=active_text_ner_service,
+        text_svc=active_text_service,
     )
     app.dependency_overrides[get_screening_service] = lambda: orchestrator
     try:
@@ -247,9 +213,9 @@ def test_clinical_and_text_together(
         assert res["status"] == "completed"
         assert res["clinical"]["status"] == "completed"
         assert res["text"]["status"] == "completed"
+        assert res["text"]["risk_score"] is not None
         assert res["audio"]["status"] == "not_requested"
         assert res["video"]["status"] == "not_requested"
-        assert res["fusion"]["status"] == "not_available"
     finally:
         app.dependency_overrides.clear()
 
@@ -445,10 +411,10 @@ def test_unavailable_audio_and_video_modalities(client: TestClient):
 def test_individual_modality_failure_preserves_successful_results(client: TestClient):
     """Verify that when one requested modality fails, other modality outputs are preserved."""
     # Create mock text service that fails with an inference error
-    class FailingTextService(TextNERService):
-        def extract_entities(self, text: str):
-            from fastapi import HTTPException
-            raise HTTPException(status_code=500, detail="Mocked text model failure")
+    class FailingTextService(ThreeModalityInferenceService):
+        def predict_text(self, text: Optional[str] = None):
+            from backend.services.three_modality_service import ModalityScoreResult
+            return ModalityScoreResult(status="failed", error="Mocked text model failure")
 
     mock_svc = ScreeningOrchestrationService(
         clinical_svc=clinical_service,
@@ -509,7 +475,7 @@ def test_mother_existence_validator(client: TestClient):
 
     custom_orchestrator = ScreeningOrchestrationService(
         clinical_svc=clinical_service,
-        text_svc=text_ner_service,
+        text_svc=three_modality_service,
         mother_val=MockRegistryValidator(),
     )
     app.dependency_overrides[get_screening_service] = lambda: custom_orchestrator
@@ -558,7 +524,7 @@ def test_response_contract_schema(client: TestClient):
 # 15. Regression Check on Existing Endpoints
 # ---------------------------------------------------------------------------
 def test_existing_endpoints_regression(client: TestClient):
-    """Ensure clinical predict, feature info, EPDS, and Text NER endpoints remain unaffected."""
+    """Ensure clinical predict, feature info, EPDS, and multimodal status endpoints remain unaffected."""
     # Clinical Predict
     resp_clin = client.post(
         "/api/clinical/predict",
@@ -583,10 +549,8 @@ def test_existing_endpoints_regression(client: TestClient):
     assert resp_epds_sub.status_code == 200
     assert "total_score" in resp_epds_sub.json()
 
-    # Text NER
-    resp_ner = client.post(
-        "/api/text-ner/extract",
-        json={"text": "Patient reports insomnia and depression."},
-    )
-    assert resp_ner.status_code in {200, 503}
+    # Multimodal status
+    resp_status = client.get("/api/screenings/multimodal/status")
+    assert resp_status.status_code == 200
+    assert resp_status.json()["text"]["status"] == "ready"
 

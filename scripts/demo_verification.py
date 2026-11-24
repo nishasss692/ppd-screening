@@ -4,7 +4,7 @@ Executes live HTTP requests through the Vite frontend proxy (http://localhost:30
 to the FastAPI backend (http://127.0.0.1:8000), verifying:
 1. Health and Proxy Connectivity
 2. Clinical-Only Baseline Screening
-3. Clinical + Text NER Screening (Qualitative extraction verification)
+3. Clinical + Synthetic Narrative Text Screening (TF-IDF + Logistic Regression)
 4. Clinical + Audio Screening (Safe unavailable behavior when weights not deployed)
 5. Clinical + Video Screening (Simulation notice verification)
 6. Results Page Data Structure and Clinical vs Fusion separation
@@ -151,7 +151,7 @@ def test_2_clinical_only_screening():
 
 
 def test_3_clinical_plus_text_screening():
-    print("\n--- Test 3: Clinical + Qualitative Text NER Screening ---")
+    print("\n--- Test 3: Clinical + Synthetic Narrative Text Screening ---")
     narrative = (
         "Mother reports feeling deeply depressed, constant crying spells, overwhelming anxiety, "
         "and severe insomnia since arriving home with the newborn."
@@ -168,15 +168,14 @@ def test_3_clinical_plus_text_screening():
     assert resp["status"] == "completed"
     assert resp["clinical"]["status"] == "completed"
     assert resp["text"]["status"] == "completed"
-    assert resp["text"]["processing_type"] == "biomedical_ner"
-    entities = resp["text"]["entities"]
-    assert len(entities) >= 1
-    assert resp["text"]["total_entities_detected"] == len(entities)
-    print("✓ Clinical + Text NER screening succeeded!")
+    assert resp["text"]["processing_type"] == "synthetic_text_risk"
+    assert resp["text"]["risk_score"] is not None
+    assert 0.0 <= resp["text"]["risk_score"] <= 1.0
+    print("✓ Clinical + Synthetic Narrative Text screening succeeded!")
     print(f"  Clinical Baseline Probability: {resp['clinical']['prediction']['predicted_risk_probability']}")
-    print(f"  Total Biomedical Entities Detected: {len(entities)}")
-    print(f"  Detected Mentions: {[e['text'] for e in entities[:4]]}")
-    print(f"  Late Fusion Status: {resp['fusion']['status']} (Text NER correctly excluded from PPD probabilities)")
+    print(f"  Synthetic Text Risk Score: {resp['text']['risk_score']}")
+    print(f"  Predicted Class: {resp['text'].get('predicted_class')}")
+    print(f"  Late Fusion Status: {resp['fusion']['status']}")
 
 
 def test_4_clinical_plus_audio_safe_unavailable():

@@ -40,6 +40,12 @@ VIDEO_MODEL_PATH = (
 )
 
 # Fusion Meta-Classifiers
+FUSION_4MOD_PATH = (
+    PROJECT_ROOT
+    / "models"
+    / "fusion"
+    / "fusion_meta_learner.joblib"
+)
 FUSION_3MOD_PATH = (
     PROJECT_ROOT
     / "artifacts"
@@ -121,6 +127,7 @@ class ThreeModalityInferenceService:
         self._audio_model: Optional[Any] = None
         self._video_model: Optional[Any] = None
 
+        self._fusion_4mod: Optional[Any] = None
         self._fusion_3mod: Optional[Any] = None
         self._fusion_text_audio: Optional[Any] = None
         self._fusion_text_video: Optional[Any] = None
@@ -183,7 +190,8 @@ class ThreeModalityInferenceService:
                 self._load_errors["video"] = f"Video model artifact not found at {VIDEO_MODEL_PATH}"
                 logger.warning("Missing video model at %s", VIDEO_MODEL_PATH)
 
-            # 4. Late Fusion Meta-Classifiers (3-modality and 2-modality fallbacks)
+            # 4. Late Fusion Meta-Classifiers (4-modality, 3-modality and 2-modality fallbacks)
+            self._fusion_4mod = self._safe_load_joblib(FUSION_4MOD_PATH, "fusion_4mod")
             self._fusion_3mod = self._safe_load_joblib(FUSION_3MOD_PATH, "fusion_3mod")
             self._fusion_text_audio = self._safe_load_joblib(FUSION_TEXT_AUDIO_PATH, "fusion_text_audio")
             self._fusion_text_video = self._safe_load_joblib(FUSION_TEXT_VIDEO_PATH, "fusion_text_video")
@@ -193,9 +201,10 @@ class ThreeModalityInferenceService:
                 self._text_pipeline is not None,
                 self._audio_model is not None,
                 self._video_model is not None,
+                self._fusion_4mod is not None,
                 self._fusion_3mod is not None,
             ])
-            logger.info("Three-Modality Inference Service initialization complete. Ready=%s", self._is_loaded)
+            logger.info("Four-Modality Inference Service initialization complete. Ready=%s", self._is_loaded)
 
     def shutdown(self) -> None:
         """Release in-memory model references cleanly."""
@@ -204,6 +213,7 @@ class ThreeModalityInferenceService:
             self._audio_scaler = None
             self._audio_model = None
             self._video_model = None
+            self._fusion_4mod = None
             self._fusion_3mod = None
             self._fusion_text_audio = None
             self._fusion_text_video = None
@@ -253,12 +263,19 @@ class ThreeModalityInferenceService:
                 "features": "220 Temporal Summary Statistics (Action Units & Landmarks)",
                 "error": self._load_errors.get("video"),
             },
+            "clinical": {
+                "status": "ready",
+                "model_name": "Random Forest Classifier",
+                "model_version": "clinical_random_forest_v1",
+                "features": "46 Tabular Demographic, Obstetric & Medical Covariates",
+                "error": None,
+            },
             "fusion": {
-                "status": "ready" if self._fusion_3mod is not None else "unavailable",
-                "model_name": "Stacking Meta-Classifier",
-                "model_version": "meta_classifier_three_modality_v1",
-                "method": "Stacking Meta-Logistic Regression",
-                "error": self._load_errors.get("fusion_3mod"),
+                "status": "ready" if (self._fusion_4mod is not None or self._fusion_3mod is not None) else "unavailable",
+                "model_name": "Four-Modality Stacking Meta-Classifier" if self._fusion_4mod is not None else "Three-Modality Stacking Meta-Classifier",
+                "model_version": "meta_classifier_four_modality_v1" if self._fusion_4mod is not None else "meta_classifier_three_modality_v1",
+                "method": "Stacking Meta-Logistic Regression (Clinical + Audio + Text + Video)" if self._fusion_4mod is not None else "Stacking Meta-Logistic Regression",
+                "error": self._load_errors.get("fusion_4mod") or self._load_errors.get("fusion_3mod"),
             },
         }
 
@@ -454,6 +471,77 @@ class ThreeModalityInferenceService:
             logger.error("Video inference error: %s", exc, exc_info=True)
             return ModalityScoreResult(status="failed", error=f"Video inference failed: {exc}")
 
+    def predict_clinical(
+        self,
+        features: Optional[Dict[str, Any]],
+        mother_id: Optional[str] = None,
+    ) -> ModalityScoreResult:
+        """Execute clinical numerical risk prediction via trained 46-feature Random Forest."""
+        if features is None or not features:
+            return ModalityScoreResult(status="not_requested")
+
+        try:
+            from backend.services.clinical_service import clinical_service
+            from pipelines.clinical_numerical.config import NUMERICAL_FEATURES, CATEGORICAL_FEATURES
+
+            if not clinical_service.is_loaded:
+                clinical_service.startup()
+
+            if not clinical_service.is_loaded:
+                return ModalityScoreResult(
+                    status="unavailable",
+                    error=getattr(clinical_service, "_load_error", "Clinical service model artifact unavailable."),
+                )
+
+            # Ensure all 46 expected features are present in the dictionary (filled with baseline defaults if omitted)
+            complete_features = dict(features)
+            for feat in NUMERICAL_FEATURES:
+                if feat not in complete_features or complete_features[feat] is None:
+                    complete_features[feat] = 28 if feat == "Age" else 1
+            for feat in CATEGORICAL_FEATURES:
+                if feat not in complete_features or complete_features[feat] is None:
+                    complete_features[feat] = "Missing"
+
+            pred = clinical_service.predict(mother_id=mother_id or "screening_eval", features=complete_features)
+            pred_dict = pred.get("prediction", {}) if isinstance(pred, dict) else {}
+            prob = (
+                pred_dict.get("predicted_risk_probability")
+                if isinstance(pred, dict)
+                else getattr(pred, "risk_probability", getattr(pred, "predicted_risk_probability", None))
+            )
+            if prob is None:
+                return ModalityScoreResult(status="failed", error="Clinical model returned no probability")
+            clamped_prob = round(float(np.clip(prob, 0.0, 1.0)), 4)
+            pred_class = (
+                pred_dict.get("predicted_class")
+                if isinstance(pred, dict)
+                else getattr(pred, "predicted_class", 0)
+            )
+            risk_cat = (
+                pred_dict.get("risk_category")
+                if isinstance(pred, dict)
+                else getattr(pred, "risk_category", "UNKNOWN")
+            )
+            thresh = (
+                pred_dict.get("decision_threshold", 0.5)
+                if isinstance(pred, dict)
+                else getattr(pred, "decision_threshold", 0.5)
+            )
+            return ModalityScoreResult(
+                status="completed",
+                score=clamped_prob,
+                predicted_class=pred_class,
+                model_version="clinical_random_forest_v1",
+                details={
+                    "risk_category": risk_cat,
+                    "decision_threshold": thresh,
+                    "features_evaluated": len(features),
+                },
+            )
+        except Exception as exc:
+            logger.error("Clinical inference error: %s", exc, exc_info=True)
+            return ModalityScoreResult(status="failed", error=f"Clinical model inference failed: {exc}")
+
     # -------------------------------------------------------------------------
     # Multimodal Late Fusion Combiner with Verified Fallbacks
     # -------------------------------------------------------------------------
@@ -463,10 +551,12 @@ class ThreeModalityInferenceService:
         text_res: ModalityScoreResult,
         audio_res: ModalityScoreResult,
         video_res: ModalityScoreResult,
+        clinical_res: Optional[ModalityScoreResult] = None,
     ) -> Dict[str, Any]:
         """Combine available unimodal scores using trained meta-classifiers.
 
         Strict Missing-Modality Rules:
+        - 4 completed modalities: Invokes fusion_meta_learner [clinical, audio, text, video]
         - 3 completed modalities: Invokes meta_classifier_three_modality_learned [text, audio, video]
         - Text + Audio (Video missing): Invokes meta_classifier_text_audio_learned [text, audio]
         - Text + Video (Audio missing): Invokes meta_classifier_text_video_learned [text, video]
@@ -478,8 +568,13 @@ class ThreeModalityInferenceService:
         has_text = text_res.status == "completed" and text_res.score is not None
         has_audio = audio_res.status == "completed" and audio_res.score is not None
         has_video = video_res.status == "completed" and video_res.score is not None
+        has_clinical = (
+            clinical_res is not None
+            and clinical_res.status == "completed"
+            and clinical_res.score is not None
+        )
 
-        completed_count = sum([has_text, has_audio, has_video])
+        completed_count = sum([has_text, has_audio, has_video, has_clinical])
 
         if not self._startup_attempted:
             self.startup()
@@ -489,7 +584,30 @@ class ThreeModalityInferenceService:
         fusion_status: str = "not_available"
         fusion_weights: Dict[str, float] = {}
 
-        if completed_count == 3:
+        if completed_count == 4 and self._fusion_4mod is not None:
+            # 4-Modality Meta-Classifier: [clinical, audio, text, video]
+            try:
+                X_input = np.array(
+                    [[clinical_res.score, audio_res.score, text_res.score, video_res.score]],
+                    dtype=float,
+                )
+                p_fuse = float(self._fusion_4mod.predict_proba(X_input)[0, 1])
+                fusion_score = round(float(np.clip(p_fuse, 0.0, 1.0)), 4)
+                fusion_status = "completed"
+                fusion_method = "learned_stacking_four_modality"
+                coefs = self._fusion_4mod.coef_[0]
+                fusion_weights = {
+                    "clinical": float(coefs[0]),
+                    "audio": float(coefs[1]),
+                    "text": float(coefs[2]),
+                    "video": float(coefs[3]),
+                    "intercept": float(self._fusion_4mod.intercept_[0]),
+                }
+            except Exception as exc:
+                logger.error("4-modality fusion error: %s", exc)
+                fusion_status = "failed"
+
+        elif has_text and has_audio and has_video:
             # 3-Modality Meta-Classifier
             if self._fusion_3mod is not None:
                 try:
@@ -511,8 +629,8 @@ class ThreeModalityInferenceService:
             else:
                 fusion_status = "unavailable"
 
-        elif completed_count == 2:
-            # Verified 2-Modality Fallbacks
+        elif completed_count >= 2:
+            # 2-Modality Fallbacks
             if has_text and has_audio:
                 if self._fusion_text_audio is not None:
                     try:
@@ -573,6 +691,13 @@ class ThreeModalityInferenceService:
                 else:
                     fusion_status = "unavailable"
 
+            elif has_clinical and has_text:
+                # Direct Clinical + Text synthesis
+                fusion_score = round(float(0.7 * clinical_res.score + 0.3 * text_res.score), 4)
+                fusion_status = "completed"
+                fusion_method = "weighted_clinical_text"
+                fusion_weights = {"clinical": 0.7, "text": 0.3}
+
         elif completed_count == 1:
             fusion_status = "insufficient_data"
             fusion_method = "none"
@@ -587,6 +712,8 @@ class ThreeModalityInferenceService:
 
         if completed_count >= 2:
             scores_map: Dict[str, float] = {}
+            if has_clinical and clinical_res.score is not None:
+                scores_map["clinical"] = clinical_res.score
             if has_text and text_res.score is not None:
                 scores_map["text"] = text_res.score
             if has_audio and audio_res.score is not None:
@@ -636,16 +763,17 @@ class ThreeModalityInferenceService:
         text: Optional[str] = None,
         audio_features: Optional[Union[Dict[str, float], List[float], np.ndarray]] = None,
         video_features: Optional[Union[List[float], np.ndarray]] = None,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
-        """Run complete Stage 1 Three-Modality Inference and Late Fusion.
-
-        Excludes clinical numerical features and EPDS survey items.
-        """
+        """Run complete multimodal screening inference across available modalities."""
+        clinical_features = kwargs.get("clinical_features")
+        mother_id = kwargs.get("mother_id")
         text_result = self.predict_text(text)
         audio_result = self.predict_audio(audio_features)
         video_result = self.predict_video(video_features)
+        clinical_result = self.predict_clinical(clinical_features, mother_id=mother_id)
 
-        fusion_result = self.predict_fusion(text_result, audio_result, video_result)
+        fusion_result = self.predict_fusion(text_result, audio_result, video_result, clinical_result)
 
         # Modality statuses map
         modality_status = {
@@ -653,6 +781,14 @@ class ThreeModalityInferenceService:
             "audio": audio_result.status,
             "video": video_result.status,
         }
+        modalities = {
+            "text": text_result.to_dict(),
+            "audio": audio_result.to_dict(),
+            "video": video_result.to_dict(),
+        }
+        if clinical_result.status != "not_requested":
+            modality_status["clinical"] = clinical_result.status
+            modalities["clinical"] = clinical_result.to_dict()
 
         # Overall execution status
         completed_count = sum(1 for s in modality_status.values() if s == "completed")
@@ -665,8 +801,11 @@ class ThreeModalityInferenceService:
         else:
             overall_status = "failed"
 
+        model_ver = "stage1_four_modality_v1" if clinical_result.status == "completed" else "stage1_three_modality_v1"
+
         return {
             "status": overall_status,
+            "clinical_score": clinical_result.score if clinical_result.status == "completed" else None,
             "text_score": text_result.score,
             "audio_score": audio_result.score,
             "video_score": video_result.score,
@@ -674,14 +813,10 @@ class ThreeModalityInferenceService:
             "fusion_status": fusion_result["fusion_status"],
             "fusion_method": fusion_result["fusion_method"],
             "modality_status": modality_status,
-            "modalities": {
-                "text": text_result.to_dict(),
-                "audio": audio_result.to_dict(),
-                "video": video_result.to_dict(),
-            },
+            "modalities": modalities,
             "disagreement_flag": fusion_result["disagreement_flag"],
             "disagreement_details": fusion_result["disagreement_details"],
-            "model_version": "stage1_three_modality_v1",
+            "model_version": model_ver,
             "disclaimer": DISCLAIMER_TEXT,
         }
 

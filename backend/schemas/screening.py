@@ -213,7 +213,7 @@ class ClinicalModalityResult(BaseModel):
 
 
 class TextModalityResult(BaseModel):
-    """Extraction results produced by the TextNERService (Biomedical MMLite spans)."""
+    """Classification results produced by the synthetic text pipeline (TF-IDF + Logistic Regression)."""
 
     model_config = ConfigDict(extra="ignore")
 
@@ -222,16 +222,24 @@ class TextModalityResult(BaseModel):
         description="'completed', 'unavailable', 'failed', or 'not_requested'",
     )
     processing_type: Optional[str] = Field(
-        default="biomedical_ner",
-        description="Type of NLP extraction executed",
+        default="synthetic_text_risk",
+        description="Type of NLP classification executed",
+    )
+    risk_score: Optional[float] = Field(
+        default=None,
+        description="Text classification risk score (0.0 - 1.0)",
+    )
+    predicted_class: Optional[int] = Field(
+        default=None,
+        description="Predicted binary screening class (0 or 1)",
     )
     entities: List[Dict[str, Any]] = Field(
         default_factory=list,
-        description="List of detected biomedical entity spans",
+        description="Deprecated biomedical entity spans",
     )
     total_entities_detected: Optional[int] = Field(
         default=None,
-        description="Count of identified biomedical entity spans",
+        description="Count of identified entity spans",
     )
     processed_character_count: Optional[int] = Field(
         default=None,
@@ -239,11 +247,11 @@ class TextModalityResult(BaseModel):
     )
     model_version: Optional[str] = Field(
         default=None,
-        description="Text NER model release version",
+        description="Text classification model release version",
     )
     error: Optional[str] = Field(
         default=None,
-        description="Diagnostic error description if extraction failed",
+        description="Diagnostic error description if extraction or inference failed",
     )
 
 
@@ -364,6 +372,10 @@ class ThreeModalityAnalyzeResponse(BaseModel):
     status: OverallScreeningStatus = Field(
         ...,
         description="'completed', 'partially_completed', or 'failed'",
+    )
+    clinical_score: Optional[float] = Field(
+        default=None,
+        description="Clinical numerical baseline model risk score (0.0 - 1.0)",
     )
     text_score: Optional[float] = Field(
         default=None,

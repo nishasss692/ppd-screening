@@ -5,7 +5,7 @@ Verifies:
 2. Research-only multimodal late fusion with learned non-negative stacking weights.
 3. Preservation of individual modality predictions (clinical and audio).
 4. Audio inclusion in research pipeline without altering the clinical baseline probability.
-5. Biomedical Text NER extraction strictly excluded from predictive probability fusion.
+5. Synthetic text risk classification with risk score prediction.
 6. Clean handling of missing modalities without zero-fabrication.
 7. Video modality explicit simulation notice.
 8. EPDS Q10 safety escalation independence from ML scores.
@@ -49,13 +49,7 @@ from backend.services.screening_service import (
     ScreeningOrchestrationService,
     get_screening_service,
 )
-from backend.services.text_ner_service import (
-    TextNERService,
-    get_text_ner_service,
-    text_ner_service,
-)
 from tests.test_backend_screening import (
-    _create_fast_test_ner_service,
     _get_valid_clinical_features,
 )
 
@@ -287,35 +281,27 @@ def test_missing_modalities_do_not_fabricate_scores(client: TestClient):
 
 
 # ---------------------------------------------------------------------------
-# 6. Text NER Non-Predictive Boundary
+# 6. Synthetic Text Risk Screening
 # ---------------------------------------------------------------------------
-def test_text_ner_never_enters_predictive_fusion(client: TestClient, tmp_path: Path):
-    """Verify Biomedical Text NER entity extraction is strictly non-predictive."""
-    if not text_ner_service.is_loaded:
-        app.dependency_overrides[get_text_ner_service] = lambda: _create_fast_test_ner_service(tmp_path)
-    try:
-        payload = {
-            "motherId": "M-RESEARCH-04",
-            "modalities": json.dumps({"clinical": True, "text": True}),
-            "consentConfirmed": "true",
-            "eligibilityConfirmed": "true",
-            "clinical_features": json.dumps(_get_valid_clinical_features()),
-            "text_content": "Patient reports severe sadness, insomnia, and overwhelming fatigue.",
-        }
-        response = client.post("/api/screenings/analyze", data=payload)
-        assert response.status_code == 200
+def test_synthetic_text_risk_screening(client: TestClient):
+    """Verify synthetic narrative text model evaluates risk score in screening."""
+    payload = {
+        "motherId": "M-RESEARCH-04",
+        "modalities": json.dumps({"clinical": True, "text": True}),
+        "consentConfirmed": "true",
+        "eligibilityConfirmed": "true",
+        "clinical_features": json.dumps(_get_valid_clinical_features()),
+        "text_content": "Patient reports severe sadness, insomnia, and overwhelming fatigue.",
+    }
+    response = client.post("/api/screenings/analyze", data=payload)
+    assert response.status_code == 200
 
-        data = response.json()
-        assert data["status"] == "completed"
-        assert data["clinical"]["status"] == "completed"
-        assert data["text"]["status"] == "completed"
-        assert data["text"]["processing_type"] == "biomedical_ner"
-
-        # Fusion does NOT consider Text NER as a predictive PPD probability
-        assert data["fusion"]["status"] == "not_available"
-        assert data["fusion"]["combined_score"] is None
-    finally:
-        app.dependency_overrides.clear()
+    data = response.json()
+    assert data["status"] == "completed"
+    assert data["clinical"]["status"] == "completed"
+    assert data["text"]["status"] == "completed"
+    assert data["text"]["processing_type"] == "synthetic_text_risk"
+    assert data["text"]["risk_score"] is not None
 
 
 # ---------------------------------------------------------------------------

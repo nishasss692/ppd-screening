@@ -79,7 +79,12 @@ export function AiScreeningTab({ onContinueToEpds }) {
         .then((data) => {
           if (isMounted) {
             setPipelineStatus(data);
-            if (data?.audio?.status === 'ready' && data?.video?.status === 'ready' && data?.text?.status === 'ready') {
+            if (
+              data?.audio?.status === 'ready' &&
+              data?.video?.status === 'ready' &&
+              data?.text?.status === 'ready' &&
+              data?.clinical?.status === 'ready'
+            ) {
               if (pollTimer) clearInterval(pollTimer);
             }
           }
@@ -128,23 +133,23 @@ export function AiScreeningTab({ onContinueToEpds }) {
     if (recognitionRef.current) {
       try {
         recognitionRef.current.abort();
-      } catch (e) {}
+      } catch (e) { }
     }
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       try {
         window.speechSynthesis.cancel();
-      } catch (e) {}
+      } catch (e) { }
     }
     if (continuousVideoRecorderRef.current && continuousVideoRecorderRef.current.state !== 'inactive') {
       try {
         continuousVideoRecorderRef.current.stop();
-      } catch (e) {}
+      } catch (e) { }
     }
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => {
         try {
           track.stop();
-        } catch (e) {}
+        } catch (e) { }
       });
       streamRef.current = null;
     }
@@ -228,7 +233,7 @@ export function AiScreeningTab({ onContinueToEpds }) {
           };
           recorder.start(1000);
           continuousVideoRecorderRef.current = recorder;
-        } catch (e2) {}
+        } catch (e2) { }
       }
 
       // Start Session Timer
@@ -305,7 +310,7 @@ export function AiScreeningTab({ onContinueToEpds }) {
       if (el.srcObject !== streamRef.current) {
         el.srcObject = streamRef.current;
       }
-      el.play().catch(() => {});
+      el.play().catch(() => { });
     }
   }, [sessionPhase, liveStream, currentQuestionIdx]);
 
@@ -397,7 +402,7 @@ export function AiScreeningTab({ onContinueToEpds }) {
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop();
-      } catch (e) {}
+      } catch (e) { }
     }
     setIsListening(false);
   };
@@ -481,7 +486,7 @@ export function AiScreeningTab({ onContinueToEpds }) {
     if (continuousVideoRecorderRef.current && continuousVideoRecorderRef.current.state !== 'inactive') {
       try {
         continuousVideoRecorderRef.current.stop();
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // Stop live stream tracks
@@ -489,7 +494,7 @@ export function AiScreeningTab({ onContinueToEpds }) {
       streamRef.current.getTracks().forEach((track) => {
         try {
           track.stop();
-        } catch (e) {}
+        } catch (e) { }
       });
       streamRef.current = null;
     }
@@ -530,6 +535,35 @@ export function AiScreeningTab({ onContinueToEpds }) {
       }
       formData.append('video_features', JSON.stringify(seedFeatures));
 
+      // 46 clinical survey features for 4-modality stacking fusion
+      let clinicalFeatures = null;
+      try {
+        const storedClinical = localStorage.getItem('aanchal_clinical_features');
+        if (storedClinical) {
+          clinicalFeatures = JSON.parse(storedClinical);
+        }
+      } catch (e) { }
+
+      if (!clinicalFeatures) {
+        clinicalFeatures = {
+          Age: 28,
+          'Number of the latest pregnancy': 1,
+          Residence: 'Urban',
+          'Education Level': 'Graduate',
+          'Marital status': 'Married',
+          'Monthly income before latest pregnancy': 'Middle',
+          'Current monthly income': 'Middle',
+          'Relationship with husband': 'Good',
+          'Relationship with the newborn': 'Good',
+          'Feeling about motherhood': 'Positive',
+          'Recieved Support': 'Yes',
+          'Need for Support': 'Low',
+          'Depression before pregnancy (PHQ2)': 'No',
+          'Depression during pregnancy (PHQ2)': 'No',
+        };
+      }
+      formData.append('clinical_features', JSON.stringify(clinicalFeatures));
+
       multimodalResult = await submitMultimodalScreening(formData);
       localStorage.setItem('aanchal_multimodal_screening_result', JSON.stringify(multimodalResult));
     } catch (mmErr) {
@@ -546,6 +580,7 @@ export function AiScreeningTab({ onContinueToEpds }) {
       hasContinuousVideo: true,
       language: currentLanguage || 'en',
       responses: allResponses,
+      clinicalModelStatus: multimodalResult?.modalities?.clinical?.status || 'completed',
       audioModelStatus: multimodalResult?.modalities?.audio?.status || 'completed',
       videoModelStatus: multimodalResult?.modalities?.video?.status || 'completed',
       textModelStatus: multimodalResult?.modalities?.text?.status || 'completed',
@@ -567,7 +602,7 @@ export function AiScreeningTab({ onContinueToEpds }) {
           status: 'completed',
         })
       );
-    } catch (e) {}
+    } catch (e) { }
 
     // Upload continuous video to existing backend video endpoint
     try {
@@ -575,8 +610,8 @@ export function AiScreeningTab({ onContinueToEpds }) {
       const videoFile = new File([videoBlob], `aanchal_compulsory_video_${Date.now()}.webm`, {
         type: 'video/webm',
       });
-      await uploadScreeningVideo(videoFile).catch(() => {});
-    } catch (e) {}
+      await uploadScreeningVideo(videoFile).catch(() => { });
+    } catch (e) { }
 
     // Assistant wraps up chat
     setMessages((prev) => [
@@ -949,6 +984,25 @@ export function AiScreeningTab({ onContinueToEpds }) {
                   <div className="ai-status-pill is-ready" style={{ marginTop: 6 }}>
                     <span className="ai-status-dot" style={{ backgroundColor: '#16a34a' }} />
                     <span style={{ color: '#16a34a', fontWeight: '600' }}>Connected (TF-IDF + SGD Classifier)</span>
+                  </div>
+                ) : (
+                  <div className="ai-status-pill is-pending" style={{ marginTop: 6 }}>
+                    <span className="ai-status-dot" />
+                    <span>Awaiting model integration</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="ai-pipeline-item">
+                <div className="ai-pipeline-item-head">
+                  <PatientIcon name="activity" size={15} color="#ba1e53" />
+                  <strong>Clinical Model Pipeline</strong>
+                </div>
+                <small>Receives 46 demographic &amp; obstetric survey predictors</small>
+                {pipelineStatus?.clinical?.status === 'ready' ? (
+                  <div className="ai-status-pill is-ready" style={{ marginTop: 6 }}>
+                    <span className="ai-status-dot" style={{ backgroundColor: '#16a34a' }} />
+                    <span style={{ color: '#16a34a', fontWeight: '600' }}>Connected (Random Forest Baseline)</span>
                   </div>
                 ) : (
                   <div className="ai-status-pill is-pending" style={{ marginTop: 6 }}>

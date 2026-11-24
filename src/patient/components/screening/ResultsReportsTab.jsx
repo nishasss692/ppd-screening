@@ -17,27 +17,27 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
     try {
       const rawAi = localStorage.getItem('aanchal_ai_screening_status');
       if (rawAi) setStoredAiSession(JSON.parse(rawAi));
-    } catch (e) {}
+    } catch (e) { }
 
     try {
       const rawEpds = localStorage.getItem('aanchal_submitted_epds_assessment');
       if (rawEpds) setStoredEpds(JSON.parse(rawEpds));
-    } catch (e) {}
+    } catch (e) { }
 
     try {
       const rawMm = localStorage.getItem('aanchal_multimodal_screening_result');
       if (rawMm) setStoredMultimodalResult(JSON.parse(rawMm));
-    } catch (e) {}
+    } catch (e) { }
 
     try {
       const rawCm = localStorage.getItem('aanchal_clinical_model_prediction');
       if (rawCm) setStoredClinicalModel(JSON.parse(rawCm));
-    } catch (e) {}
+    } catch (e) { }
 
     try {
       const rawPs = localStorage.getItem('aanchal_psychosocial_answers');
       if (rawPs) setStoredPsychosocial(JSON.parse(rawPs));
-    } catch (e) {}
+    } catch (e) { }
   }, []);
 
   const hasEpds = Boolean(storedEpds || screening?.summary?.totalScore !== undefined);
@@ -118,6 +118,176 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
               <>
                 {' '}A lower-risk result does not rule out postpartum depression or other emotional health concerns. We recommend consulting a qualified healthcare professional regardless of your screening result.
               </>
+          {hasMultimodalInference ? (
+            <div className="result-modality-rows">
+              <div className="result-modality-row">
+                <div className="modality-row-label">
+                  <PatientIcon name="mic" size={15} />
+                  <strong>Audio Analysis</strong>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#ba1e53' }}>
+                    {storedMultimodalResult.audio_score !== null ? `${Math.round(storedMultimodalResult.audio_score * 100)}%` : 'N/A'}
+                  </span>
+                  <span className="ai-status-pill is-completed" style={{ background: '#ecfdf5', color: '#16a34a' }}>
+                    <span className="ai-status-dot" style={{ background: '#16a34a' }} />
+                    <span>{storedMultimodalResult.modality_status?.audio === 'completed' ? 'Active Model' : 'Offline'}</span>
+                  </span>
+                </div>
+              </div>
+
+              <div className="result-modality-row">
+                <div className="modality-row-label">
+                  <PatientIcon name="video" size={15} />
+                  <strong>Video Analysis</strong>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#ba1e53' }}>
+                    {storedMultimodalResult.video_score !== null ? `${Math.round(storedMultimodalResult.video_score * 100)}%` : 'N/A'}
+                  </span>
+                  <span className="ai-status-pill is-completed" style={{ background: '#ecfdf5', color: '#16a34a' }}>
+                    <span className="ai-status-dot" style={{ background: '#16a34a' }} />
+                    <span>{storedMultimodalResult.modality_status?.video === 'completed' ? 'Active Model' : 'Offline'}</span>
+                  </span>
+                </div>
+              </div>
+
+              <div className="result-modality-row">
+                <div className="modality-row-label">
+                  <PatientIcon name="sparkles" size={15} />
+                  <strong>Text Analysis</strong>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#ba1e53' }}>
+                    {storedMultimodalResult.text_score !== null ? `${Math.round(storedMultimodalResult.text_score * 100)}%` : 'N/A'}
+                  </span>
+                  <span className="ai-status-pill is-completed" style={{ background: '#ecfdf5', color: '#16a34a' }}>
+                    <span className="ai-status-dot" style={{ background: '#16a34a' }} />
+                    <span>{storedMultimodalResult.modality_status?.text === 'completed' ? 'Active Model' : 'Offline'}</span>
+                  </span>
+                </div>
+              </div>
+
+              <div className="result-modality-row">
+                <div className="modality-row-label">
+                  <PatientIcon name="activity" size={15} />
+                  <strong>Clinical Analysis</strong>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#ba1e53' }}>
+                    {storedMultimodalResult.clinical_score !== undefined && storedMultimodalResult.clinical_score !== null
+                      ? `${Math.round(storedMultimodalResult.clinical_score * 100)}%`
+                      : storedClinicalModel?.predicted_probability !== undefined
+                        ? `${Math.round(storedClinicalModel.predicted_probability * 100)}%`
+                        : 'N/A'}
+                  </span>
+                  <span className="ai-status-pill is-completed" style={{ background: '#ecfdf5', color: '#16a34a' }}>
+                    <span className="ai-status-dot" style={{ background: '#16a34a' }} />
+                    <span>{storedMultimodalResult.modality_status?.clinical === 'completed' || storedClinicalModel ? 'Active Model' : 'Offline'}</span>
+                  </span>
+                </div>
+              </div>
+
+              <div className="result-modality-row is-fusion" style={{ background: '#fdf2f4', padding: '10px 12px', borderRadius: '8px', marginTop: '6px' }}>
+                <div className="modality-row-label">
+                  <PatientIcon name="ai-assistant" size={16} />
+                  <strong>
+                    {storedMultimodalResult.fusion_method === 'learned_stacking_four_modality'
+                      ? 'Four-Modality Stacking Fusion'
+                      : 'Learned Stacking Fusion'}
+                  </strong>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '16px', fontWeight: '700', color: '#ba1e53' }}>
+                    {storedMultimodalResult.fusion_score !== null ? `${Math.round(storedMultimodalResult.fusion_score * 100)}%` : 'N/A'}
+                  </span>
+                  <span className="ai-status-pill is-completed" style={{ background: '#ecfdf5', color: '#16a34a', fontWeight: '600' }}>
+                    <span>Uncalibrated Research Score</span>
+                  </span>
+                </div>
+              </div>
+
+              {storedMultimodalResult.disagreement_flag && (
+                <div style={{ background: '#fffbeb', border: '1px solid #fef3c7', padding: '8px 12px', borderRadius: '6px', marginTop: '8px', fontSize: '12px', color: '#92400e' }}>
+                  <strong>⚠️ Algorithmic Modality Disagreement:</strong> {storedMultimodalResult.disagreement_details}
+                </div>
+              )}
+
+              <p style={{ margin: '8px 0 0 0', fontSize: '11px', color: '#8d737e', fontStyle: 'italic', lineHeight: 1.4 }}>
+                * {storedMultimodalResult.disclaimer || 'Experimental research prototype. Uncalibrated research risk score. Not a clinical diagnosis.'}
+              </p>
+            </div>
+          ) : (
+            <div className="result-modality-rows">
+              <div className="result-modality-row">
+                <div className="modality-row-label">
+                  <PatientIcon name="mic" size={15} />
+                  <strong>Audio Analysis</strong>
+                </div>
+                <span className="ai-status-pill is-pending">
+                  <span className="ai-status-dot" />
+                  <span>Awaiting model integration</span>
+                </span>
+              </div>
+
+              <div className="result-modality-row">
+                <div className="modality-row-label">
+                  <PatientIcon name="video" size={15} />
+                  <strong>Video Analysis</strong>
+                </div>
+                <span className="ai-status-pill is-pending">
+                  <span className="ai-status-dot" />
+                  <span>Awaiting model integration</span>
+                </span>
+              </div>
+
+              <div className="result-modality-row">
+                <div className="modality-row-label">
+                  <PatientIcon name="sparkles" size={15} />
+                  <strong>Text Analysis</strong>
+                </div>
+                <span className="ai-status-pill is-pending">
+                  <span className="ai-status-dot" />
+                  <span>Awaiting model integration</span>
+                </span>
+              </div>
+
+              <div className="result-modality-row">
+                <div className="modality-row-label">
+                  <PatientIcon name="activity" size={15} />
+                  <strong>Clinical Analysis</strong>
+                </div>
+                <span className="ai-status-pill is-pending">
+                  <span className="ai-status-dot" />
+                  <span>Awaiting model integration</span>
+                </span>
+              </div>
+
+              <div className="result-modality-row is-fusion">
+                <div className="modality-row-label">
+                  <PatientIcon name="ai-assistant" size={15} />
+                  <strong>Four-Modality Stacking Fusion</strong>
+                </div>
+                <span className="ai-status-pill is-pending">
+                  <span className="ai-status-dot" />
+                  <span>Awaiting model integration</span>
+                </span>
+              </div>
+            </div>
+          )}
+
+          <div className="result-panel-actions">
+            {!hasAiSession ? (
+              <button
+                type="button"
+                className="patient-btn-secondary"
+                onClick={onTakeAiScreening}
+              >
+                <span>Record AI Screening</span>
+                <PatientIcon name="arrow-right" size={15} />
+              </button>
+            ) : (
+              <span className="result-note-text">Video response captured for clinical evaluation</span>
             )}
           </p>
         </div>

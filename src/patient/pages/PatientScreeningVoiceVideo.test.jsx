@@ -37,6 +37,25 @@ describe('AANCHAL — Conversational AI Screening with Compulsory Video', () => 
       status: 'recorded',
     });
 
+    vi.spyOn(patientApi, 'fetchMultimodalStatus').mockResolvedValue({
+      text: { status: 'ready' },
+      audio: { status: 'ready' },
+      video: { status: 'ready' },
+      clinical: { status: 'ready' },
+    });
+
+    vi.spyOn(patientApi, 'submitMultimodalScreening').mockResolvedValue({
+      status: 'completed',
+      clinical_score: 0.35,
+      text_score: 0.42,
+      audio_score: 0.38,
+      video_score: 0.40,
+      fusion_score: 0.39,
+      fusion_status: 'completed',
+      fusion_method: 'learned_stacking_four_modality',
+      modality_status: { text: 'completed', audio: 'completed', video: 'completed', clinical: 'completed' },
+    });
+
     // Mock HTMLMediaElement play and pause for JSDOM
     window.HTMLMediaElement.prototype.play = vi.fn().mockImplementation(() => Promise.resolve());
     window.HTMLMediaElement.prototype.pause = vi.fn();
