@@ -365,6 +365,10 @@ class ThreeModalityAnalyzeResponse(BaseModel):
         ...,
         description="'completed', 'partially_completed', or 'failed'",
     )
+    clinical_score: Optional[float] = Field(
+        default=None,
+        description="Clinical numerical baseline model risk score (0.0 - 1.0)",
+    )
     text_score: Optional[float] = Field(
         default=None,
         description="Text baseline model risk score (0.0 - 1.0)",

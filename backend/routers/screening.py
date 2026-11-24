@@ -166,6 +166,10 @@ async def analyze_multimodal_screening(
         description="JSON string containing 220 pooled summary statistics over facial/gaze dynamics",
     ),
     files_video: Optional[UploadFile] = File(None, description="Optional raw video recording (.mp4, .webm)"),
+    clinical_features: Optional[str] = Form(
+        None,
+        description="Optional JSON string containing 46 clinical survey features for four-modality late fusion",
+    ),
     current_user: User = Depends(get_current_user),
     service: ThreeModalityInferenceService = Depends(lambda: three_modality_service),
 ) -> ThreeModalityAnalyzeResponse:
@@ -252,9 +256,24 @@ async def analyze_multimodal_screening(
                 detail=f"Invalid video_features JSON payload: {exc}",
             ) from exc
 
+    # Clinical input
+    resolved_clinical: Optional[Dict[str, Any]] = None
+    if clinical_features is not None and clinical_features.strip():
+        try:
+            parsed_clinical = json.loads(clinical_features)
+            if not isinstance(parsed_clinical, dict):
+                raise ValueError("clinical_features must be a JSON object mapping feature names to values")
+            resolved_clinical = parsed_clinical
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Invalid clinical_features JSON payload: {exc}",
+            ) from exc
+
     # Check for empty request
     has_any_input = (
-        resolved_text is not None
+        resolved_clinical is not None
+        or resolved_text is not None
         or resolved_audio is not None
         or resolved_video is not None
         or files_voice is not None
@@ -263,7 +282,7 @@ async def analyze_multimodal_screening(
     if not has_any_input:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="At least one screening modality (text, audio, or video) must be provided for analysis.",
+            detail="At least one screening modality (clinical, text, audio, or video) must be provided for analysis.",
         )
 
     # 4. Execute Service Inference
@@ -271,6 +290,8 @@ async def analyze_multimodal_screening(
         text=resolved_text,
         audio_features=resolved_audio,
         video_features=resolved_video,
+        clinical_features=resolved_clinical,
+        mother_id=effective_mother_id,
     )
 
     # If raw recordings were uploaded without pre-extracted feature vectors, annotate details
@@ -308,6 +329,7 @@ async def analyze_multimodal_screening(
         screening_id=transient_screening_id,
         mother_id=effective_mother_id,
         status=inference_result["status"],
+        clinical_score=inference_result.get("clinical_score"),
         text_score=inference_result["text_score"],
         audio_score=inference_result["audio_score"],
         video_score=inference_result["video_score"],
