@@ -24,6 +24,7 @@ from backend.ml.fusion_engine import (
     BaseFusionStrategy,
     DiscordanceAnalyzer,
     FusionStatus,
+    LearnedFourModalityStackingStrategy,
     ModalityCandidate,
     MultimodalFusionEngine,
     WeightedAverageFusionStrategy,
@@ -337,4 +338,161 @@ def test_screening_endpoint_regression_with_fusion_engine(client: TestClient):
         "comparison": [],
         "explanation": "Insufficient comparable modality predictions.",
     }
+
+
+# ---------------------------------------------------------------------------
+# 13. Unified Four-Modality Late Fusion Tests
+# ---------------------------------------------------------------------------
+def test_four_modality_late_fusion_all_modalities():
+    """Verify late fusion execution when all four modalities (clinical, text, audio, video) are completed."""
+    strategy = WeightedAverageFusionStrategy(
+        default_weights={"clinical": 0.40, "text": 0.20, "audio": 0.20, "video": 0.20}
+    )
+    engine = MultimodalFusionEngine(strategy=strategy)
+
+    clinical = _sample_clinical_completed(0.80)
+    text = _sample_text_completed(0.60)
+    audio = AudioModalityResult(
+        status="completed",
+        risk_score=0.50,
+        prediction={"predicted_risk_probability": 0.50, "predicted_class": 1},
+    )
+    video = VideoModalityResult(
+        status="completed",
+        risk_score=0.40,
+        prediction={"predicted_risk_probability": 0.40, "predicted_class": 0},
+    )
+
+    result = engine.evaluate(clinical=clinical, text=text, audio=audio, video=video)
+    assert result.status == FusionStatus.COMPLETED.value
+    # 0.80*0.40 + 0.60*0.20 + 0.50*0.20 + 0.40*0.20 = 0.32 + 0.12 + 0.10 + 0.08 = 0.62
+    assert result.combined_score == 0.62
+    assert result.risk_category == "MODERATE_RISK"
+    assert result.epds_equivalent == 19
+    assert result.modality_contributions == {
+        "clinical": 0.40,
+        "text": 0.20,
+        "audio": 0.20,
+        "video": 0.20,
+    }
+
+
+def test_four_modality_dynamic_reweighting_partial():
+    """Verify dynamic weight re-normalization when some modalities are missing or unrequested."""
+    strategy = WeightedAverageFusionStrategy(
+        default_weights={"clinical": 0.40, "text": 0.20, "audio": 0.20, "video": 0.20}
+    )
+    engine = MultimodalFusionEngine(strategy=strategy)
+
+    # Video is not_requested, audio is unavailable
+    clinical = _sample_clinical_completed(0.70)
+    text = _sample_text_completed(0.50)
+    audio = AudioModalityResult(status="unavailable")
+    video = VideoModalityResult(status="not_requested")
+
+    result = engine.evaluate(clinical=clinical, text=text, audio=audio, video=video)
+    assert result.status == FusionStatus.COMPLETED.value
+    # clinical raw 0.40, text raw 0.20 -> sum 0.60 -> normalized: clinical 2/3 (0.6667), text 1/3 (0.3333)
+    # score: 0.70 * (2/3) + 0.50 * (1/3) = 0.4667 + 0.1667 = 0.6333
+    assert result.combined_score is not None
+    assert 0.63 <= result.combined_score <= 0.64
+    assert "clinical" in result.modality_contributions
+    assert "text" in result.modality_contributions
+    assert "audio" not in result.modality_contributions
+    assert "video" not in result.modality_contributions
+
+
+def test_four_modality_insufficient_modalities():
+    """Verify that fewer than 2 predictive modalities return status='not_available'."""
+    strategy = WeightedAverageFusionStrategy()
+    engine = MultimodalFusionEngine(strategy=strategy)
+
+    # Only 1 modality predictive
+    clinical = _sample_clinical_completed(0.75)
+    text = _sample_text_completed(score=None)  # non-predictive
+    audio = AudioModalityResult(status="unavailable")
+    video = VideoModalityResult(status="not_requested")
+
+    result = engine.evaluate(clinical=clinical, text=text, audio=audio, video=video)
+    assert result.status == FusionStatus.NOT_AVAILABLE.value
+    assert result.combined_score is None
+    assert result.discordance_analysis["discordance_detected"] is False
+
+
+def test_four_modality_discordance_across_six_pairs():
+    """Verify cross-modal discordance evaluates all 6 pairwise combinations when 4 modalities are active."""
+    strategy = WeightedAverageFusionStrategy()
+    engine = MultimodalFusionEngine(strategy=strategy)
+
+    clinical = _sample_clinical_completed(0.85)
+    text = _sample_text_completed(0.50)
+    audio = AudioModalityResult(
+        status="completed",
+        prediction={"predicted_risk_probability": 0.45},
+    )
+    video = VideoModalityResult(
+        status="completed",
+        prediction={"predicted_risk_probability": 0.30},
+    )
+
+    result = engine.evaluate(clinical=clinical, text=text, audio=audio, video=video)
+    assert result.status == FusionStatus.COMPLETED.value
+    discordance = result.discordance_analysis
+    assert discordance["discordance_detected"] is True
+    # 4 modalities -> 4*3/2 = 6 pairwise comparisons
+    assert len(discordance["comparison"]) == 6
+    # Max difference between clinical (0.85) and video (0.30) is 0.55 >= 0.25
+    assert any(c["modality_a"] == "clinical" and c["modality_b"] == "video" for c in discordance["comparison"])
+
+
+def test_four_modality_screening_endpoint_with_standalone_q10(client: TestClient):
+    """Verify live analyze endpoint handles 4 modalities and standalone EPDS Q10 safety alert."""
+    import json
+    from tests.test_backend_screening import _get_valid_clinical_features
+
+    q10_answers = [{"question_id": f"EPDS_Q{i:02d}", "selected_index": 0} for i in range(1, 10)]
+    q10_answers.append({"question_id": "EPDS_Q10", "selected_index": 2})  # self-harm alert
+
+    valid_audio_dict = {
+        "f0_mean_hz": 215.0,
+        "f0_std_hz": 26.5,
+        "jitter_local_percent": 1.15,
+        "shimmer_local_percent": 4.50,
+        "hnr_db": 19.2,
+        "speech_rate_syllables_per_sec": 3.80,
+        "pause_ratio": 0.25,
+    }
+
+    payload = {
+        "motherId": "M-FOUR-MOD-01",
+        "modalities": json.dumps({"clinical": True, "text": True, "audio": True}),
+        "consentConfirmed": "true",
+        "eligibilityConfirmed": "true",
+        "clinical_features": json.dumps(_get_valid_clinical_features()),
+        "text_content": "Mother describes persistent sadness and sleeping difficulties.",
+        "audio_features": json.dumps(valid_audio_dict),
+        "epds_answers": json.dumps(q10_answers),
+    }
+
+    resp = client.post("/api/screenings/analyze", data=payload)
+    assert resp.status_code == 200
+    data = resp.json()
+
+    assert data["status"] == "completed"
+    assert data["clinical"]["status"] == "completed"
+    assert data["text"]["status"] == "completed"
+    assert data["audio"]["status"] == "completed"
+    assert data["video"]["status"] == "not_requested"
+
+    # Standalone Q10 safety alert is present and triggered
+    assert data["q10_safety_alert"] is not None
+    assert data["q10_safety_alert"]["triggered"] is True
+    assert data["q10_safety_alert"]["question_10_score"] == 2
+    assert data["q10_safety_alert"]["severity"] == "URGENT_SAFETY_ASSESSMENT"
+    assert "never be overridden" in data["q10_safety_alert"]["override_protection"].lower()
+
+    # Fusion executed across completed modalities
+    assert data["fusion"]["status"] == "completed"
+    assert data["fusion"]["combined_score"] is not None
+
 
