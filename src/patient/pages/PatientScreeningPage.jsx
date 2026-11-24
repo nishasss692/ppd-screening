@@ -44,22 +44,15 @@ export function PatientScreeningPage() {
       {/* Hero Header Box with Page Heading & 4-Stage Progress Tracker */}
       <div className="patient-hero-box screening-hero-box" style={{ marginBottom: '20px' }}>
         <div className="patient-hero-box-text">
-          <div className="miora-dash-eyebrow">
-            <span>AI SCREENING</span>
-            <span className="miora-dash-eyebrow-line" aria-hidden="true" />
-          </div>
           {activeTab === 'results' ? (
-            <h1 className="miora-dash-title patient-page-heading screening-page-title">
-              Results &amp; <em>Reports</em>
+            <h1 className="screening-page-title">
+              Results &amp; Reports
             </h1>
           ) : (
-            <h1 className="miora-dash-title patient-page-heading screening-page-title">
-              AI Screening <em>Session</em>
+            <h1 className="screening-page-title">
+              AI Screening Session
             </h1>
           )}
-          <p className="miora-dash-subtitle patient-page-subheading screening-page-sub">
-            A private, conversational screening to understand your emotional well-being after childbirth.
-          </p>
         </div>
 
         {/* 4-Stage Progress Tracker */}
@@ -98,7 +91,7 @@ export function PatientScreeningPage() {
         </div>
       </div>
 
-      {/* Exactly 4 Screening Tabs */}
+      {/* Exactly 4 Clean Text-Based Screening Tabs */}
       <div className="screening-tab-nav" role="tablist" aria-label="Screening sections">
         <button
           type="button"
@@ -108,7 +101,6 @@ export function PatientScreeningPage() {
           className={`screening-tab-nav-btn ${activeTab === 'ai-screening' ? 'is-active' : ''}`}
           onClick={() => handleTabChange('ai-screening')}
         >
-          <PatientIcon name="video" size={16} />
           <span>AI Screening</span>
         </button>
 
@@ -120,8 +112,7 @@ export function PatientScreeningPage() {
           className={`screening-tab-nav-btn ${activeTab === 'psychosocial' ? 'is-active' : ''}`}
           onClick={() => handleTabChange('psychosocial')}
         >
-          <PatientIcon name="heart" size={16} />
-          <span>Wellbeing &amp; Support (Stage 2)</span>
+          <span>Wellbeing &amp; Support</span>
         </button>
 
         <button
@@ -132,7 +123,6 @@ export function PatientScreeningPage() {
           className={`screening-tab-nav-btn ${activeTab === 'epds' ? 'is-active' : ''}`}
           onClick={() => handleTabChange('epds')}
         >
-          <PatientIcon name="reports" size={16} />
           <span>EPDS</span>
         </button>
 
@@ -144,7 +134,6 @@ export function PatientScreeningPage() {
           className={`screening-tab-nav-btn ${activeTab === 'results' ? 'is-active' : ''}`}
           onClick={() => handleTabChange('results')}
         >
-          <PatientIcon name="sparkles" size={16} />
           <span>Results &amp; Reports</span>
         </button>
       </div>
