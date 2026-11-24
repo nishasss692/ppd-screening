@@ -2,7 +2,7 @@
 
 Verifies:
 1. Clinical-only output evaluation.
-2. Clinical plus Text NER evaluation (Text NER entity confidence is NOT treated as PPD risk).
+2. Clinical plus Synthetic Text evaluation.
 3. Missing modalities handling.
 4. Unavailable audio/video handling.
 5. Incompatible output types handling.
@@ -15,7 +15,7 @@ Verifies:
 12. Full end-to-end screening endpoint integration regression.
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 import pytest
 from fastapi.testclient import TestClient
 
@@ -58,18 +58,15 @@ def _sample_clinical_completed(prob: float = 0.72) -> ClinicalModalityResult:
     )
 
 
-def _sample_text_ner_completed() -> TextModalityResult:
-    """Create valid completed TextModalityResult fixture (biomedical entity extraction)."""
+def _sample_text_completed(score: Optional[float] = None) -> TextModalityResult:
+    """Create valid completed TextModalityResult fixture."""
     return TextModalityResult(
         status="completed",
-        processing_type="biomedical_ner",
-        entities=[
-            {"text": "depression", "label": "MMLite", "start": 0, "end": 10, "confidence": 0.98},
-            {"text": "anxiety", "label": "MMLite", "start": 15, "end": 22, "confidence": 0.95},
-        ],
-        total_entities_detected=2,
+        processing_type="synthetic_text_risk",
+        risk_score=score,
+        predicted_class=1 if score is not None and score >= 0.5 else (0 if score is not None else None),
         processed_character_count=50,
-        model_version="1.2.0-test",
+        model_version="text_sgd_logistic_v1",
     )
 
 
@@ -95,25 +92,34 @@ def test_fusion_clinical_only_output():
 
 
 # ---------------------------------------------------------------------------
-# 2. Clinical Plus Text NER (Entity confidence is NOT PPD probability)
+# 2. Clinical Plus Synthetic Text Evaluation
 # ---------------------------------------------------------------------------
-def test_fusion_clinical_plus_text_ner_not_available():
-    """Verify Text NER is recognized as non-predictive entity extraction and cannot be fused."""
-    engine = MultimodalFusionEngine()
+def test_fusion_clinical_plus_text_predictive():
+    """Verify synthetic text risk score is evaluated as a predictive modality."""
+    strategy = WeightedAverageFusionStrategy(default_weights={"clinical": 0.5, "text": 0.5})
+    engine = MultimodalFusionEngine(strategy=strategy)
     clinical = _sample_clinical_completed(0.65)
-    text = _sample_text_ner_completed()
+    text = _sample_text_completed(0.70)
 
     result = engine.evaluate(clinical=clinical, text=text)
 
-    # Even with clinical + text, predictive modality count is 1
+    assert result.status == FusionStatus.COMPLETED.value
+    assert result.combined_score is not None
+    assert 0.0 <= result.combined_score <= 1.0
+    assert result.discordance_analysis is not None
+
+
+def test_fusion_clinical_plus_text_without_strategy():
+    """Verify that without a configured strategy, fusion is not_available but discordance is analyzed."""
+    engine = MultimodalFusionEngine()
+    clinical = _sample_clinical_completed(0.85)
+    text = _sample_text_completed(0.40)
+
+    result = engine.evaluate(clinical=clinical, text=text)
+
     assert result.status == FusionStatus.NOT_AVAILABLE.value
     assert result.combined_score is None
-    assert result.modality_contributions == {}
-
-    # Must NOT compare text entity confidence with clinical risk probability
-    assert result.discordance_analysis["discordance_detected"] is False
-    assert result.discordance_analysis["comparison"] == []
-    assert result.discordance_analysis["explanation"] == "Insufficient comparable modality predictions."
+    assert result.discordance_analysis["discordance_detected"] is True
 
 
 # ---------------------------------------------------------------------------
@@ -149,9 +155,9 @@ def test_fusion_unavailable_audio_and_video():
 # 5. Incompatible Output Types
 # ---------------------------------------------------------------------------
 def test_fusion_incompatible_output_types():
-    """Verify that non-predictive formats (e.g. text NER only) are recognized as incompatible."""
+    """Verify that non-predictive formats (e.g. text without score) are recognized as incompatible."""
     engine = MultimodalFusionEngine()
-    text = _sample_text_ner_completed()
+    text = _sample_text_completed(score=None)
 
     # Candidate extraction check
     candidate = engine.extract_candidate("text", text)
