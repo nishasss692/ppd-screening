@@ -1618,14 +1618,21 @@
    ========================================================================== */
 
 /* Pre-Screening Consent Card */
-.ai-screening-setup-heading {
+.ai-screening-setup-heading,
+.psychosocial-assessment-title {
   margin: 0;
   font-family: var(--sans, 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
-  font-size: 20px;
+  font-size: clamp(19px, 2.2vw, 22px);
   font-weight: 600;
   color: var(--patient-ink, #271218);
   letter-spacing: -0.012em;
   line-height: 1.3;
+}
+
+.psychosocial-assessment-title em {
+  font-style: normal;
+  font-weight: 600;
+  color: inherit;
 }
 
 .ai-compulsory-video-banner,
@@ -2369,9 +2376,25 @@
   .ai-screening-controls-row button {
     min-height: 44px;
   }
+
+  .psychosocial-intro-card {
+    padding: 16px 18px !important;
+  }
+
+  .psychosocial-question-card {
+    padding: 18px 16px !important;
+  }
 }
 
 @media (max-width: 480px) {
+  .psychosocial-intro-card {
+    padding: 14px 14px !important;
+  }
+
+  .psychosocial-question-card {
+    padding: 16px 12px !important;
+  }
+
   .result-panel-card {
     padding: 14px 12px;
     border-radius: 12px;
