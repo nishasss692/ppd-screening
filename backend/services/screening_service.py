@@ -282,6 +282,8 @@ class ScreeningOrchestrationService:
         text_content: Optional[str] = None,
         files_voice_bytes: Optional[bytes] = None,
         files_video_bytes: Optional[bytes] = None,
+        video_features_raw: Optional[Union[str, List[float], Any]] = None,
+        epds_answers: Optional[Union[str, List[Dict[str, Any]]]] = None,
         eligibility_confirmed: Optional[Union[bool, str]] = None,
     ) -> ScreeningAnalysisResponse:
         """Execute multimodal screening analysis preserving partial completion states."""
@@ -554,19 +556,78 @@ class ScreeningOrchestrationService:
                 model_version=None,
             )
 
-        # 7. Video Modality (Experimental Synthetic Simulation / Offline Benchmark)
+        # 7. Video Modality (Four-Modality Pipeline / Experimental Synthetic Simulation)
         video_result: VideoModalityResult
         if modalities.video:
-            video_result = VideoModalityResult(
-                status="unavailable",
-                prediction=None,
-                model_version=None,
-                message=(
-                    "Video screening model is an experimental synthetic simulation / offline benchmark. "
-                    "In live screening, visual dynamics inference is unavailable to protect patient privacy "
-                    "and avoid uncalibrated diagnostic predictions."
-                ),
-            )
+            if video_features_raw is not None:
+                parsed_video: Optional[List[float]] = None
+                if isinstance(video_features_raw, str):
+                    try:
+                        raw_json = json.loads(video_features_raw)
+                        if isinstance(raw_json, list):
+                            parsed_video = [float(x) for x in raw_json]
+                    except Exception:
+                        parsed_video = None
+                elif isinstance(video_features_raw, (list, tuple)):
+                    parsed_video = [float(x) for x in video_features_raw]
+
+                if parsed_video is not None and len(parsed_video) == 220:
+                    try:
+                        pred_video = self.text_service.predict_video(parsed_video)
+                        if pred_video.status == "completed":
+                            video_result = VideoModalityResult(
+                                status="completed",
+                                risk_score=pred_video.score,
+                                predicted_class=pred_video.predicted_class,
+                                prediction={
+                                    "predicted_risk_probability": pred_video.score,
+                                    "predicted_class": pred_video.predicted_class,
+                                    "model_utilized": pred_video.model_version or "video_baseline_lr_all",
+                                    "data_origin": "synthetic_video_simulation",
+                                },
+                                model_version=pred_video.model_version or "video_baseline_lr_all",
+                                message="Visual dynamics facial affect profile processed under research protocol.",
+                            )
+                        else:
+                            video_result = VideoModalityResult(
+                                status=pred_video.status,
+                                error=pred_video.error,
+                                message=pred_video.error,
+                            )
+                    except Exception as exc:
+                        logger.error("Video feature inference failed: %s", exc, exc_info=True)
+                        video_result = VideoModalityResult(
+                            status="failed",
+                            error="Video inference failed due to an internal error.",
+                        )
+                else:
+                    video_result = VideoModalityResult(
+                        status="unavailable",
+                        prediction=None,
+                        model_version=None,
+                        message="Video screening requires exactly 220 pre-extracted summary features.",
+                    )
+            elif files_video_bytes is not None and len(files_video_bytes) > 0:
+                video_result = VideoModalityResult(
+                    status="unavailable",
+                    prediction=None,
+                    model_version=None,
+                    message=(
+                        "Raw video landmark temporal extraction pipeline is offline in this environment. "
+                        "Video screening requires 220 pre-extracted summary features."
+                    ),
+                )
+            else:
+                video_result = VideoModalityResult(
+                    status="unavailable",
+                    prediction=None,
+                    model_version=None,
+                    message=(
+                        "Video screening model is an experimental synthetic simulation / offline benchmark. "
+                        "In live screening, visual dynamics inference is unavailable to protect patient privacy "
+                        "and avoid uncalibrated diagnostic predictions."
+                    ),
+                )
         else:
             video_result = VideoModalityResult(
                 status="not_requested",
@@ -581,6 +642,26 @@ class ScreeningOrchestrationService:
             audio=audio_result,
             video=video_result,
         )
+
+        # Standalone EPDS Question 10 Safety Check (Outside ML probability fusion)
+        q10_safety_alert: Optional[Dict[str, Any]] = None
+        if epds_answers is not None:
+            try:
+                answers_list = epds_answers if isinstance(epds_answers, list) else json.loads(epds_answers)
+                if isinstance(answers_list, list):
+                    q10_val = 0
+                    for a in answers_list:
+                        if isinstance(a, dict) and a.get("question_id") == "EPDS_Q10":
+                            q10_val = int(a.get("selected_index", a.get("score", 0)))
+                    q10_safety_alert = {
+                        "triggered": bool(q10_val > 0),
+                        "question_10_score": q10_val,
+                        "severity": "URGENT_SAFETY_ASSESSMENT" if q10_val > 0 else "NORMAL",
+                        "override_protection": "Deterministic safety rule: Crisis alerts can never be overridden by AI predictions.",
+                        "helpline": "Tele-MANAS (14416 / 1800-891-4416)",
+                    }
+            except Exception as exc:
+                logger.warning("Could not parse epds_answers for standalone Q10 check: %s", exc)
 
         # 9. Compute Overall Screening Status
         requested_results = []
@@ -614,6 +695,7 @@ class ScreeningOrchestrationService:
             audio=audio_result,
             video=video_result,
             fusion=fusion_result,
+            q10_safety_alert=q10_safety_alert,
             processed_at=processed_at,
         )
 

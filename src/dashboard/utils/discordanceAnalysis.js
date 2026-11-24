@@ -17,10 +17,24 @@ const MODALITY_DEFS = [
   { key: 'video', name: 'Video', subLabel: 'Facial', icon: 'video', optional: true },
 ];
 
+const CLINICAL_DEF = {
+  key: 'clinical',
+  name: 'Clinical',
+  subLabel: 'Survey Covariates',
+  icon: 'document',
+  optional: true,
+};
+
 const PAIR_DEFS = [
   { key: 'text-voice', label: 'Text ↔ Voice', a: 'text', b: 'voice' },
   { key: 'text-video', label: 'Text ↔ Video', a: 'text', b: 'video' },
   { key: 'voice-video', label: 'Voice ↔ Video', a: 'voice', b: 'video' },
+];
+
+const CLINICAL_PAIRS = [
+  { key: 'clinical-text', label: 'Clinical ↔ Text', a: 'clinical', b: 'text' },
+  { key: 'clinical-voice', label: 'Clinical ↔ Voice', a: 'clinical', b: 'voice' },
+  { key: 'clinical-video', label: 'Clinical ↔ Video', a: 'clinical', b: 'video' },
 ];
 
 export function classifyModalityRisk(score) {
@@ -81,7 +95,11 @@ export function analyzeCrossModalDiscordance({ screening }) {
   }
 
   const rawModalities = screening.modalities || {};
-  const modalityRows = MODALITY_DEFS.map((def) => buildModalityRow(def, rawModalities[def.key]));
+  const hasClinical = Boolean(rawModalities.clinical);
+  const activeDefs = hasClinical ? [CLINICAL_DEF, ...MODALITY_DEFS] : MODALITY_DEFS;
+  const activePairs = hasClinical ? [...PAIR_DEFS, ...CLINICAL_PAIRS] : PAIR_DEFS;
+
+  const modalityRows = activeDefs.map((def) => buildModalityRow(def, rawModalities[def.key]));
   const modalityMap = Object.fromEntries(modalityRows.map((row) => [row.key, row]));
 
   const completedModalities = modalityRows.filter((row) => row.isCompleted);
@@ -104,7 +122,7 @@ export function analyzeCrossModalDiscordance({ screening }) {
   };
 
   // 2. Pairwise Signal Alignment
-  const pairwiseAlignment = PAIR_DEFS.map((pair) => {
+  const pairwiseAlignment = activePairs.map((pair) => {
     const modA = modalityMap[pair.a];
     const modB = modalityMap[pair.b];
     const backendPair = screening.pairwiseAlignment?.[pair.key];

@@ -85,34 +85,41 @@ A calming, blush-and-cream design system featuring the signature rose header car
 
 ### Modality Pipelines & Fusion Architecture
 
-The screening platform implements three primary behavioral modality pipelines converging into a late-fusion meta-classifier:
+The screening platform implements a unified four-modality late-fusion architecture combining:
+1. **Clinical Numerical**: 46 validated demographic, obstetric, socioeconomic, and PHQ-2 survey predictors.
+2. **Narrative Text**: Maternal domestic context vignettes evaluated via TF-IDF vectorization and $L_2$-regularized Logistic Regression (`models/text_model/text_pipeline.joblib`).
+3. **Voice Audio**: 7 physiological acoustic vocal biomarkers (mean/std F0, jitter, shimmer, HNR, speech rate, pause ratio) with StandardScaler (`models/audio_model/`).
+4. **Facial Video**: 220 temporal summary statistics over facial Action Units and landmarks (`artifacts/video_experiments/`).
 
 ```mermaid
 flowchart TD
     subgraph Input["1. Maternal Input Streams"]
-        T["Text / Conversational EPDS\n(10 Canonical Items, Transcripts)"]
-        A["Voice & Acoustic Stream\n(F0, Jitter, Shimmer, HNR, MFCCs)"]
+        C["Clinical Survey Predictors\n(46 Demographics & Covariates)"]
+        T["Narrative Text Self-Report\n(Maternal Domestic Context)"]
+        A["Voice & Acoustic Stream\n(F0, Jitter, Shimmer, HNR, Pause Ratio)"]
         V["Live Video / Visual Stream\n(Facial Dynamics, Action Units AU04/12/15)"]
     end
 
     subgraph Processing["2. Unimodal Feature Extraction & Models"]
+        P_C["Clinical Pipeline (Random Forest / Logistic Regr.)\nmodels/clinical_numerical/"]
         P_T["Text Pipeline (TF-IDF + Logistic Regression)\nmodels/text_model/text_pipeline.joblib"]
         P_A["Audio Pipeline (Scaler + Logistic Regression)\nmodels/audio_model/logistic_regression.joblib"]
         P_V["Video Pipeline (OpenFace 220 Features + Baseline)\nartifacts/video_experiments/.../fitted_model.joblib"]
     end
 
-    subgraph Fusion["3. Multimodal Fusion Engine"]
-        F1["Stacking Meta-Classifier (Logistic Regression)\nartifacts/three_modality_fusion/meta_classifier.joblib"]
-        F2["Uncalibrated Multimodal Research Risk Score [0.0, 1.0]\nAttribution & Cross-Modal Disagreement Flag"]
+    subgraph Fusion["3. Unified Four-Modality Late Fusion Engine"]
+        F1["Stacking Meta-Classifier & Dynamic Reweighting\nmodels/fusion/fusion_meta_learner.joblib"]
+        F2["Uncalibrated Multimodal Research Risk Score [0.0, 1.0]\nDynamic Normalization & Cross-Modal Discordance (|Δ| >= 0.25)"]
     end
 
     subgraph Safety["4. Clinical Safety & Output"]
-        S["Deterministic Emergency Safety Intercept\n(Tele-MANAS 14416 / 1800-891-4416)"]
+        S["Standalone EPDS Question 10 Intercept\n(Tele-MANAS 14416 / 1800-891-4416)"]
         R["Screening Summary & Research Output"]
         DB[(PostgreSQL Hospital Database)]
         Dash["Clinician & Patient Interfaces"]
     end
 
+    C --> P_C --> F1
     T --> P_T --> F1
     A --> P_A --> F1
     V --> P_V --> F1
@@ -126,8 +133,10 @@ flowchart TD
 ```
 
 ### Safety & Crisis Protocol
-- **EPDS Question 10 Guardrail**: Any non-zero answer on Question 10 (*"The thought of harming myself has occurred to me"*) automatically triggers an emergency banner with direct toll-free helpline links to **Tele-MANAS (14416 / 1800-891-4416)** and local emergency services.
-- **Zero Hallucination / Zero Override**: The crisis intercept is deterministic and coded into both Python backend and React frontend—it cannot be bypassed or downgraded by AI inferences.
+- **Strict Target Leakage Safeguard**: `EPDS Score`, `EPDS Result`, and individual EPDS questions are strictly excluded from all model feature spaces (`EXCLUDED_COLUMNS`, `extra='forbid'`). The authentic ground-truth binary target is `target_canonical_epds_ge_13` (`EPDS >= 13`).
+- **Standalone EPDS Question 10 Guardrail**: Any non-zero answer on Question 10 (*"The thought of harming myself has occurred to me"*) automatically triggers an emergency banner with direct toll-free helpline links to **Tele-MANAS (14416 / 1800-891-4416)** and local emergency services.
+- **Zero Hallucination / Zero Override**: The crisis intercept is a standalone deterministic rule operating outside ML probability fusion—it cannot be bypassed, suppressed, or downgraded by AI predictions.
+- **Dynamic Reweighting Without Fabrication**: When modalities are unavailable or unrequested, weights are dynamically re-normalized across available completed predictive modalities; missing streams are never imputed or zero-filled. If fewer than 2 predictive modalities exist, fusion safely returns `status="not_available"`.
 
 ---
 

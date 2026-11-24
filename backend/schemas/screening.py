@@ -264,6 +264,14 @@ class AudioModalityResult(BaseModel):
         default="unavailable",
         description="'unavailable' until unimodal acoustic inference model is deployed",
     )
+    risk_score: Optional[float] = Field(
+        default=None,
+        description="Acoustic model predicted risk score (0.0 - 1.0)",
+    )
+    predicted_class: Optional[int] = Field(
+        default=None,
+        description="Acoustic model predicted binary class (0 or 1)",
+    )
     prediction: Optional[Dict[str, Any]] = Field(
         default=None,
         description="Reserved for acoustic inference predictions",
@@ -290,6 +298,14 @@ class VideoModalityResult(BaseModel):
     status: ModalityStatus = Field(
         default="unavailable",
         description="'unavailable' until visual dynamics inference model is deployed",
+    )
+    risk_score: Optional[float] = Field(
+        default=None,
+        description="Visual dynamics predicted risk score (0.0 - 1.0)",
+    )
+    predicted_class: Optional[int] = Field(
+        default=None,
+        description="Visual dynamics predicted binary class (0 or 1)",
     )
     prediction: Optional[Dict[str, Any]] = Field(
         default=None,
@@ -429,6 +445,10 @@ class ThreeModalityAnalyzeResponse(BaseModel):
         ),
         description="Mandatory scientific integrity and non-diagnostic research disclaimer",
     )
+    q10_safety_alert: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Standalone EPDS Question 10 safety check flag and crisis details",
+    )
     processed_at: str = Field(
         ...,
         description="ISO-8601 UTC timestamp of screening completion",
@@ -451,5 +471,14 @@ class ScreeningAnalysisResponse(BaseModel):
     audio: AudioModalityResult
     video: VideoModalityResult
     fusion: FusionModalityResult
+    q10_safety_alert: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Standalone EPDS Question 10 safety check flag and crisis details",
+    )
     processed_at: str = Field(..., description="ISO-8601 UTC timestamp of screening completion")
+
+
+# Alias for unified naming convention
+FourModalityAnalyzeResponse = ThreeModalityAnalyzeResponse
+
 

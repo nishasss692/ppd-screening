@@ -514,6 +514,7 @@ export function ClinicalProvider({ children }) {
     preliminaryScore,
     modalityContributions,
     indicators,
+    q10SafetyAlert,
   }) => {
     const mother = mothers.find((m) => m.id === motherId);
     const cap = capturedModalities || { text: true, voice: false, video: false };
@@ -529,13 +530,21 @@ export function ClinicalProvider({ children }) {
       completedAgo: 'Just now',
       screeningDateTime: `Today · ${nowTime}`,
       risk,
-      modality: modality || 'Multimodal (Text · Voice · Video)',
+      modality: modality || 'Multimodal (Clinical · Text · Voice · Video)',
       combinedScore: score,
       epdsEquivalent: Number(epdsEquivalent) || 6,
       discordanceScore: discordanceDetected ? 0.72 : 0.14,
       preliminaryScore: preliminaryScore ?? null,
       capturedModalities: cap,
+      q10SafetyAlert: q10SafetyAlert || null,
       modalities: {
+        clinical:
+          cap.clinical || typeof modalityContributions?.clinical === 'number'
+            ? {
+                status: 'completed',
+                score: typeof modalityContributions?.clinical === 'number' ? modalityContributions.clinical : score,
+              }
+            : { status: 'unavailable', score: null },
         text: cap.text
           ? { status: 'completed', score: modalityContributions?.text ?? score }
           : { status: 'unavailable', score: null },

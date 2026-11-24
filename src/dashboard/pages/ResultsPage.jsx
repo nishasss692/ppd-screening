@@ -220,6 +220,51 @@ export function ResultsPage() {
           </section>
         )}
 
+        {/* EPDS Question 10 Deterministic Crisis Alert Banner */}
+        {Boolean(
+          activeScreening?.q10SafetyAlert?.triggered ||
+            activeScreening?.q10_safety_alert?.triggered
+        ) && (
+          <div
+            className="miora-card miora-crisis-alert-banner"
+            role="alert"
+            style={{
+              background: '#fff1f2',
+              border: '2px solid #e11d48',
+              borderRadius: '12px',
+              padding: '16px 20px',
+              marginTop: '16px',
+              marginBottom: '16px',
+              color: '#9f1239',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <DashboardIcon
+                name="alertTriangle"
+                size={24}
+                style={{ color: '#e11d48', flexShrink: 0 }}
+              />
+              <div>
+                <strong
+                  style={{
+                    fontSize: '15px',
+                    color: '#881337',
+                    display: 'block',
+                    marginBottom: '4px',
+                  }}
+                >
+                  URGENT CRISIS ALERT: EPDS Question 10 Positive (Thoughts of Self-Harm)
+                </strong>
+                <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.45 }}>
+                  Deterministic safety rule: Crisis alerts can never be overridden by AI predictions.
+                  Initiate immediate clinical safety assessment and connect with Tele-MANAS at
+                  <strong> 14416 </strong> or <strong> 1800-891-4416</strong>.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Row 1: Overall Risk Assessment | Modality-wise Analysis | Multimodal Summary */}
         {activeScreening && (
           <div className="miora-results-row-3">
