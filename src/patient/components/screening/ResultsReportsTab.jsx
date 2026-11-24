@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PatientIcon } from '../PatientIcons.jsx';
 import { usePatient } from '../../context/PatientContext.jsx';
@@ -155,6 +155,102 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
     isHigherRisk = true;
   }
 
+  // Derive patient-facing risk category from dynamic screening results
+  const riskCategory = useMemo(() => {
+    // 1. Safety alert check
+    if (hasQ10Alert) {
+      return 'High Risk';
+    }
+
+    // 2. Clinical model prediction
+    const cmLabel = storedClinicalModel?.predicted_label || storedClinicalModel?.risk_category;
+    if (cmLabel) {
+      const norm = String(cmLabel).toUpperCase();
+      if (norm.includes('HIGH')) return 'High Risk';
+      if (norm.includes('MODERATE') || norm.includes('MILD')) return 'Moderate Risk';
+      if (norm.includes('LOW')) return 'Low Risk';
+    }
+
+    // 3. EPDS questionnaire threshold
+    if (hasEpds && epdsScore !== null && epdsScore !== undefined) {
+      if (epdsScore >= 13) return 'High Risk';
+      if (epdsScore >= 10) return 'Moderate Risk';
+      return 'Low Risk';
+    }
+
+    // 4. Multimodal screening result
+    if (storedMultimodalResult?.risk_level) {
+      const ml = String(storedMultimodalResult.risk_level).toLowerCase();
+      if (ml.includes('high')) return 'High Risk';
+      if (ml.includes('moderate')) return 'Moderate Risk';
+      if (ml.includes('low')) return 'Low Risk';
+    }
+    if (storedMultimodalResult?.fusion_score !== undefined) {
+      const fs = Number(storedMultimodalResult.fusion_score);
+      if (fs >= 0.55) return 'High Risk';
+      if (fs >= 0.33) return 'Moderate Risk';
+      return 'Low Risk';
+    }
+
+    // 5. Patient context screening record
+    if (screening?.risk_level) {
+      const sl = String(screening.risk_level).toLowerCase();
+      if (sl.includes('high')) return 'High Risk';
+      if (sl.includes('mod')) return 'Moderate Risk';
+      if (sl.includes('low')) return 'Low Risk';
+    }
+    if (screening?.riskLabel) {
+      const rl = String(screening.riskLabel).toLowerCase();
+      if (rl.includes('high')) return 'High Risk';
+      if (rl.includes('mod')) return 'Moderate Risk';
+      if (rl.includes('low')) return 'Low Risk';
+    }
+    if (screening?.riskScore !== undefined && screening?.riskScore !== null) {
+      const scoreNum = Number(screening.riskScore);
+      if (scoreNum >= 43) return 'High Risk';
+      if (scoreNum >= 33) return 'Moderate Risk';
+      return 'Low Risk';
+    }
+
+    return null;
+  }, [hasQ10Alert, storedClinicalModel, hasEpds, epdsScore, storedMultimodalResult, screening]);
+
+  // Derive patient-facing risk percentage
+  const riskPercentage = useMemo(() => {
+    // 1. Clinical model probability if available
+    if (storedClinicalModel?.predicted_risk_probability !== undefined && storedClinicalModel?.predicted_risk_probability !== null) {
+      const prob = Number(storedClinicalModel.predicted_risk_probability);
+      return Math.round(prob <= 1 ? prob * 100 : prob);
+    }
+
+    // 2. Multimodal fusion score if available
+    if (storedMultimodalResult?.fusion_score !== undefined && storedMultimodalResult?.fusion_score !== null) {
+      const fs = Number(storedMultimodalResult.fusion_score);
+      return Math.round(fs <= 1 ? fs * 100 : fs);
+    }
+
+    // 3. EPDS score
+    if (hasEpds && epdsScore !== null && epdsScore !== undefined) {
+      if (hasQ10Alert) {
+        return Math.max(72, Math.round((epdsScore / 30) * 100));
+      }
+      return Math.round((epdsScore / 30) * 100);
+    }
+
+    // 4. Screening context riskScore
+    if (screening?.riskScore !== undefined && screening?.riskScore !== null) {
+      const rs = Number(screening.riskScore);
+      return Math.round(rs <= 1 ? rs * 100 : rs);
+    }
+
+    // 5. Fallback from riskCategory if available
+    if (riskCategory === 'High Risk') return 68;
+    if (riskCategory === 'Moderate Risk') return 38;
+    if (riskCategory === 'Low Risk') return 24;
+
+    return null;
+  }, [storedClinicalModel, storedMultimodalResult, hasEpds, epdsScore, hasQ10Alert, screening, riskCategory]);
+
   return (
     <div className="aanchal-results-reports-shell" aria-label="Results and Reports Summary">
       {/* ── 1. Clear, Text-Led Screening Outcome Card ── */}
@@ -164,7 +260,19 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
       >
         <div className="outcome-card-header">
           <div className="outcome-title-wrap">
-            <span className="outcome-eyebrow">SCREENING OUTCOME</span>
+            <div className="outcome-eyebrow-row">
+              <span className="outcome-eyebrow">SCREENING OUTCOME</span>
+              {riskCategory && (
+                <span
+                  className={`patient-risk-badge is-${riskCategory.toLowerCase().replace(/\s+/g, '-')}`}
+                  data-testid="patient-risk-badge"
+                  aria-label={`Screening Risk Category: ${riskCategory}${riskPercentage !== null ? ` (${riskPercentage}%)` : ''}`}
+                >
+                  <span className="patient-risk-dot" aria-hidden="true" />
+                  <span>{riskCategory}{riskPercentage !== null ? ` (${riskPercentage}%)` : ''}</span>
+                </span>
+              )}
+            </div>
             <h2 className="outcome-main-heading">
               {!hasEpds && !hasAiSession
                 ? 'Your Screening Overview'
@@ -174,6 +282,46 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
             </h2>
           </div>
         </div>
+
+        {/* Prominent Risk Level Indicator */}
+        {riskCategory && (
+          <div
+            className={`patient-risk-level-indicator is-${riskCategory.toLowerCase().replace(/\s+/g, '-')}`}
+            aria-label={`Screening Risk Level: ${riskCategory}${riskPercentage !== null ? `, ${riskPercentage} percent` : ''}`}
+            data-testid="patient-risk-indicator"
+          >
+            <div className="patient-risk-indicator-copy">
+              <span className="patient-risk-indicator-eyebrow">Overall Screening Risk Level</span>
+              <div className="patient-risk-indicator-row">
+                <strong className="patient-risk-indicator-category">{riskCategory}</strong>
+                {riskPercentage !== null && (
+                  <span className="patient-risk-percentage-badge" aria-label={`Estimated Risk: ${riskPercentage}%`}>
+                    {riskPercentage}% Risk
+                  </span>
+                )}
+              </div>
+            </div>
+            {riskPercentage !== null ? (
+              <div className="patient-risk-percentage-meter" aria-hidden="true">
+                <div className="patient-risk-meter-track">
+                  <div
+                    className="patient-risk-meter-fill"
+                    style={{ width: `${Math.min(100, Math.max(8, riskPercentage))}%` }}
+                  />
+                </div>
+                <span className="patient-risk-meter-label">{riskPercentage}% Risk Score</span>
+              </div>
+            ) : (
+              <span className="patient-risk-indicator-badge">
+                {riskCategory === 'High Risk'
+                  ? 'Elevated Indicators'
+                  : riskCategory === 'Moderate Risk'
+                  ? 'Mild to Moderate Indicators'
+                  : 'Lower Risk Indicators'}
+              </span>
+            )}
+          </div>
+        )}
 
         <p className="outcome-main-description">
           {!hasEpds && !hasAiSession
