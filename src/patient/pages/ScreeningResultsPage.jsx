@@ -83,6 +83,39 @@ export function ScreeningResultsPage() {
 
     if (screening?.isPending) return null;
 
+    // Check localStorage for saved screening results
+    try {
+      const cmRaw = localStorage.getItem('aanchal_clinical_model_prediction');
+      if (cmRaw) {
+        const cm = JSON.parse(cmRaw);
+        if (cm?.predicted_risk_probability !== undefined && cm?.predicted_risk_probability !== null) {
+          const prob = Number(cm.predicted_risk_probability);
+          return Math.round(prob <= 1 ? prob * 100 : prob);
+        }
+      }
+    } catch (e) {}
+
+    try {
+      const mmRaw = localStorage.getItem('aanchal_multimodal_screening_result');
+      if (mmRaw) {
+        const mm = JSON.parse(mmRaw);
+        if (mm?.fusion_score !== undefined && mm?.fusion_score !== null) {
+          const fs = Number(mm.fusion_score);
+          return Math.round(fs <= 1 ? fs * 100 : fs);
+        }
+      }
+    } catch (e) {}
+
+    try {
+      const epdsRaw = localStorage.getItem('aanchal_submitted_epds_assessment');
+      if (epdsRaw) {
+        const epds = JSON.parse(epdsRaw);
+        if (epds?.totalScore !== undefined && epds?.totalScore !== null) {
+          return Math.round((Number(epds.totalScore) / 30) * 100);
+        }
+      }
+    } catch (e) {}
+
     if (screening?.riskScore != null) {
       return Number(screening.riskScore);
     }
