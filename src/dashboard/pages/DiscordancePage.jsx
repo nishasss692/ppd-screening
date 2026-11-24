@@ -8,11 +8,9 @@ import {
   KeyObservationsCard,
   ModalityComparisonCard,
   RiskByModalityCard,
-  SignalAlignmentCard,
 } from '../components/DiscordanceVisuals.jsx';
 import {
   AddClinicalNoteModal,
-  DiscordanceExportModal,
 } from '../components/DiscordanceModals.jsx';
 import { analyzeCrossModalDiscordance } from '../utils/discordanceAnalysis.js';
 
@@ -24,8 +22,6 @@ export function DiscordancePage() {
     setSelectedMotherId,
     clinicalNotes,
     addClinicalNote,
-    updateMotherStatus,
-    addScheduledFollowUp,
   } = useClinicalData();
 
   const { motherId: routeMotherId } = useParams();
@@ -33,7 +29,6 @@ export function DiscordancePage() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [exportOpen, setExportOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
   const [actionFeedback, setActionFeedback] = useState('');
 
@@ -96,36 +91,6 @@ export function DiscordancePage() {
     }
   };
 
-  const handleScheduleFollowUp = () => {
-    if (!activeScreening) return;
-    updateMotherStatus(activeScreening.motherId, 'Follow-up');
-    addScheduledFollowUp(activeScreening.motherId, {
-      date: 'In 7 Days',
-      type: 'Follow-up Screening',
-      description: 'Post-discordance contextual screening check-in across consented modalities.',
-      clinician: 'AANCHAL Care Team',
-    });
-    setActionFeedback(
-      `7-day follow-up screening scheduled for ${activeScreening.motherId}.`
-    );
-  };
-
-  const handleScheduleClinicalReview = () => {
-    if (!activeScreening) return;
-    setSelectedMotherId(activeScreening.motherId);
-    updateMotherStatus(activeScreening.motherId, 'Review');
-    setActionFeedback(
-      `Brief clinical review queued for ${activeScreening.motherId} (${activeScreening.id}).`
-    );
-    navigate(`/clinical-review?mother=${activeScreening.motherId}`);
-  };
-
-  const handleOpenSupportResources = () => {
-    if (!activeScreening) return;
-    setSelectedMotherId(activeScreening.motherId);
-    navigate(`/insights?mother=${activeScreening.motherId}`);
-  };
-
   if (requestedMotherId && !activeScreening) {
     return (
       <div className="miora-command-shell">
@@ -175,14 +140,6 @@ export function DiscordancePage() {
           </div>
 
           <div className="miora-results-header-actions">
-            <button
-              type="button"
-              className="miora-btn-secondary"
-              onClick={() => setExportOpen(true)}
-            >
-              <DashboardIcon name="download" size={15} />
-              <span>Export Report</span>
-            </button>
             <button
               type="button"
               className="miora-btn-secondary"
@@ -317,10 +274,9 @@ export function DiscordancePage() {
           </div>
         )}
 
-        {/* Row 2: Signal Alignment | Key Observations | Clinical Interpretation */}
+        {/* Row 2: Key Observations (Important Differences) | Clinical Notes & Interpretation */}
         {activeScreening && analysis && (
-          <div className="miora-results-row-3 miora-disc-row-bottom">
-            <SignalAlignmentCard pairwiseAlignment={analysis.pairwiseAlignment} />
+          <div className="miora-results-row-2 miora-disc-row-bottom">
             <KeyObservationsCard observations={analysis.observations} />
             <ClinicalInterpretationCard
               interpretation={analysis.interpretation}
@@ -329,67 +285,6 @@ export function DiscordancePage() {
               onOpenAddNote={() => setNoteOpen(true)}
             />
           </div>
-        )}
-
-        {/* Bottom Bar: Recommended Actions */}
-        {activeScreening && (
-          <section
-            className="miora-card miora-next-steps-bar"
-            aria-labelledby="recommended-actions-title"
-          >
-            <div className="miora-next-steps-label">
-              <span className="miora-card-icon" aria-hidden="true">
-                <DashboardIcon name="calendar" size={20} strokeWidth={1.65} />
-              </span>
-              <h2 id="recommended-actions-title" className="miora-quick-title">
-                Recommended Actions
-              </h2>
-            </div>
-
-            <div className="miora-next-steps-cards">
-              <button
-                type="button"
-                className="miora-next-step-card"
-                onClick={handleScheduleFollowUp}
-              >
-                <span className="miora-next-step-icon" aria-hidden="true">
-                  <DashboardIcon name="calendar" size={19} strokeWidth={1.65} />
-                </span>
-                <span className="miora-next-step-copy">
-                  <strong>Conduct follow-up screening in 7 days</strong>
-                  <small>Update mother status &amp; schedule check-in</small>
-                </span>
-              </button>
-
-              <button
-                type="button"
-                className="miora-next-step-card"
-                onClick={handleScheduleClinicalReview}
-              >
-                <span className="miora-next-step-icon" aria-hidden="true">
-                  <DashboardIcon name="users" size={19} strokeWidth={1.65} />
-                </span>
-                <span className="miora-next-step-copy">
-                  <strong>Schedule brief clinical review</strong>
-                  <small>Queue clinician review for {activeScreening.motherId}</small>
-                </span>
-              </button>
-
-              <button
-                type="button"
-                className="miora-next-step-card"
-                onClick={handleOpenSupportResources}
-              >
-                <span className="miora-next-step-icon" aria-hidden="true">
-                  <DashboardIcon name="heart" size={19} strokeWidth={1.65} />
-                </span>
-                <span className="miora-next-step-copy">
-                  <strong>Discuss support resources</strong>
-                  <small>Open Insights &amp; Care pathway tools</small>
-                </span>
-              </button>
-            </div>
-          </section>
         )}
 
         {actionFeedback && (
@@ -401,15 +296,6 @@ export function DiscordancePage() {
           </div>
         )}
       </div>
-
-      <DiscordanceExportModal
-        isOpen={exportOpen}
-        onClose={() => setExportOpen(false)}
-        screening={activeScreening}
-        mother={activeMother}
-        analysis={analysis}
-        notes={sessionNotes}
-      />
 
       <AddClinicalNoteModal
         isOpen={noteOpen}

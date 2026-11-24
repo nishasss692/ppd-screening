@@ -46,15 +46,13 @@ describe('Miora Screen 05: Maternal Screening Results', () => {
     expect(screen.getByText('Apr 16, 2026 · 10:24 AM')).toBeInTheDocument();
     expect(screen.getByText('Screening Completed')).toBeInTheDocument();
 
-    // Row 1: Overall Risk, Modality-wise Analysis, Multimodal Summary
+    // Row 1: Overall Risk, Modality-wise Analysis
     expect(screen.getByRole('heading', { name: 'Overall Risk Assessment' })).toBeInTheDocument();
-    expect(screen.getAllByText('0.62')).toHaveLength(2);
+    expect(screen.getAllByText('0.62')).toHaveLength(1);
     expect(screen.getByRole('heading', { name: 'Modality-wise Analysis' })).toBeInTheDocument();
     expect(screen.getByText('0.58')).toBeInTheDocument();
     expect(screen.getByText('0.66')).toBeInTheDocument();
     expect(screen.getByText('0.60')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Multimodal Summary' })).toBeInTheDocument();
-    expect(screen.getByText('3 of 3 modalities processed')).toBeInTheDocument();
 
     // Row 2: Risk Trend, Key Contributing Factors, Interpretation
     expect(screen.getByRole('heading', { name: 'Risk Trend' })).toBeInTheDocument();
@@ -63,15 +61,9 @@ describe('Miora Screen 05: Maternal Screening Results', () => {
     expect(screen.getByText('Higher vocal strain and lower energy')).toBeInTheDocument();
     expect(screen.getByText('Reduced positive facial expressiveness')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Interpretation' })).toBeInTheDocument();
-
-    // Recommended Next Steps
-    expect(screen.getByRole('heading', { name: 'Recommended Next Steps' })).toBeInTheDocument();
-    expect(screen.getByText('Schedule follow-up in 7 days')).toBeInTheDocument();
-    expect(screen.getByText('Consider brief clinical review')).toBeInTheDocument();
-    expect(screen.getByText('Provide support resources')).toBeInTheDocument();
   });
 
-  it('supports Export Report, Share Case with consent, Support Resources, and Follow-up action', () => {
+  it('supports Export Report and Share Case with consent', () => {
     const createObjectUrlSpy = vi.fn(() => 'blob:mock-report');
     const revokeObjectUrlSpy = vi.fn();
     Object.defineProperty(URL, 'createObjectURL', {
@@ -101,29 +93,12 @@ describe('Miora Screen 05: Maternal Screening Results', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send Internal Handoff' }));
     expect(screen.getByText(/Shared with Perinatal Psychiatry Team/i)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Done' }));
-
-    // Schedule Follow-up & Support Resources
-    fireEvent.click(screen.getByRole('button', { name: /Schedule follow-up in 7 days/i }));
-    expect(screen.getByRole('status')).toHaveTextContent(
-      '7-day follow-up scheduled for M-108'
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: /Provide support resources/i }));
-    expect(screen.getByRole('dialog', { name: /Maternal Support Resources/i })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Close support resources modal' }));
-
-    // Clinical Review navigation
-    fireEvent.click(screen.getByRole('button', { name: /Consider brief clinical review/i }));
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-      'Cross-Modal Discordance'
-    );
   });
 
   it('handles partial modality availability, missing historical trend, and missing mother record', () => {
     renderResults('/results/M-112');
 
     expect(screen.getByText('Screening Pending')).toBeInTheDocument();
-    expect(screen.getByText('1 of 3 modalities processed')).toBeInTheDocument();
     expect(screen.getAllByText('Unavailable').length).toBe(2);
     expect(
       screen.getByText('No historical screening trend available yet for this mother.')

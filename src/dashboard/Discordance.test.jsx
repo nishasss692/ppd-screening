@@ -29,7 +29,7 @@ describe('Miora Screen 06: Cross-Modal Discordance', () => {
     window.localStorage.clear();
   });
 
-  it('renders header, patient strip, 3-column Row 1, 3-column Row 2, and Recommended Actions with non-judgmental copy', () => {
+  it('renders header, patient strip, Modality Comparison, Risk by Modality, Discordance Result, Key Observations, and Clinical Interpretation', () => {
     renderDiscordance();
 
     expect(screen.getByRole('link', { name: 'Discordance' })).toHaveAttribute(
@@ -41,7 +41,6 @@ describe('Miora Screen 06: Cross-Modal Discordance', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
       'Cross-Modal Discordance'
     );
-    expect(screen.getByRole('button', { name: /Export Report/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Add Note/i })).toBeInTheDocument();
 
     // Patient Strip defaults to M-108
@@ -71,38 +70,20 @@ describe('Miora Screen 06: Cross-Modal Discordance', () => {
     fireEvent.mouseEnter(voiceBarCol);
     expect(screen.getByRole('status')).toHaveTextContent('Voice: 0.66 (Moderate)');
 
-    // Row 1C: Discordance Result separate from Overall Risk
+    // Row 1C: Discordance Result focused on discordance
     expect(screen.getByRole('heading', { name: 'Discordance Result' })).toBeInTheDocument();
     expect(screen.getByText('0.81')).toBeInTheDocument();
     expect(screen.getByText('Notable Difference')).toBeInTheDocument();
-    expect(screen.getByText('Overall Postpartum Risk (Separate):')).toBeInTheDocument();
-    expect(screen.getByText('Moderate (0.62)')).toBeInTheDocument();
 
-    // Row 2A: Signal Alignment
-    expect(screen.getByRole('heading', { name: 'Signal Alignment' })).toBeInTheDocument();
-    expect(screen.getByText(/Pairwise alignment score/i)).toBeInTheDocument();
-    expect(screen.getByText('Text ↔ Voice')).toBeInTheDocument();
-    expect(screen.getByText('0.92')).toBeInTheDocument();
-    expect(screen.getByText('Text ↔ Video')).toBeInTheDocument();
-    expect(screen.getByText('0.98')).toBeInTheDocument();
-    expect(screen.getByText('Voice ↔ Video')).toBeInTheDocument();
-    expect(screen.getByText('0.94')).toBeInTheDocument();
-
-    // Row 2B: Key Observations
+    // Row 2A: Key Observations
     expect(screen.getByRole('heading', { name: 'Key Observations' })).toBeInTheDocument();
     expect(screen.getByText('Elevated negative sentiment in text')).toBeInTheDocument();
     expect(screen.getByText('Higher vocal strain and lower energy')).toBeInTheDocument();
 
-    // Row 2C: Clinical Interpretation (no deception / underreporting wording)
+    // Row 2B: Clinical Interpretation (no deception / underreporting wording)
     expect(screen.getByRole('heading', { name: 'Clinical Interpretation' })).toBeInTheDocument();
     expect(document.body.textContent.toLowerCase()).not.toContain('underreporting');
     expect(document.body.textContent.toLowerCase()).not.toContain('concealing');
-
-    // Bottom: Recommended Actions
-    expect(screen.getByRole('heading', { name: 'Recommended Actions' })).toBeInTheDocument();
-    expect(screen.getByText('Conduct follow-up screening in 7 days')).toBeInTheDocument();
-    expect(screen.getByText('Schedule brief clinical review')).toBeInTheDocument();
-    expect(screen.getByText('Discuss support resources')).toBeInTheDocument();
   });
 
   it('withholds pairwise & discordance calculations when required modalities are missing', () => {
@@ -111,24 +92,12 @@ describe('Miora Screen 06: Cross-Modal Discordance', () => {
     expect(screen.getByLabelText('Select mother for discordance analysis')).toHaveValue('M-112');
     expect(screen.getByText('Analysis Pending')).toBeInTheDocument();
     expect(screen.getByText('Insufficient Modalities')).toBeInTheDocument();
-    expect(screen.getAllByText(/Voice & Video unavailable|Text & Video unavailable|Voice unavailable/i).length).toBeGreaterThanOrEqual(2);
 
     renderDiscordance('/discordance/M-999');
     expect(screen.getByText('Discordance Record Not Found')).toBeInTheDocument();
   });
 
-  it('supports Add Note, Export PDF Report, patient switching, and Recommended Actions workflows', () => {
-    const createObjectUrlSpy = vi.fn(() => 'blob:mock-discordance-pdf');
-    const revokeObjectUrlSpy = vi.fn();
-    Object.defineProperty(URL, 'createObjectURL', {
-      configurable: true,
-      value: createObjectUrlSpy,
-    });
-    Object.defineProperty(URL, 'revokeObjectURL', {
-      configurable: true,
-      value: revokeObjectUrlSpy,
-    });
-
+  it('supports Add Note and patient switching', () => {
     renderDiscordance();
 
     // Switch patient via dropdown to M-104
@@ -153,37 +122,5 @@ describe('Miora Screen 06: Cross-Modal Discordance', () => {
     expect(
       screen.getByText('Mother reported disrupted nighttime sleep during intake.')
     ).toBeInTheDocument();
-
-    // Export PDF Report includes saved note & triggers Blob download
-    fireEvent.click(screen.getByRole('button', { name: /Export Report/i }));
-    const exportDialog = screen.getByRole('dialog', { name: /Export Discordance Report/i });
-    expect(within(exportDialog).getByText(/SEPARATE ASSESSMENT METRICS/i)).toBeInTheDocument();
-    fireEvent.click(within(exportDialog).getByRole('button', { name: 'Export PDF' }));
-    expect(createObjectUrlSpy).toHaveBeenCalledTimes(1);
-    expect(createObjectUrlSpy.mock.calls[0][0].type).toBe('application/pdf');
-    expect(within(exportDialog).getByRole('status')).toHaveTextContent(
-      'Discordance PDF report downloaded successfully.'
-    );
-    fireEvent.click(
-      within(exportDialog).getByRole('button', { name: 'Close discordance export modal' })
-    );
-
-    // Recommended Action 1: 7-day follow-up scheduling
-    fireEvent.click(
-      screen.getByRole('button', { name: /Conduct follow-up screening in 7 days/i })
-    );
-    expect(screen.getByRole('status')).toHaveTextContent(
-      '7-day follow-up screening scheduled for M-104.'
-    );
-
-    // Recommended Action 2: Clinical Review workflow
-    fireEvent.click(screen.getByRole('button', { name: /Schedule brief clinical review/i }));
-    expect(screen.getByRole('status')).toHaveTextContent(
-      'Brief clinical review queued for M-104 (SCR-244).'
-    );
-
-    // Recommended Action 3: Support resources -> Insights & Care
-    fireEvent.click(screen.getByRole('button', { name: /Discuss support resources/i }));
-    expect(screen.getByText('Insights & Care View')).toBeInTheDocument();
   });
 });

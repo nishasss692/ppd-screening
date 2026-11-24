@@ -50,7 +50,7 @@ describe('Miora Screen 07: Personalized Insights & Care', () => {
 
     // Row 1
     expect(screen.getByRole('heading', { name: 'Key Insights' })).toBeInTheDocument();
-    expect(screen.getByText(/Moderate risk of postpartum distress \(Score: 0.62\)/)).toBeInTheDocument();
+    expect(screen.getByText(/supportive check-ins recommended/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Care Recommendations' })).toBeInTheDocument();
     expect(screen.getByText('Emotional Support')).toBeInTheDocument();
     expect(screen.getByText('Counselling Referral')).toBeInTheDocument();
@@ -130,7 +130,7 @@ describe('Miora Screen 07: Personalized Insights & Care', () => {
     renderInsights('/insights/M-112');
 
     expect(
-      screen.getByText('No historical wellbeing trend available yet for this mother.')
+      screen.getByText('Multiple assessments are unavailable to calculate a historical trend. Subsequent screening sessions will populate this timeline.')
     ).toBeInTheDocument();
   });
 });

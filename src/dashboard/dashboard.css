@@ -4143,6 +4143,16 @@
   align-items: stretch;
 }
 
+.miora-results-row-2 {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+  align-items: stretch;
+}
+
 .miora-results-card {
   display: flex;
   flex-direction: column;
@@ -5355,7 +5365,8 @@
     grid-template-columns: 130px 1fr 34px;
     gap: 8px;
   }
-  .miora-results-row-3 {
+  .miora-results-row-3,
+  .miora-results-row-2 {
     grid-template-columns: minmax(0, 1fr);
   }
   .miora-support-tiles-grid {

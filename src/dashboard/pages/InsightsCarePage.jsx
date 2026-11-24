@@ -129,72 +129,44 @@ export function InsightsCarePage() {
       return [
         {
           id: 'ins-empty',
-          icon: 'barChart',
+          icon: 'clipboardList',
           text: 'No screening session outputs recorded yet for this mother.',
         },
       ];
     }
 
     const list = [];
-    if (typeof activeScreening.combinedScore === 'number') {
-      list.push({
-        id: 'ins-risk',
-        icon: 'barChart',
-        text: `${activeScreening.risk} risk of postpartum distress (Score: ${activeScreening.combinedScore.toFixed(
-          2
-        )}).`,
-      });
-    } else {
-      list.push({
-        id: 'ins-risk-pending',
-        icon: 'barChart',
-        text: `Combined risk score pending completion (${activeScreening.modality}).`,
-      });
-    }
 
-    if (typeof activeScreening.discordanceScore === 'number') {
-      const prefix =
-        activeScreening.discordanceScore >= 0.3
-          ? 'Notable cross-modal difference'
-          : 'Low cross-modal divergence';
-      list.push({
-        id: 'ins-disc',
-        icon: 'bolt',
-        text: `${prefix} (Discordance: ${activeScreening.discordanceScore.toFixed(2)}).`,
-      });
-    }
+    // 1. Primary care direction
+    list.push({
+      id: 'ins-care',
+      icon: 'heart',
+      text: activeMother?.carePlan || 'Schedule supportive clinician check-in within 7 days.',
+    });
 
-    const mods = activeScreening.modalities || {};
-    if (mods.voice?.status === 'completed' && typeof mods.voice.score === 'number') {
-      list.push({
-        id: 'ins-voice',
-        icon: 'waveform',
-        text: `Voice acoustic signal observation (Score: ${mods.voice.score.toFixed(2)}).`,
-      });
-    } else {
-      list.push({
-        id: 'ins-voice-unavail',
-        icon: 'waveform',
-        text: 'Voice acoustic signal unavailable for this session.',
-      });
-    }
+    // 2. Emotional wellbeing support finding
+    list.push({
+      id: 'ins-support',
+      icon: 'users',
+      text: 'Supportive check-ins recommended to reinforce emotional wellbeing and postpartum recovery.',
+    });
 
-    if (mods.video?.status === 'completed' && typeof mods.video.score === 'number') {
-      list.push({
-        id: 'ins-video',
-        icon: 'smile',
-        text: `Facial expressiveness signal observation (Score: ${mods.video.score.toFixed(2)}).`,
-      });
-    } else if (mods.text?.status === 'completed' && typeof mods.text.score === 'number') {
-      list.push({
-        id: 'ins-text',
-        icon: 'fileText',
-        text: `Text sentiment signal observation (Score: ${mods.text.score.toFixed(2)}).`,
-      });
-    }
+    // 3. Rest & recovery guidance
+    list.push({
+      id: 'ins-rest',
+      icon: 'feather',
+      text: 'Rest scheduling and daily support coordination prioritized for daily routine.',
+    });
+
+    // 4. Clinical follow-up priority
+    list.push({
+      id: 'ins-cadence',
+      icon: 'calendar',
+      text: `Care pathway established for Week ${activeMother.postpartumWeek} with ${plan.milestones.length} structured milestones.`,
+    });
 
     return list;
-  }, [activeScreening]);
+  }, [activeScreening, activeMother, plan.milestones.length]);
 
   const includedRecommendations = useMemo(
     () =>
@@ -583,7 +555,7 @@ export function InsightsCarePage() {
               </div>
             </div>
 
-            {trendHistory.length > 0 ? (
+            {trendHistory.length > 1 ? (
               <div className="miora-trend-chart-wrap">
                 <ResponsiveContainer width="100%" height={185}>
                   <AreaChart data={trendHistory} margin={{ top: 10, right: 16, left: -14, bottom: 2 }}>
@@ -625,7 +597,7 @@ export function InsightsCarePage() {
               </div>
             ) : (
               <div className="miora-trend-empty">
-                <p>No historical wellbeing trend available yet for this mother.</p>
+                <p>Multiple assessments are unavailable to calculate a historical trend. Subsequent screening sessions will populate this timeline.</p>
               </div>
             )}
           </section>
