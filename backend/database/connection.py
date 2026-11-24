@@ -146,22 +146,27 @@ def init_db(target_engine: Optional[Engine] = None) -> None:
     Base.metadata.create_all(bind=active_engine)
 
     # Dynamic non-destructive column additions for existing SQLite / Postgres dev instances
-    with active_engine.connect() as conn:
-        columns_to_add = [
-            ("mothers", "clinical_profile", "JSON"),
-            ("mothers", "profile_completed", "BOOLEAN DEFAULT 0"),
-            ("screenings", "psychosocial_answers", "JSON"),
-            ("screenings", "clinical_features_snapshot", "JSON"),
-            ("screenings", "clinical_model_prediction", "JSON"),
-        ]
-        for tbl, col, col_type in columns_to_add:
-            try:
-                conn.execute(text(f"ALTER TABLE {tbl} ADD COLUMN {col} {col_type}"))
+    is_sqlite = active_engine.dialect.name == "sqlite"
+    bool_type = "BOOLEAN DEFAULT 0" if is_sqlite else "BOOLEAN DEFAULT FALSE"
+
+    columns_to_add = [
+        ("mothers", "clinical_profile", "JSON"),
+        ("mothers", "profile_completed", bool_type),
+        ("screenings", "psychosocial_answers", "JSON"),
+        ("screenings", "clinical_features_snapshot", "JSON"),
+        ("screenings", "clinical_model_prediction", "JSON"),
+    ]
+    for tbl, col, col_type in columns_to_add:
+        try:
+            with active_engine.connect() as conn:
+                if is_sqlite:
+                    conn.execute(text(f"ALTER TABLE {tbl} ADD COLUMN {col} {col_type}"))
+                else:
+                    conn.execute(text(f"ALTER TABLE {tbl} ADD COLUMN IF NOT EXISTS {col} {col_type}"))
                 conn.commit()
                 logger.info("Migrated column %s.%s successfully.", tbl, col)
-            except Exception:
-                # Column already exists or dialect does not support syntax
-                pass
+        except Exception as exc:
+            logger.debug("Migration note for %s.%s: %s", tbl, col, exc)
 
     logger.info("Database schema verified against metadata tables.")
 
