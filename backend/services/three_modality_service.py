@@ -630,8 +630,28 @@ class ThreeModalityInferenceService:
                 fusion_status = "unavailable"
 
         elif completed_count >= 2:
-            # 2-Modality Fallbacks
-            if has_text and has_audio:
+            # Clinical + 1 or 2 behavioral modalities (e.g., typed-only with clinical + text + video)
+            if has_clinical:
+                available_scores = {"clinical": clinical_res.score}
+                if has_text:
+                    available_scores["text"] = text_res.score
+                if has_audio:
+                    available_scores["audio"] = audio_res.score
+                if has_video:
+                    available_scores["video"] = video_res.score
+
+                behavioral_keys = [k for k in available_scores if k != "clinical"]
+                beh_weight = 0.50 / len(behavioral_keys) if behavioral_keys else 0.0
+                fusion_weights = {"clinical": 0.50}
+                for bk in behavioral_keys:
+                    fusion_weights[bk] = round(beh_weight, 4)
+
+                fusion_score = round(float(sum(available_scores[k] * fusion_weights[k] for k in available_scores)), 4)
+                fusion_status = "completed"
+                fusion_method = f"weighted_clinical_{'_'.join(behavioral_keys)}"
+
+            # 2-Modality Behavioral-Only Fallbacks
+            elif has_text and has_audio:
                 if self._fusion_text_audio is not None:
                     try:
                         X_input = np.array([[text_res.score, audio_res.score]], dtype=float)
@@ -690,25 +710,6 @@ class ThreeModalityInferenceService:
                         fusion_status = "failed"
                 else:
                     fusion_status = "unavailable"
-
-            elif has_clinical:
-                available_scores = {"clinical": clinical_res.score}
-                if has_text:
-                    available_scores["text"] = text_res.score
-                if has_audio:
-                    available_scores["audio"] = audio_res.score
-                if has_video:
-                    available_scores["video"] = video_res.score
-
-                behavioral_keys = [k for k in available_scores if k != "clinical"]
-                beh_weight = 0.50 / len(behavioral_keys) if behavioral_keys else 0.0
-                fusion_weights = {"clinical": 0.50}
-                for bk in behavioral_keys:
-                    fusion_weights[bk] = round(beh_weight, 4)
-
-                fusion_score = round(float(sum(available_scores[k] * fusion_weights[k] for k in available_scores)), 4)
-                fusion_status = "completed"
-                fusion_method = f"weighted_clinical_{'_'.join(behavioral_keys)}"
 
         elif completed_count == 1:
             fusion_status = "insufficient_data"

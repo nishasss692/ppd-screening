@@ -71,6 +71,8 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
       pct = Math.round(storedClinicalModel.predicted_probability * 100);
     } else if (typeof epdsScore === 'number') {
       pct = Math.round((epdsScore / 30) * 100);
+    } else if (typeof storedMultimodalResult?.text_score === 'number') {
+      pct = Math.round(storedMultimodalResult.text_score * 100);
     } else {
       pct = 28;
     }
