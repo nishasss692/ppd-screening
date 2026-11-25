@@ -16,10 +16,16 @@
 import { getAuthToken } from '../../auth/authService.js';
 
 function getApiBase() {
-  if (typeof window !== 'undefined' && window.location && window.location.origin) {
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_MIORA_API_URL) {
+    return import.meta.env.VITE_MIORA_API_URL.replace(/\/$/, '');
+  }
+  if (typeof window !== 'undefined' && window.location?.origin && !window.location.origin.startsWith('blob:')) {
+    if (window.location.port === '3000' || window.location.port === '5173') {
+      return 'http://127.0.0.1:8000';
+    }
     return window.location.origin;
   }
-  return '';
+  return 'http://127.0.0.1:8000';
 }
 
 function getHeaders(extraHeaders = {}) {

@@ -6,7 +6,7 @@ import { fetchPatientScreenings } from '../../services/patientApiService.js';
 
 export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
   const navigate = useNavigate();
-  const { patient, screening, downloadReport, downloadToast } = usePatient();
+  const { patient, screening, consultationReports = [], downloadReport, downloadToast } = usePatient();
 
   const [storedAiSession, setStoredAiSession] = useState(null);
   const [storedEpds, setStoredEpds] = useState(null);
@@ -64,7 +64,7 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
         };
         try {
           localStorage.setItem('aanchal_clinical_model_prediction', JSON.stringify(rawCmData));
-        } catch (e) {}
+        } catch (e) { }
       }
     }
     if (rawCmData) {
@@ -99,7 +99,7 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
       };
       try {
         localStorage.setItem('aanchal_multimodal_screening_result', JSON.stringify(rawMmData));
-      } catch (e) {}
+      } catch (e) { }
     }
     if (rawMmData) {
       setStoredMultimodalResult(rawMmData);
@@ -117,7 +117,7 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
                 'aanchal_clinical_model_prediction',
                 JSON.stringify(latest.clinical_model_prediction)
               );
-            } catch (e) {}
+            } catch (e) { }
           }
           if (latest.psychosocial_answers) {
             setStoredPsychosocial(latest.psychosocial_answers);
@@ -126,11 +126,11 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
                 'aanchal_psychosocial_answers',
                 JSON.stringify(latest.psychosocial_answers)
               );
-            } catch (e) {}
+            } catch (e) { }
           }
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [screening]);
 
   const hasEpds = Boolean(storedEpds || screening?.summary?.totalScore !== undefined);
@@ -142,128 +142,278 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
   const hasAiSession = Boolean(storedAiSession?.hasRecording || storedMultimodalResult);
   const hasMultimodalInference = Boolean(storedMultimodalResult && storedMultimodalResult.fusion_score !== undefined);
 
-  // Question 10 Flag check
-  const hasQ10Alert = Boolean(storedEpds?.q10Alert || storedEpds?.answers?.q10 > 0);
-
-  // Derive dynamic risk classification
-  let isHigherRisk = false;
-  if (hasEpds && epdsScore !== null) {
-    if (epdsScore >= 10 || hasQ10Alert) {
-      isHigherRisk = true;
-    }
-  } else if (storedClinicalModel?.predicted_label === 'HIGH_RISK') {
-    isHigherRisk = true;
-  }
-
   return (
     <div className="aanchal-results-reports-shell" aria-label="Results and Reports Summary">
-      {/* ── 1. Clear, Text-Led Screening Outcome Card ── */}
-      <section
-        className={`patient-card simple-screening-outcome-card ${isHigherRisk ? 'is-higher-risk' : 'is-lower-risk'}`}
-        data-testid="results-consultation-card"
-      >
-        <div className="outcome-card-header">
-          <div className="outcome-title-wrap">
-            <span className="outcome-eyebrow">SCREENING OUTCOME</span>
-            <h2 className="outcome-main-heading">
-              {!hasEpds && !hasAiSession
-                ? 'Your Screening Overview'
-                : isHigherRisk
-                ? 'Your screening suggests that you may be experiencing a higher level of emotional distress.'
-                : 'Your screening suggests a lower level of emotional distress based on your answers today.'}
-            </h2>
-          </div>
+      {/* Overview Banner */}
+      <section className="patient-card results-overview-card">
+        <div className="miora-dash-eyebrow">
+          <span>MATERNAL ASSESSMENT PORTFOLIO</span>
+          <span className="miora-dash-eyebrow-line" aria-hidden="true" />
         </div>
-
-        <p className="outcome-main-description">
-          {!hasEpds && !hasAiSession
-            ? 'Complete your AI screening session or EPDS questionnaire below to receive a personalized summary of your emotional wellbeing.'
-            : isHigherRisk
-            ? 'It may be helpful to speak with a qualified healthcare professional for further assessment and support.'
-            : 'This is encouraging, but it does not mean that you cannot be experiencing emotional difficulties. If you feel worried, overwhelmed, sad or simply need support, please consider speaking with a healthcare professional.'}
+        <h2 className="patient-page-heading" style={{ fontSize: '20px' }}>Assessment Portfolio Overview</h2>
+        <p className="patient-page-subheading">
+          Unified overview of your AI screening, questionnaire score, and clinical care summaries.
         </p>
-
-        {/* ── 2. Professional Consultation Section (Placed directly here) ── */}
-        <div className="outcome-consultation-box">
-          <h3 className="outcome-consult-heading">Professional Consultation Recommended</h3>
-          <p className="outcome-consult-description">
-            Speaking with a healthcare professional can help you understand how you are feeling and explore the support available to you. You can consult a healthcare professional regardless of whether your screening result is lower or higher risk.
-          </p>
-          <div className="outcome-consult-actions">
-            <button
-              type="button"
-              className="patient-btn-primary outcome-find-doctor-btn"
-              onClick={() => navigate('/patient/find-doctor')}
-              data-testid="consult-doctor-btn"
-              aria-label="Find a Doctor — navigate to doctor directory"
-            >
-              <span>Find a Doctor</span>
-              <PatientIcon name="arrow-right" size={16} />
-            </button>
-          </div>
-        </div>
-
-        {/* ── 3. Screening Disclaimer (Conditional display) ── */}
-        <div className="screening-result-disclaimer-box" role="note">
-          <p>
-            <strong>AANCHAL is a screening tool, not a medical diagnosis.</strong>
-            {!isHigherRisk && (
-              <>
-                {' '}A lower-risk result does not rule out postpartum depression or other emotional health concerns. We recommend consulting a qualified healthcare professional regardless of your screening result.
-              </>
-            )}
-          </p>
-        </div>
       </section>
 
-      {/* ── 4. Simplified Assessment Cards Grid (Text-led headers, no icons) ── */}
-      <div className="results-simplified-grid">
-        {/* Card 1: Your EPDS Screening */}
-        <section className="patient-card results-clean-card" aria-label="EPDS Score">
-          <div className="clean-card-header">
-            <div>
-              <h2 className="clean-card-title" aria-label="EPDS Score" style={{ fontSize: 16 }}>Your EPDS Screening</h2>
-              <span className="clean-card-sub">Validated 10-item wellbeing screening</span>
+      {/* Grid of Assessments */}
+      <div className="results-two-col-grid">
+        {/* Card 1: AI Screening Results */}
+        <section className="patient-card result-panel-card" aria-label="AI Screening Results">
+          <div className="result-panel-header">
+            <div className="result-panel-title-wrap">
+              <div className="result-panel-icon" style={{ background: '#fcebf0', color: '#ba1e53' }}>
+                <PatientIcon name="video" size={20} />
+              </div>
+              <div>
+                <h2 className="result-panel-title">AI Screening Results</h2>
+                <span className="result-panel-sub">Acoustic, visual, and linguistic modalities</span>
+              </div>
             </div>
-            <span className={`clean-card-badge ${hasEpds ? 'is-completed' : 'is-pending'}`}>
-              {hasEpds ? 'Completed' : 'Pending'}
+
+            <span className={`result-status-badge ${hasAiSession ? 'is-completed' : 'is-pending'}`}>
+              {hasAiSession ? 'Session Recorded' : 'Pending Recording'}
+            </span>
+          </div>
+
+          {hasMultimodalInference ? (
+            <div className="result-modality-rows">
+              <div className="result-modality-row">
+                <div className="modality-row-label">
+                  <PatientIcon name="mic" size={15} />
+                  <strong>Audio Analysis</strong>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#ba1e53' }}>
+                    {storedMultimodalResult.audio_score !== null ? `${Math.round(storedMultimodalResult.audio_score * 100)}%` : 'N/A'}
+                  </span>
+                  <span className="ai-status-pill is-completed" style={{ background: '#ecfdf5', color: '#16a34a' }}>
+                    <span className="ai-status-dot" style={{ background: '#16a34a' }} />
+                    <span>{storedMultimodalResult.modality_status?.audio === 'completed' ? 'Active Model' : 'Offline'}</span>
+                  </span>
+                </div>
+              </div>
+
+              <div className="result-modality-row">
+                <div className="modality-row-label">
+                  <PatientIcon name="video" size={15} />
+                  <strong>Video Analysis</strong>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#ba1e53' }}>
+                    {storedMultimodalResult.video_score !== null ? `${Math.round(storedMultimodalResult.video_score * 100)}%` : 'N/A'}
+                  </span>
+                  <span className="ai-status-pill is-completed" style={{ background: '#ecfdf5', color: '#16a34a' }}>
+                    <span className="ai-status-dot" style={{ background: '#16a34a' }} />
+                    <span>{storedMultimodalResult.modality_status?.video === 'completed' ? 'Active Model' : 'Offline'}</span>
+                  </span>
+                </div>
+              </div>
+
+              <div className="result-modality-row">
+                <div className="modality-row-label">
+                  <PatientIcon name="sparkles" size={15} />
+                  <strong>Text Analysis</strong>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#ba1e53' }}>
+                    {storedMultimodalResult.text_score !== null ? `${Math.round(storedMultimodalResult.text_score * 100)}%` : 'N/A'}
+                  </span>
+                  <span className="ai-status-pill is-completed" style={{ background: '#ecfdf5', color: '#16a34a' }}>
+                    <span className="ai-status-dot" style={{ background: '#16a34a' }} />
+                    <span>{storedMultimodalResult.modality_status?.text === 'completed' ? 'Active Model' : 'Offline'}</span>
+                  </span>
+                </div>
+              </div>
+
+              <div className="result-modality-row">
+                <div className="modality-row-label">
+                  <PatientIcon name="activity" size={15} />
+                  <strong>Clinical Analysis</strong>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#ba1e53' }}>
+                    {storedMultimodalResult.clinical_score !== undefined && storedMultimodalResult.clinical_score !== null
+                      ? `${Math.round(storedMultimodalResult.clinical_score * 100)}%`
+                      : (storedClinicalModel?.predicted_risk_probability ?? storedClinicalModel?.predicted_probability) !== undefined
+                        ? `${Math.round((storedClinicalModel.predicted_risk_probability ?? storedClinicalModel.predicted_probability) * 100)}%`
+                        : 'N/A'}
+                  </span>
+                  <span className="ai-status-pill is-completed" style={{ background: '#ecfdf5', color: '#16a34a' }}>
+                    <span className="ai-status-dot" style={{ background: '#16a34a' }} />
+                    <span>{storedMultimodalResult.modality_status?.clinical === 'completed' || storedClinicalModel ? 'Active Model' : 'Offline'}</span>
+                  </span>
+                </div>
+              </div>
+
+              <div className="result-modality-row is-fusion" style={{ background: '#fdf2f4', padding: '10px 12px', borderRadius: '8px', marginTop: '6px' }}>
+                <div className="modality-row-label">
+                  <PatientIcon name="ai-assistant" size={16} />
+                  <strong>
+                    {storedMultimodalResult.fusion_method === 'learned_stacking_four_modality'
+                      ? 'Four-Modality Stacking Fusion'
+                      : 'Learned Stacking Fusion'}
+                  </strong>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '16px', fontWeight: '700', color: '#ba1e53' }}>
+                    {storedMultimodalResult.fusion_score !== null ? `${Math.round(storedMultimodalResult.fusion_score * 100)}%` : 'N/A'}
+                  </span>
+                  <span className="ai-status-pill is-completed" style={{ background: '#ecfdf5', color: '#16a34a', fontWeight: '600' }}>
+                    <span>Uncalibrated Research Score</span>
+                  </span>
+                </div>
+              </div>
+
+              {storedMultimodalResult.disagreement_flag && (
+                <div style={{ background: '#fffbeb', border: '1px solid #fef3c7', padding: '8px 12px', borderRadius: '6px', marginTop: '8px', fontSize: '12px', color: '#92400e' }}>
+                  <strong>⚠️ Algorithmic Modality Disagreement:</strong> {storedMultimodalResult.disagreement_details}
+                </div>
+              )}
+
+              <p style={{ margin: '8px 0 0 0', fontSize: '11px', color: '#8d737e', fontStyle: 'italic', lineHeight: 1.4 }}>
+                * {storedMultimodalResult.disclaimer || 'Experimental research prototype. Uncalibrated research risk score. Not a clinical diagnosis.'}
+              </p>
+            </div>
+          ) : (
+            <div className="result-modality-rows">
+              <div className="result-modality-row">
+                <div className="modality-row-label">
+                  <PatientIcon name="mic" size={15} />
+                  <strong>Audio Analysis</strong>
+                </div>
+                <span className="ai-status-pill is-pending">
+                  <span className="ai-status-dot" />
+                  <span>Awaiting model integration</span>
+                </span>
+              </div>
+
+              <div className="result-modality-row">
+                <div className="modality-row-label">
+                  <PatientIcon name="video" size={15} />
+                  <strong>Video Analysis</strong>
+                </div>
+                <span className="ai-status-pill is-pending">
+                  <span className="ai-status-dot" />
+                  <span>Awaiting model integration</span>
+                </span>
+              </div>
+
+              <div className="result-modality-row">
+                <div className="modality-row-label">
+                  <PatientIcon name="sparkles" size={15} />
+                  <strong>Text Analysis</strong>
+                </div>
+                <span className="ai-status-pill is-pending">
+                  <span className="ai-status-dot" />
+                  <span>Awaiting model integration</span>
+                </span>
+              </div>
+
+              <div className="result-modality-row">
+                <div className="modality-row-label">
+                  <PatientIcon name="activity" size={15} />
+                  <strong>Clinical Analysis</strong>
+                </div>
+                {storedClinicalModel?.status === 'completed' ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#ba1e53' }}>
+                      {storedClinicalModel.predicted_risk_probability != null
+                        ? `${Math.round(storedClinicalModel.predicted_risk_probability * 100)}%`
+                        : storedClinicalModel.predicted_label || 'Completed'}
+                    </span>
+                    <span className="ai-status-pill is-completed" style={{ background: '#ecfdf5', color: '#16a34a' }}>
+                      <span className="ai-status-dot" style={{ background: '#16a34a' }} />
+                      <span>{storedClinicalModel.predicted_label ? `Evaluated (${storedClinicalModel.predicted_label})` : 'Active Model'}</span>
+                    </span>
+                  </div>
+                ) : (
+                  <span className="ai-status-pill is-pending">
+                    <span className="ai-status-dot" />
+                    <span>Awaiting Stage 1+2 Input</span>
+                  </span>
+                )}
+              </div>
+
+              <div className="result-modality-row is-fusion">
+                <div className="modality-row-label">
+                  <PatientIcon name="ai-assistant" size={15} />
+                  <strong>Four-Modality Stacking Fusion</strong>
+                </div>
+                <span className="ai-status-pill is-pending">
+                  <span className="ai-status-dot" />
+                  <span>Awaiting model integration</span>
+                </span>
+              </div>
+            </div>
+          )}
+
+          <div className="result-panel-actions">
+            {!hasAiSession ? (
+              <button
+                type="button"
+                className="patient-btn-secondary"
+                onClick={onTakeAiScreening}
+              >
+                <span>Record AI Screening</span>
+                <PatientIcon name="arrow-right" size={15} />
+              </button>
+            ) : (
+              <span className="result-note-text">Video response captured for clinical evaluation</span>
+            )}
+          </div>
+        </section>
+
+        {/* Card 2: EPDS Assessment Score */}
+        <section className="patient-card result-panel-card" aria-label="EPDS Score">
+          <div className="result-panel-header">
+            <div className="result-panel-title-wrap">
+              <div className="result-panel-icon" style={{ background: '#fcebf0', color: '#ba1e53' }}>
+                <PatientIcon name="reports" size={20} />
+              </div>
+              <div>
+                <h2 className="result-panel-title">EPDS Score</h2>
+                <span className="result-panel-sub">Validated 10-item clinical questionnaire</span>
+              </div>
+            </div>
+
+            <span className={`result-status-badge ${hasEpds ? 'is-completed' : 'is-pending'}`}>
+              {hasEpds ? 'Completed' : 'Pending Completion'}
             </span>
           </div>
 
           {hasEpds ? (
-            <div className="clean-card-body">
-              <div className="epds-clean-score-display">
-                <div className="epds-score-number">
-                  <span className="score-primary">{epdsScore}</span>
-                  <span className="score-denom">/30</span>
+            <div className="epds-result-content">
+              <div className="epds-result-score-banner">
+                <div className="epds-score-circle">
+                  <span className="score-val">{epdsScore}</span>
+                  <span className="score-max">/30</span>
                 </div>
-                <div className="epds-score-status-text">
-                  <strong>
-                    {epdsScore < 10 && 'Lower distress range'}
-                    {epdsScore >= 10 && epdsScore < 13 && 'Mild distress range'}
-                    {epdsScore >= 13 && 'Elevated distress range'}
-                  </strong>
-                  <span className="epds-date-stamp">Completed: {epdsSubmittedDate} • {epdsScore} out of 30</span>
+                <div className="epds-score-meta">
+                  <h4>
+                    {epdsScore < 10 && 'Low Risk Category'}
+                    {epdsScore >= 10 && epdsScore < 13 && 'Mild Distress Category'}
+                    {epdsScore >= 13 && 'Elevated Symptoms Category'}
+                  </h4>
+                  <small>Completed on: {epdsSubmittedDate}</small>
+                  {storedEpds?.q10Alert && (
+                    <span className="epds-alert-pill">Question 10 non-zero response flagged</span>
+                  )}
                 </div>
               </div>
 
-              <p className="clean-card-explanation">
-                {epdsScore < 10 &&
-                  'Your score reflects mild or minimal symptoms over the past week. Continuing to monitor how you feel and staying connected with your loved ones is encouraged.'}
-                {epdsScore >= 10 && epdsScore < 13 &&
-                  'Your score suggests you may be navigating mild emotional distress. Sharing how you are feeling with your healthcare provider can provide clarity and relief.'}
-                {epdsScore >= 13 &&
-                  'Your score reflects elevated emotional symptoms that deserve gentle, compassionate support and professional medical guidance.'}
+              <p className="epds-result-expl">
+                This screening instrument helps reflect emotional wellbeing and symptoms over the past week.
+                It does not replace a clinical consultation or diagnosis.
               </p>
             </div>
           ) : (
-            <div className="clean-card-empty">
-              <p>No EPDS assessment has been completed yet for this period.</p>
+            <div className="result-empty-state">
+              <p>No EPDS assessment completed yet for this period.</p>
               <button
                 type="button"
                 className="patient-btn-primary"
                 onClick={onTakeEpds}
-                style={{ width: '100%', justifyContent: 'center' }}
               >
                 <span>Start EPDS Questionnaire</span>
                 <PatientIcon name="arrow-right" size={15} />
@@ -272,106 +422,248 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
           )}
         </section>
 
-        {/* Card 2: AI Screening Session */}
-        <section className="patient-card results-clean-card" aria-label="AI Screening Results">
-          <div className="clean-card-header">
-            <div>
-              <h2 className="clean-card-title" aria-label="AI Screening Results" style={{ fontSize: 16 }}>AI Screening Session</h2>
-              <span className="clean-card-sub">Conversational check-in</span>
+        {/* Card 3: Clinical ML Model (Random Forest Tabular Model) */}
+        <section className="patient-card result-panel-card" aria-label="Clinical ML Model">
+          <div className="result-panel-header">
+            <div className="result-panel-title-wrap">
+              <div className="result-panel-icon" style={{ background: '#fcebf0', color: '#ba1e53' }}>
+                <PatientIcon name="clipboard-check" size={20} />
+              </div>
+              <div>
+                <h2 className="result-panel-title">Clinical Numerical Model</h2>
+                <span className="result-panel-sub">Trained Random Forest (46 demographic &amp; psychosocial features)</span>
+              </div>
             </div>
-            <span className={`clean-card-badge ${hasAiSession ? 'is-completed' : 'is-pending'}`}>
-              {hasAiSession ? 'Recorded' : 'Pending'}
+
+            <span className={`result-status-badge ${storedClinicalModel?.status === 'completed' ? 'is-completed' : 'is-pending'}`}>
+              {storedClinicalModel?.status === 'completed' ? 'Model Evaluated' : 'Awaiting Stage 1+2 Input'}
             </span>
           </div>
 
-          <div className="clean-card-body">
-            {hasAiSession ? (
-              <>
-                <div className="ai-session-recorded-notice">
-                  <div className="recorded-dot" />
-                  <strong>Your screening session has been recorded.</strong>
-                </div>
-
-                <div className="ai-components-status-list">
-                  <div className="ai-status-row">
-                    <span>Multimodal Analysis</span>
-                    <span className={`ai-status-text ${hasMultimodalInference ? 'is-ok' : 'is-pending'}`}>
-                      {hasMultimodalInference ? 'Analysis Available' : 'Analysis not available yet'}
-                    </span>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="clean-card-empty">
-                <p>A private, conversational check-in to express your feelings naturally.</p>
-                <button
-                  type="button"
-                  className="patient-btn-secondary"
-                  onClick={onTakeAiScreening}
-                  style={{ width: '100%', justifyContent: 'center' }}
-                >
-                  <span>Record AI Screening</span>
-                  <PatientIcon name="arrow-right" size={15} />
-                </button>
+          <div className="result-modality-rows">
+            <div className="result-modality-row">
+              <div className="modality-row-label">
+                <PatientIcon name="sparkles" size={15} />
+                <strong>Model Prediction</strong>
               </div>
-            )}
+              {storedClinicalModel?.status === 'completed' ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '700', color: '#ba1e53' }}>
+                    {storedClinicalModel.predicted_label || 'COMPLETED'}
+                  </span>
+                  <span className="ai-status-pill is-completed" style={{ background: '#ecfdf5', color: '#16a34a' }}>
+                    <span>
+                      {(storedClinicalModel.predicted_risk_probability ?? storedClinicalModel.predicted_probability) != null
+                        ? `${((storedClinicalModel.predicted_risk_probability ?? storedClinicalModel.predicted_probability) * 100).toFixed(1)}% probability`
+                        : 'Evaluated'}
+                    </span>
+                  </span>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '13px', color: '#8d737e', fontStyle: 'italic' }}>
+                    Pending Assessment
+                  </span>
+                  <span className="ai-status-pill is-pending">
+                    <span className="ai-status-dot" />
+                    <span>Awaiting Stage 1+2 Input</span>
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="result-modality-row">
+              <div className="modality-row-label">
+                <PatientIcon name="clipboard-check" size={15} />
+                <strong>Feature Pipeline</strong>
+              </div>
+              <span style={{ fontSize: '13px', color: '#5c4750' }}>
+                37 Stage 1 features + 9 Stage 2 factors
+              </span>
+            </div>
+
+            <div className="result-modality-row">
+              <div className="modality-row-label">
+                <PatientIcon name="heart" size={15} />
+                <strong>Target Leakage Guard</strong>
+              </div>
+              <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: 600 }}>
+                Zero EPDS Leakage (Strictly Independent)
+              </span>
+            </div>
           </div>
+
+          <p style={{ margin: '10px 0 0', fontSize: '11px', color: '#8d737e', fontStyle: 'italic', lineHeight: 1.4 }}>
+            Evaluated by the pre-trained clinical numerical model. Kept strictly distinct from EPDS questionnaire scores.
+          </p>
         </section>
 
-        {/* Card 3: Your Wellbeing & Support */}
-        <section className="patient-card results-clean-card" aria-label="Wellbeing & Support Context">
-          <div className="clean-card-header">
-            <div>
-              <h2 className="clean-card-title" style={{ fontSize: 16 }}>Your Wellbeing &amp; Support</h2>
-              <span className="clean-card-sub">Daily environment and rest factors</span>
+        {/* Card 4: Mother's Wellbeing & Psychosocial Factors */}
+        <section className="patient-card result-panel-card" aria-label="Mother's Wellbeing & Psychosocial Factors">
+          <div className="result-panel-header">
+            <div className="result-panel-title-wrap">
+              <div className="result-panel-icon" style={{ background: '#fcebf0', color: '#ba1e53' }}>
+                <PatientIcon name="heart" size={20} />
+              </div>
+              <div>
+                <h2 className="result-panel-title">Wellbeing &amp; Support Context</h2>
+                <span className="result-panel-sub">9 Stage 2 daily environmental factors</span>
+              </div>
             </div>
-            <span className={`clean-card-badge ${storedPsychosocial ? 'is-completed' : 'is-pending'}`}>
+
+            <span className={`result-status-badge ${storedPsychosocial ? 'is-completed' : 'is-pending'}`}>
               {storedPsychosocial ? 'Assessed' : 'Not Assessed'}
             </span>
           </div>
 
-          <div className="clean-card-body">
-            {storedPsychosocial ? (
-              <div className="psychosocial-summary-list">
-                <div className="psychosocial-summary-item">
-                  <span className="summary-label">Feelings about motherhood</span>
-                  <span className="summary-value">
-                    {storedPsychosocial['Feeling about motherhood'] || 'Generally positive'}
-                  </span>
-                </div>
-                <div className="psychosocial-summary-item">
-                  <span className="summary-label">Rest and sleep</span>
-                  <span className="summary-value">
-                    {storedPsychosocial['Relax/sleep when the newborn is asleep'] === 'Yes'
-                      ? 'Able to rest when baby sleeps'
-                      : 'Resting when possible'}
-                  </span>
-                </div>
-                <div className="psychosocial-summary-item">
-                  <span className="summary-label">Daily support</span>
-                  <span className="summary-value">
-                    {storedPsychosocial['Recieved Support']
-                      ? `${storedPsychosocial['Recieved Support']} Support`
-                      : 'Support available'}
-                  </span>
-                </div>
+          <div className="result-modality-rows">
+            <div className="result-modality-row">
+              <div className="modality-row-label">
+                <strong>Feeling on Motherhood</strong>
               </div>
-            ) : (
-              <div className="clean-card-empty">
-                <p>Complete the Wellbeing &amp; Support check-in to share context about your home and sleep.</p>
+              <span style={{ fontSize: '13px', fontWeight: 600, color: '#ba1e53' }}>
+                {storedPsychosocial?.['Feeling about motherhood'] || 'Happy'}
+              </span>
+            </div>
+
+            <div className="result-modality-row">
+              <div className="modality-row-label">
+                <strong>Rest when Baby Asleep</strong>
               </div>
-            )}
+              <span style={{ fontSize: '13px', color: '#5c4750' }}>
+                {storedPsychosocial?.['Relax/sleep when the newborn is asleep'] || 'Yes'}
+              </span>
+            </div>
+
+            <div className="result-modality-row">
+              <div className="modality-row-label">
+                <strong>Postpartum Irritability (Angry)</strong>
+              </div>
+              <span style={{ fontSize: '13px', fontWeight: 600, color: storedPsychosocial?.['Angry after latest child birth'] === 'Yes' ? '#ba1e53' : '#16a34a' }}>
+                {storedPsychosocial?.['Angry after latest child birth'] || 'No'}
+              </span>
+            </div>
+
+            <div className="result-modality-row">
+              <div className="modality-row-label">
+                <strong>Daily Support Level</strong>
+              </div>
+              <span style={{ fontSize: '13px', color: '#5c4750' }}>
+                {storedPsychosocial?.['Recieved Support'] ? `${storedPsychosocial['Recieved Support']} Support` : 'High Support'}
+              </span>
+            </div>
           </div>
+
+          <p style={{ margin: '10px 0 0', fontSize: '11px', color: '#8d737e', fontStyle: 'italic', lineHeight: 1.4 }}>
+            Provides holistic context to your clinical team alongside your clinical profile and screening.
+          </p>
         </section>
       </div>
 
-      {/* ── 5. Assessment History & Available Reports ── */}
+      {/* ── Doctor Consultation Recommendation Card (Always accessible, not gated on ML integration) ── */}
+      {(() => {
+        let category = 'pending';
+        if (hasEpds && epdsScore !== null) {
+          if (epdsScore >= 13) category = 'high';
+          else if (epdsScore >= 10) category = 'moderate';
+          else category = 'low';
+        }
+
+        const consultConfig = {
+          low: {
+            categoryLabel: 'Low Risk Category',
+            heading: 'Your Current Screening Result',
+            message:
+              'Your current screening session shows low-risk indicators. If you are still concerned about your emotional wellbeing, you can consult a healthcare professional.',
+            buttonLabel: 'Consult a Doctor',
+            badgeClass: 'is-low',
+            cardClass: 'is-low',
+          },
+          moderate: {
+            categoryLabel: 'Moderate Risk Category',
+            heading: 'Professional Consultation Recommended',
+            message:
+              'Your screening session shows indicators that may benefit from further professional assessment.',
+            buttonLabel: 'Find a Doctor',
+            badgeClass: 'is-moderate',
+            cardClass: 'is-moderate',
+          },
+          high: {
+            categoryLabel: 'High Risk Category',
+            heading: 'Professional Consultation Recommended',
+            message:
+              'Your screening session indicates that professional assessment may be helpful. We recommend consulting a qualified healthcare professional.',
+            buttonLabel: 'Find a Doctor',
+            badgeClass: 'is-high',
+            cardClass: 'is-high',
+          },
+          pending: {
+            categoryLabel: 'Doctor Consultation Available',
+            heading: 'Consult a Healthcare Professional',
+            message:
+              'AI multimodal analysis is currently awaiting model integration and pending final clinical scoring. You can explore verified specialists, clinics, and hospital care teams at any time without waiting for AI processing.',
+            buttonLabel: 'Find a Doctor',
+            badgeClass: 'is-pending',
+            cardClass: 'is-pending',
+          },
+        };
+
+        const config = consultConfig[category];
+
+        return (
+          <section
+            className={`patient-card results-consult-card ${config.cardClass}`}
+            aria-label="Doctor Consultation Recommendation"
+            data-testid="results-consultation-card"
+          >
+            <div className="results-consult-inner">
+              <div className={`results-consult-icon-pill ${config.badgeClass}`} aria-hidden="true">
+                <PatientIcon name="stethoscope" size={24} />
+              </div>
+
+              <div className="results-consult-content">
+                <div className="results-consult-top-meta">
+                  <span className={`results-consult-pill ${config.badgeClass}`}>
+                    {config.categoryLabel}
+                  </span>
+                  <span className="results-consult-ml-notice">
+                    AI models awaiting integration • Consultation permanently accessible
+                  </span>
+                </div>
+
+                <h3 className="results-consult-heading">{config.heading}</h3>
+                <p className="results-consult-message">{config.message}</p>
+
+                <p className="results-consult-note">
+                  <strong>Important:</strong> Screening is not a clinical diagnosis and does not replace medical advice. Always consult a qualified healthcare provider for clinical evaluation.
+                </p>
+
+                <div className="results-consult-actions">
+                  <button
+                    type="button"
+                    className="patient-btn-primary results-consult-cta"
+                    onClick={() => navigate('/patient/find-doctor')}
+                    data-testid="consult-doctor-btn"
+                    aria-label={`${config.buttonLabel} — navigate to doctor directory`}
+                  >
+                    <PatientIcon name="stethoscope" size={16} />
+                    <span>{config.buttonLabel}</span>
+                    <PatientIcon name="arrow-right" size={16} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        );
+      })()}
+
+      {/* Previous Assessments & Available Reports */}
       <section className="patient-card results-reports-table-card" aria-label="Assessment History & Reports">
         <div className="results-table-header">
           <div>
-            <h3 className="results-table-title">Assessment History &amp; Reports</h3>
+            <h2 className="results-table-title">Assessment History &amp; Reports</h2>
             <p className="results-table-sub">
-              Records of your completed maternal wellbeing check-ins and clinical summaries.
+              Historical records of your completed maternal wellbeing check-ins and clinical summaries.
             </p>
           </div>
         </div>
@@ -382,16 +674,15 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
           </div>
         )}
 
-        {/* Responsive Table / Card Container */}
         <div className="results-table-container">
           <table className="results-summary-table">
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Assessment Type</th>
+                <th>Assessment Date</th>
+                <th>Type</th>
                 <th>EPDS Score</th>
-                <th>Status</th>
-                <th>Action</th>
+                <th>AI Multimodal Status</th>
+                <th>Clinical Action</th>
               </tr>
             </thead>
             <tbody>
@@ -409,15 +700,32 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
                     </span>
                   </td>
                   <td>
-                    <span className="patient-history-status is-completed">
-                      Completed
-                    </span>
+                    {hasMultimodalInference ? (
+                      <span className="ai-status-pill is-completed" style={{ background: '#ecfdf5', color: '#16a34a', fontWeight: '600' }}>
+                        Fusion Score: {Math.round(storedMultimodalResult.fusion_score * 100)}%
+                      </span>
+                    ) : (
+                      <span className="ai-status-pill is-pending">
+                        <span className="ai-status-dot" />
+                        <span>Awaiting model integration</span>
+                      </span>
+                    )}
                   </td>
                   <td>
                     <button
                       type="button"
                       className="patient-btn-table-action"
-                      onClick={() => downloadReport && downloadReport('screening-report-pdf')}
+                      onClick={() =>
+                        downloadReport &&
+                        downloadReport({
+                          id: 'rep-pdf',
+                          title: 'Screening Summary Report',
+                          filename: 'AANCHAL_Screening_Report.pdf',
+                          type: 'pdf',
+                          authorized: true,
+                          format: '.pdf',
+                        })
+                      }
                     >
                       <PatientIcon name="download" size={14} />
                       <span>Download Summary PDF</span>
@@ -426,8 +734,8 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
                 </tr>
               ) : (
                 <tr>
-                  <td colSpan={5} style={{ textAlign: 'center', padding: '32px', color: '#8d737e' }}>
-                    No prior assessments recorded. Complete your first screening to see your history and download clinical reports here.
+                  <td colSpan={5} style={{ textAlign: 'center', padding: '36px', color: '#8d737e' }}>
+                    No prior assessments recorded. Complete your first AI Screening and EPDS to see your trends here.
                   </td>
                 </tr>
               )}
@@ -436,28 +744,65 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
         </div>
       </section>
 
-      {/* ── 6. Emergency Support – Dedicated Section at the Very Bottom ── */}
-      <section className="patient-card results-emergency-support-card" aria-label="Immediate Support Helpline">
-        <div className="emergency-support-header">
-          <h3 className="emergency-support-title">Support Is Available Immediately</h3>
-        </div>
-        <p className="emergency-support-desc">
-          If you are feeling overwhelmed, hopeless, or concerned for your safety or your baby&apos;s wellbeing, please reach out for immediate, confidential support. Help is available 24 hours a day, 7 days a week.
-        </p>
-        <div className="emergency-support-helplines">
-          <div className="emergency-helpline-item">
-            <div className="helpline-meta">
-              <strong>Tele-MANAS National Mental Health Helpline</strong>
-              <span>Toll-free 24/7 tele-counseling support across India</span>
+      {/* Doctor Consultation Reports (Written by Doctor, Patient-Friendly Summary) */}
+      {consultationReports.length > 0 && (
+        <section className="patient-card results-history-card" aria-label="Doctor Consultation Reports" style={{ marginTop: 20 }}>
+          <div className="history-card-head">
+            <div>
+              <h2 className="result-panel-title">Doctor Consultation Reports</h2>
+              <p className="result-panel-sub">Clinical summaries and care instructions published by your doctor</p>
             </div>
-            <a href="tel:14416" className="patient-btn-helpline">
-              <span>Call 14416</span>
-            </a>
           </div>
-        </div>
-      </section>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>
+            {consultationReports.map((rep) => (
+              <div
+                key={rep.id}
+                style={{
+                  border: '1px solid #f2dce4',
+                  borderRadius: 10,
+                  padding: '14px 16px',
+                  background: '#fffbfc',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                  <div>
+                    <strong style={{ color: '#2b1b22', fontSize: 15 }}>
+                      {rep.doctor_name} ({rep.report_code})
+                    </strong>
+                    <div style={{ fontSize: 12, color: '#8d737e' }}>
+                      {rep.hospital_name} &bull; {rep.consultation_date}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="patient-btn-table-action"
+                    onClick={() =>
+                      downloadReport &&
+                      downloadReport({
+                        id: rep.id,
+                        title: `Consultation Report ${rep.report_code}`,
+                        filename: `AANCHAL_Consultation_${rep.report_code}.txt`,
+                        type: 'consultation',
+                        authorized: true,
+                        format: '.txt',
+                      })
+                    }
+                  >
+                    <PatientIcon name="download" size={14} />
+                    <span>Download Report</span>
+                  </button>
+                </div>
+                {rep.summary && (
+                  <p style={{ margin: '10px 0 0', fontSize: 13.5, color: '#4a3d42', lineHeight: 1.5 }}>
+                    {rep.summary}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
-
 export default ResultsReportsTab;

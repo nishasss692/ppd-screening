@@ -10,9 +10,12 @@ function getApiBase() {
     return import.meta.env.VITE_MIORA_API_URL.replace(/\/$/, '');
   }
   if (typeof window !== 'undefined' && window.location?.origin && !window.location.origin.startsWith('blob:')) {
+    if (window.location.port === '3000' || window.location.port === '5173') {
+      return 'http://127.0.0.1:8000';
+    }
     return window.location.origin;
   }
-  return '';
+  return 'http://127.0.0.1:8000';
 }
 
 function getHeaders(extraHeaders = {}) {
@@ -179,5 +182,59 @@ export async function recordScreeningHandoff(screeningId, payload) {
     throw new Error(err.detail || `HTTP ${res.status}: Failed to record handoff`);
   }
   return res.json();
+}
+
+/**
+ * Create or draft a doctor consultation report via POST /api/consultation-reports.
+ */
+export async function createConsultationReport(payload) {
+  const url = `${getApiBase()}/api/consultation-reports`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${res.status}: Failed to save consultation report`);
+  }
+  return res.json();
+}
+
+/**
+ * List consultation reports from GET /api/consultation-reports.
+ */
+export async function fetchConsultationReports(motherId = null) {
+  const query = motherId ? `?mother_id=${encodeURIComponent(motherId)}` : '';
+  const url = `${getApiBase()}/api/consultation-reports${query}`;
+  const res = await fetch(url, { headers: getHeaders() });
+  if (!res.ok) {
+    return [];
+  }
+  return res.json();
+}
+
+/**
+ * Download clinical screening PDF from GET /api/screenings/{screening_id}/report.pdf.
+ */
+export async function downloadClinicianScreeningPdfBlob(screeningId) {
+  const url = `${getApiBase()}/api/screenings/${screeningId}/report.pdf`;
+  const res = await fetch(url, { method: 'GET', headers: getHeaders() });
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}: Failed to download screening PDF`);
+  }
+  return res.blob();
+}
+
+/**
+ * Download clinical screening transcript from GET /api/screenings/{screening_id}/transcript.txt.
+ */
+export async function downloadClinicianScreeningTxtBlob(screeningId) {
+  const url = `${getApiBase()}/api/screenings/${screeningId}/transcript.txt`;
+  const res = await fetch(url, { method: 'GET', headers: getHeaders() });
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}: Failed to download screening transcript`);
+  }
+  return res.blob();
 }
 

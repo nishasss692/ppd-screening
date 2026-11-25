@@ -52,7 +52,19 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
             <tbody>
               {mothers.map((m) => {
                 const isSelected = m.id === selectedMotherId;
-                const hasRecording = m.id === 'M-104' || m.id === 'M-108';
+                const mScreen = screenings.find((s) => s.motherId === m.id) || null;
+                const hasRecording = Boolean(
+                  mScreen?.capturedModalities?.video ||
+                  mScreen?.modelMetadata?.video_recording ||
+                  m.id === 'M-104' ||
+                  m.id === 'M-108'
+                );
+                const textMod = mScreen?.modalities?.text;
+                const voiceMod = mScreen?.modalities?.voice;
+                const videoMod = mScreen?.modalities?.video;
+                const clinPred = mScreen?.clinicalModelPrediction;
+                const fusionDone = mScreen?.fusionStatus === 'completed';
+
                 return (
                   <tr
                     key={m.id}
@@ -64,7 +76,7 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                       <span className="doc-pat-id">({m.id})</span>
                     </td>
                     <td>Week {m.postpartumWeek}</td>
-                    <td>{m.lastScreeningDate}</td>
+                    <td>{mScreen?.screeningDateTime || m.lastScreeningDate}</td>
                     <td>
                       <StatusBadge status={m.status} />
                     </td>
@@ -76,19 +88,49 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                       )}
                     </td>
                     <td>
-                      <span className="ai-status-pill is-pending">Pending <span className="sr-only">Awaiting model integration</span></span>
+                      {textMod?.status === 'completed' ? (
+                        <span className="ai-status-pill is-completed">
+                          {typeof textMod.score === 'number' ? `${Math.round(textMod.score * 100)}%` : 'Completed'}
+                        </span>
+                      ) : (
+                        <span className="ai-status-pill is-pending">Pending <span className="sr-only">Awaiting model integration</span></span>
+                      )}
                     </td>
                     <td>
-                      <span className="ai-status-pill is-pending">Pending <span className="sr-only">Awaiting model integration</span></span>
+                      {voiceMod?.status === 'completed' ? (
+                        <span className="ai-status-pill is-completed">
+                          {typeof voiceMod.score === 'number' ? `${Math.round(voiceMod.score * 100)}%` : 'Completed'}
+                        </span>
+                      ) : (
+                        <span className="ai-status-pill is-pending">Pending <span className="sr-only">Awaiting model integration</span></span>
+                      )}
                     </td>
                     <td>
-                      <span className="ai-status-pill is-pending">Pending <span className="sr-only">Awaiting model integration</span></span>
+                      {videoMod?.status === 'completed' || videoMod?.status === 'recorded' ? (
+                        <span className="ai-status-pill is-completed">
+                          {typeof videoMod.score === 'number' ? `${Math.round(videoMod.score * 100)}%` : 'Recorded'}
+                        </span>
+                      ) : (
+                        <span className="ai-status-pill is-pending">Pending <span className="sr-only">Awaiting model integration</span></span>
+                      )}
                     </td>
                     <td>
-                      <span className="ai-status-pill is-pending">Pending <span className="sr-only">Awaiting model integration</span></span>
+                      {clinPred?.status === 'completed' ? (
+                        <span className="ai-status-pill is-completed">
+                          {clinPred.predicted_label || 'Evaluated'}
+                        </span>
+                      ) : (
+                        <span className="ai-status-pill is-pending">Pending <span className="sr-only">Awaiting model integration</span></span>
+                      )}
                     </td>
                     <td>
-                      <span className="ai-status-pill is-pending">Awaiting integration</span>
+                      {fusionDone ? (
+                        <span className="ai-status-pill is-completed">
+                          {typeof mScreen.combinedScore === 'number' ? `${Math.round(mScreen.combinedScore * 100)}%` : 'Evaluated'}
+                        </span>
+                      ) : (
+                        <span className="ai-status-pill is-pending">Awaiting integration</span>
+                      )}
                     </td>
                     <td>
                       <button
@@ -136,34 +178,34 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
           {/* Deterministic Crisis Alert Banner */}
           {Boolean(
             activeScreening?.q10SafetyAlert?.triggered ||
-              activeScreening?.q10_safety_alert?.triggered
+            activeScreening?.q10_safety_alert?.triggered
           ) && (
-            <div
-              className="ai-crisis-alert-banner"
-              role="alert"
-              style={{
-                background: '#fff1f2',
-                border: '2px solid #e11d48',
-                borderRadius: '10px',
-                padding: '14px 18px',
-                marginBottom: '16px',
-                color: '#9f1239',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <DashboardIcon name="alertTriangle" size={22} style={{ color: '#e11d48', flexShrink: 0 }} />
-                <div>
-                  <strong style={{ fontSize: '14px', color: '#881337', display: 'block' }}>
-                    EPDS Question 10 Safety Flag: Immediate Clinical Assessment Required
-                  </strong>
-                  <p style={{ margin: '3px 0 0', fontSize: '12.5px', lineHeight: 1.4 }}>
-                    Thoughts of self-harm indicated. Deterministic safety protocol active: refer to Tele-MANAS
-                    at <strong>14416 / 1800-891-4416</strong>.
-                  </p>
+              <div
+                className="ai-crisis-alert-banner"
+                role="alert"
+                style={{
+                  background: '#fff1f2',
+                  border: '2px solid #e11d48',
+                  borderRadius: '10px',
+                  padding: '14px 18px',
+                  marginBottom: '16px',
+                  color: '#9f1239',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <DashboardIcon name="alertTriangle" size={22} style={{ color: '#e11d48', flexShrink: 0 }} />
+                  <div>
+                    <strong style={{ fontSize: '14px', color: '#881337', display: 'block' }}>
+                      EPDS Question 10 Safety Flag: Immediate Clinical Assessment Required
+                    </strong>
+                    <p style={{ margin: '3px 0 0', fontSize: '12.5px', lineHeight: 1.4 }}>
+                      Thoughts of self-harm indicated. Deterministic safety protocol active: refer to Tele-MANAS
+                      at <strong>14416 / 1800-891-4416</strong>.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* 4 Modality Panels */}
           <div className="doc-modality-panels-grid">
@@ -180,7 +222,7 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
               </div>
               <div className="doc-panel-body">
                 {activeScreening?.modalities?.voice?.status === 'completed' &&
-                typeof activeScreening?.modalities?.voice?.score === 'number' ? (
+                  typeof activeScreening?.modalities?.voice?.score === 'number' ? (
                   <div
                     className="ai-status-pill is-completed"
                     style={{ marginBottom: 10, background: '#ecfdf5', color: '#065f46' }}
@@ -199,7 +241,7 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                     <span>Model Output:</span>
                     <em>
                       {activeScreening?.modalities?.voice?.status === 'completed' &&
-                      typeof activeScreening?.modalities?.voice?.score === 'number'
+                        typeof activeScreening?.modalities?.voice?.score === 'number'
                         ? `Acoustic Probability ${activeScreening.modalities.voice.score.toFixed(2)}`
                         : 'Awaiting model integration'}
                     </em>
@@ -238,7 +280,7 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
               </div>
               <div className="doc-panel-body">
                 {activeScreening?.modalities?.video?.status === 'completed' &&
-                typeof activeScreening?.modalities?.video?.score === 'number' ? (
+                  typeof activeScreening?.modalities?.video?.score === 'number' ? (
                   <div
                     className="ai-status-pill is-completed"
                     style={{ marginBottom: 10, background: '#ecfdf5', color: '#065f46' }}
@@ -257,7 +299,7 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                     <span>Model Output:</span>
                     <em>
                       {activeScreening?.modalities?.video?.status === 'completed' &&
-                      typeof activeScreening?.modalities?.video?.score === 'number'
+                        typeof activeScreening?.modalities?.video?.score === 'number'
                         ? `Visual Probability ${activeScreening.modalities.video.score.toFixed(2)}`
                         : 'Awaiting model integration'}
                     </em>
@@ -294,7 +336,7 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
               </div>
               <div className="doc-panel-body">
                 {activeScreening?.modalities?.text?.status === 'completed' &&
-                typeof activeScreening?.modalities?.text?.score === 'number' ? (
+                  typeof activeScreening?.modalities?.text?.score === 'number' ? (
                   <div
                     className="ai-status-pill is-completed"
                     style={{ marginBottom: 10, background: '#ecfdf5', color: '#065f46' }}
@@ -313,7 +355,7 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                     <span>Model Output:</span>
                     <em>
                       {activeScreening?.modalities?.text?.status === 'completed' &&
-                      typeof activeScreening?.modalities?.text?.score === 'number'
+                        typeof activeScreening?.modalities?.text?.score === 'number'
                         ? `Text Risk Probability ${activeScreening.modalities.text.score.toFixed(2)}`
                         : 'Awaiting model integration'}
                     </em>
@@ -352,7 +394,7 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
               </div>
               <div className="doc-panel-body">
                 {activeScreening?.modalities?.clinical?.status === 'completed' &&
-                typeof activeScreening?.modalities?.clinical?.score === 'number' ? (
+                  typeof activeScreening?.modalities?.clinical?.score === 'number' ? (
                   <div
                     className="ai-status-pill is-completed"
                     style={{ marginBottom: 10, background: '#ecfdf5', color: '#065f46' }}
@@ -371,7 +413,7 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                     <span>Model Output:</span>
                     <em>
                       {activeScreening?.modalities?.clinical?.status === 'completed' &&
-                      typeof activeScreening?.modalities?.clinical?.score === 'number'
+                        typeof activeScreening?.modalities?.clinical?.score === 'number'
                         ? `Clinical Probability ${activeScreening.modalities.clinical.score.toFixed(2)}`
                         : 'Awaiting model integration'}
                     </em>

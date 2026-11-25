@@ -1880,3 +1880,69 @@ def get_patient_consultation_report_detail(
         submitted_at=report.submitted_at.strftime("%d %b %Y") if report.submitted_at else None,
     )
 
+
+@router.get(
+    "/me/consultation-reports/{report_id}/download",
+    summary="Download patient-friendly consultation report",
+)
+def download_patient_consultation_report(
+    report_id: str,
+    user: User = Depends(require_patient),
+    db: Session = Depends(get_db),
+):
+    """Stream a downloadable summary of an approved doctor consultation report."""
+    if not user.mother_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mother record not linked.")
+
+    try:
+        r_uuid = uuid.UUID(report_id)
+        report = db.get(ConsultationReport, r_uuid)
+    except ValueError:
+        report = db.scalar(select(ConsultationReport).where(ConsultationReport.report_code == report_id))
+
+    if not report:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Consultation report '{report_id}' not found.",
+        )
+
+    if report.mother_id != user.mother_id or report.status != "final" or not report.patient_approved:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: You are only authorized to download your own approved consultation reports.",
+        )
+
+    lines = [
+        "==================================================================",
+        "AANCHAL — DOCTOR CONSULTATION REPORT (PATIENT SUMMARY)",
+        "==================================================================",
+        f"Report Code:     {report.report_code}",
+        f"Patient Name:    {report.patient_name}",
+        f"Doctor:          {report.doctor_name} ({report.doctor_specialization or 'Specialist'})",
+        f"Hospital:        {report.hospital_name}",
+        f"Consult Date:    {report.consultation_date}",
+        "==================================================================",
+        "",
+        "CONSULTATION SUMMARY:",
+        report.patient_friendly_summary or report.clinical_assessment or "N/A",
+        "",
+        "MEDICATIONS & CARE INSTRUCTIONS:",
+        report.patient_friendly_medications or report.medications or "No medications prescribed.",
+        "",
+        "RECOMMENDATIONS:",
+        report.patient_friendly_recommendations or report.recommendations or "N/A",
+        "",
+        "FOLLOW-UP PLAN:",
+        report.patient_friendly_followup or report.followup_instructions or "N/A",
+        f"Next Follow-up Date: {report.next_followup_date or 'As scheduled'}",
+        "",
+        "--- End of Confidential Consultation Summary ---",
+    ]
+    content = "\n".join(lines).encode("utf-8")
+    filename = f"AANCHAL_Consultation_{report.report_code}.txt"
+    return Response(
+        content=content,
+        media_type="text/plain; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+

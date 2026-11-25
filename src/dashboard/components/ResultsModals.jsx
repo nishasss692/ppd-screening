@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { DashboardIcon } from './DashboardIcon.jsx';
+import {
+  downloadClinicianScreeningPdfBlob,
+  downloadClinicianScreeningTxtBlob,
+} from '../services/doctorApiService.js';
 
 export function buildScreeningReportText(screening, mother) {
   const lines = [
@@ -13,28 +17,24 @@ export function buildScreeningReportText(screening, mother) {
     `Status: ${screening.status}`,
     '',
     'OVERALL ASSESSMENT (ASSISTIVE — NOT A DIAGNOSIS)',
-    `Combined Risk Score: ${
-      typeof screening.combinedScore === 'number'
-        ? `${screening.combinedScore.toFixed(2)} / 1.00`
-        : 'Pending / Unavailable'
+    `Combined Risk Score: ${typeof screening.combinedScore === 'number'
+      ? `${screening.combinedScore.toFixed(2)} / 1.00`
+      : 'Pending / Unavailable'
     }`,
     `Risk Category: ${screening.risk} Risk`,
     '',
     'MODALITY-WISE OUTPUTS',
-    `- Text (NLP): ${
-      screening.modalities?.text?.status === 'completed'
-        ? screening.modalities.text.score.toFixed(2)
-        : screening.modalities?.text?.status || 'Unavailable'
+    `- Text (NLP): ${screening.modalities?.text?.status === 'completed'
+      ? screening.modalities.text.score.toFixed(2)
+      : screening.modalities?.text?.status || 'Unavailable'
     }`,
-    `- Voice (Acoustic): ${
-      screening.modalities?.voice?.status === 'completed'
-        ? screening.modalities.voice.score.toFixed(2)
-        : screening.modalities?.voice?.status || 'Unavailable'
+    `- Voice (Acoustic): ${screening.modalities?.voice?.status === 'completed'
+      ? screening.modalities.voice.score.toFixed(2)
+      : screening.modalities?.voice?.status || 'Unavailable'
     }`,
-    `- Video (Facial): ${
-      screening.modalities?.video?.status === 'completed'
-        ? screening.modalities.video.score.toFixed(2)
-        : screening.modalities?.video?.status || 'Unavailable'
+    `- Video (Facial): ${screening.modalities?.video?.status === 'completed'
+      ? screening.modalities.video.score.toFixed(2)
+      : screening.modalities?.video?.status || 'Unavailable'
     }`,
     '',
     'KEY CONTRIBUTING FACTORS',
@@ -65,18 +65,27 @@ export function ExportReportModal({ isOpen, onClose, screening, mother }) {
 
   const reportText = buildScreeningReportText(screening, mother);
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     setExportError('');
     setExportSuccess('');
     try {
       if (typeof window === 'undefined' || typeof Blob === 'undefined' || !URL?.createObjectURL) {
         throw new Error('File download is unavailable in this browser environment.');
       }
-      const blob = new Blob([reportText], { type: 'text/plain;charset=utf-8' });
+      let blob;
+      if (screening.isFromBackend) {
+        try {
+          blob = await downloadClinicianScreeningTxtBlob(screening.id);
+        } catch {
+          blob = new Blob([reportText], { type: 'text/plain;charset=utf-8' });
+        }
+      } else {
+        blob = new Blob([reportText], { type: 'text/plain;charset=utf-8' });
+      }
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `miora-screening-${screening.motherId.toLowerCase()}-${screening.id.toLowerCase()}.txt`;
+      link.download = `miora-screening-${String(screening.motherId).toLowerCase()}-${String(screening.id).toLowerCase()}.txt`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -84,6 +93,29 @@ export function ExportReportModal({ isOpen, onClose, screening, mother }) {
       setExportSuccess('Report downloaded successfully.');
     } catch (err) {
       setExportError(err?.message || 'Unable to generate report file.');
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    setExportError('');
+    setExportSuccess('');
+    try {
+      if (!screening.isFromBackend) {
+        handlePrint();
+        return;
+      }
+      const blob = await downloadClinicianScreeningPdfBlob(screening.id);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `AANCHAL_Screening_Report_${String(screening.id).slice(0, 8)}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setExportSuccess('Official PDF report downloaded successfully.');
+    } catch (err) {
+      setExportError(err?.message || 'Unable to download PDF report.');
     }
   };
 
@@ -147,11 +179,15 @@ export function ExportReportModal({ isOpen, onClose, screening, mother }) {
 
         <div className="miora-modal-actions">
           <button type="button" className="miora-btn-secondary" onClick={handlePrint}>
-            Print / Save PDF
+            Print Preview
           </button>
-          <button type="button" className="miora-cta-primary" onClick={handleDownload}>
+          <button type="button" className="miora-btn-secondary" onClick={handleDownload}>
             <DashboardIcon name="download" size={15} />
             <span>Download Report (.txt)</span>
+          </button>
+          <button type="button" className="miora-cta-primary" onClick={handleDownloadPdf}>
+            <DashboardIcon name="download" size={15} />
+            <span>Download PDF</span>
           </button>
         </div>
       </div>

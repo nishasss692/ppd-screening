@@ -12,7 +12,7 @@
 
 function getApiBase() {
   if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_MIORA_API_URL) {
-    return import.meta.env.VITE_MIORA_API_URL;
+    return import.meta.env.VITE_MIORA_API_URL.replace(/\/$/, '');
   }
   if (
     typeof window !== 'undefined' &&
@@ -20,9 +20,12 @@ function getApiBase() {
     window.location.origin !== 'null' &&
     !window.location.origin.startsWith('blob:')
   ) {
+    if (window.location.port === '3000' || window.location.port === '5173') {
+      return 'http://127.0.0.1:8000';
+    }
     return window.location.origin;
   }
-  return '';
+  return 'http://127.0.0.1:8000';
 }
 
 export const FALLBACK_DOCTOR_KNOWLEDGE = {
@@ -120,12 +123,12 @@ export async function sendDoctorAssistantChat({ message, history = [] }, fetchIm
   // Format turns into standard [{role: 'user'|'model', content: string}]
   const formattedHistory = Array.isArray(history)
     ? history
-        .filter((turn) => turn && (turn.content || turn.text))
-        .map((turn) => ({
-          role: turn.role || (turn.sender === 'user' ? 'user' : 'model'),
-          content: (turn.content || turn.text || '').trim(),
-        }))
-        .filter((turn) => turn.content.length > 0)
+      .filter((turn) => turn && (turn.content || turn.text))
+      .map((turn) => ({
+        role: turn.role || (turn.sender === 'user' ? 'user' : 'model'),
+        content: (turn.content || turn.text || '').trim(),
+      }))
+      .filter((turn) => turn.content.length > 0)
     : [];
 
   const payload = {

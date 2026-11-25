@@ -2,6 +2,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { NavLink, useNavigate, useSearchParams } from 'react-router-dom';
 import { usePatient } from '../context/PatientContext.jsx';
 import { PatientIcon } from '../components/PatientIcons.jsx';
+import {
+  fetchPatientConsultationReports,
+  downloadPatientConsultationReportBlob,
+} from '../services/patientApiService.js';
 import './reports.css';
 
 export function PatientReportsPage() {
@@ -30,19 +34,13 @@ export function PatientReportsPage() {
     let mounted = true;
     async function fetchReports() {
       try {
-        const token = localStorage.getItem('aanchal_token') || localStorage.getItem('miora_token') || '';
-        const res = await fetch('/api/patients/me/consultation-reports', {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (mounted && Array.isArray(data) && data.length > 0) {
-            setPatientReports(data);
-            return;
-          }
+        const data = await fetchPatientConsultationReports();
+        if (mounted && Array.isArray(data) && data.length > 0) {
+          setPatientReports(data);
+          return;
         }
       } catch {
-        // Fallback to initial seed
+        // Fallback to empty
       }
       if (mounted) {
         setPatientReports([]);
@@ -51,6 +49,24 @@ export function PatientReportsPage() {
     fetchReports();
     return () => { mounted = false; };
   }, []);
+
+  const handleDownloadConsultationReport = async (rep) => {
+    try {
+      const blob = await downloadPatientConsultationReportBlob(rep.id || rep.report_code);
+      if (typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `AANCHAL_Consultation_${rep.report_code || rep.id}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } catch {
+      window.print();
+    }
+  };
 
   // Filter downloadable reports: preserve Screening Report PDF & Conversation Transcript, exclude raw recordings per Change 6
   const downloadableReports = useMemo(() => {
@@ -589,13 +605,13 @@ export function PatientReportsPage() {
                         <button
                           type="button"
                           className="patient-btn-secondary"
-                          onClick={() => window.print()}
+                          onClick={() => handleDownloadConsultationReport(r)}
                           style={{ padding: '6px 10px', fontSize: '12px' }}
-                          title="Print / Save PDF"
-                          aria-label={`Print or download report ${r.report_code}`}
+                          title="Download Consultation Summary"
+                          aria-label={`Download report ${r.report_code}`}
                         >
                           <PatientIcon name="download" size={13} />
-                          <span>PDF</span>
+                          <span>Download</span>
                         </button>
                       </div>
                     </div>
