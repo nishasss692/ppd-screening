@@ -4,6 +4,7 @@ import {
   downloadClinicianScreeningPdfBlob,
   downloadClinicianScreeningTxtBlob,
 } from '../services/doctorApiService.js';
+import { buildMultiPagePdfBlob, triggerBlobDownload } from '../../utils/pdfBuilder.js';
 
 export function buildScreeningReportText(screening, mother) {
   const lines = [
@@ -100,19 +101,18 @@ export function ExportReportModal({ isOpen, onClose, screening, mother }) {
     setExportError('');
     setExportSuccess('');
     try {
-      if (!screening.isFromBackend) {
-        handlePrint();
-        return;
+      let blob;
+      if (screening.isFromBackend) {
+        try {
+          blob = await downloadClinicianScreeningPdfBlob(screening.id);
+        } catch {
+          blob = buildMultiPagePdfBlob(reportText.split('\n'));
+        }
+      } else {
+        blob = buildMultiPagePdfBlob(reportText.split('\n'));
       }
-      const blob = await downloadClinicianScreeningPdfBlob(screening.id);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `AANCHAL_Screening_Report_${String(screening.id).slice(0, 8)}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      const filename = `AANCHAL_Screening_Report_${String(screening.id).slice(0, 8)}.pdf`;
+      triggerBlobDownload(blob, filename);
       setExportSuccess('Official PDF report downloaded successfully.');
     } catch (err) {
       setExportError(err?.message || 'Unable to download PDF report.');

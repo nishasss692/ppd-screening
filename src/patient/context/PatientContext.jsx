@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { getCurrentUser, getAuthToken } from '../../auth/authService.js';
+import { buildMultiPagePdfBlob } from '../../utils/pdfBuilder.js';
 import {
   fetchPatientProfile,
   updatePatientProfile as apiUpdatePatientProfile,
@@ -466,7 +467,55 @@ export function PatientProvider({ children }) {
         try {
           blob = await downloadReportPdfBlob(targetScreeningId);
         } catch {
-          blob = new Blob(['%PDF-1.4 AANCHAL Clinical Screening Summary'], { type: 'application/pdf' });
+          let mm = null;
+          let epdsLocal = null;
+          let profileLocal = null;
+          let psychoLocal = null;
+          try { mm = JSON.parse(localStorage.getItem('aanchal_multimodal_screening_result') || 'null'); } catch { }
+          try { epdsLocal = JSON.parse(localStorage.getItem('aanchal_submitted_epds_assessment') || 'null'); } catch { }
+          try { profileLocal = JSON.parse(localStorage.getItem('aanchal_clinical_profile_features') || 'null'); } catch { }
+          try { psychoLocal = JSON.parse(localStorage.getItem('aanchal_psychosocial_answers') || 'null'); } catch { }
+
+          const fmtPct = (v) => (typeof v === 'number' ? `${Math.round(v * 100)}% (${v.toFixed(4)})` : 'Not recorded');
+          const epdsTotal = epdsLocal?.totalScore ?? screening?.totalScore ?? 'Recorded';
+          const lines = [
+            'AANCHAL - COMPREHENSIVE MATERNAL SCREENING REPORT',
+            `Patient: ${patient?.fullName || patient?.name || 'Patient'} | Postpartum Week: ${patient?.postpartumWeek || 'N/A'}`,
+            `Screening Date: ${screening?.completedDateTime || screening?.date || new Date().toLocaleDateString()}`,
+            '--------------------------------------------------------------------------------',
+            '1. OVERALL SCREENING & EPDS SUMMARY',
+            `EPDS Total Score: ${epdsTotal} / 30`,
+            `Risk Classification: ${screening?.riskLabel || epdsLocal?.riskTier || 'Assessed'}`,
+            `Overall Risk Score: ${screening?.riskScore !== undefined ? `${screening.riskScore}%` : fmtPct(mm?.fusion_score)}`,
+            `Q10 Safety Alert: ${epdsLocal?.q10Alert ? 'TRIGGERED - Immediate evaluation advised' : 'Negative'}`,
+            '',
+            '2. MULTIMODAL AI & CLINICAL MODEL BREAKDOWN',
+            `Clinical Numerical (46 Features): ${fmtPct(mm?.clinical_score)}`,
+            `Narrative Text Model: ${fmtPct(mm?.text_score)}`,
+            `Acoustic Voice Model: ${fmtPct(mm?.audio_score)}`,
+            `Facial / Video Model: ${fmtPct(mm?.video_score)}`,
+            `Fusion Method: ${mm?.fusion_method || 'N/A'} | Status: ${mm?.fusion_status || 'N/A'}`,
+            '',
+            '3. CLINICIAN FINALIZED REVIEW & CARE PLAN',
+            `Reviewed By: ${carePlan?.clinicianReview?.clinician_name || 'Pending / Verified Record'}`,
+            `Final Risk Classification: ${carePlan?.clinicianReview?.final_risk_classification || 'N/A'}`,
+            `Clinical Notes: ${carePlan?.clinicianReview?.clinical_notes || 'No clinician notes recorded.'}`,
+            `Care Focus: ${carePlan?.clinicianPlan?.intervention_type || 'N/A'} | Priority: ${carePlan?.clinicianPlan?.priority || 'N/A'}`,
+            `Care Guidance: ${carePlan?.clinicianPlan?.notes || 'No care plan guidance recorded.'}`,
+            '',
+            '4. CLINICAL & PSYCHOSOCIAL CONTEXT',
+            ...(profileLocal || psychoLocal
+              ? Object.entries({ ...(profileLocal || {}), ...(psychoLocal || {}) })
+                .filter(([, v]) => v !== null && v !== undefined && v !== '' && v !== 'Missing')
+                .slice(0, 14)
+                .map(([k, v]) => `* ${k.trim()}: ${v}`)
+              : ['No additional profile context recorded.']),
+            '',
+            'CONFIDENTIALITY & SAFETY NOTICE',
+            'AANCHAL is a clinical screening aid and does not constitute a standalone diagnosis.',
+            'For urgent support, contact Tele-MANAS (14416 / 1800-891-4416).',
+          ];
+          blob = buildMultiPagePdfBlob(lines);
         }
         if (!targetFilename.endsWith('.pdf')) targetFilename += '.pdf';
       } else if (report.type === 'txt') {
