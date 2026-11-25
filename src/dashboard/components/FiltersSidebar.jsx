@@ -19,7 +19,7 @@ export function FiltersSidebar({
   onClearFilters,
   activeFilterCount,
 }) {
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [minWeek, maxWeek] = weekRange;
 
   const minPercent = (minWeek / 24) * 100;
@@ -52,7 +52,7 @@ export function FiltersSidebar({
           type="button"
           className="miora-filters-mobile-close"
           aria-label="Close filters"
-          onClick={() => setMobileOpen(false)}
+          onClick={() => setDropdownOpen(false)}
         >
           <DashboardIcon name="close" size={18} />
         </button>
@@ -178,43 +178,45 @@ export function FiltersSidebar({
   );
 
   return (
-    <>
-      <div className="miora-mobile-filter-bar">
+    <div className="miora-filters-dropdown-wrap">
+      <div className="miora-filters-dropdown-bar">
         <button
           type="button"
-          className="miora-btn-secondary miora-mobile-filter-trigger"
-          aria-expanded={mobileOpen}
-          onClick={() => setMobileOpen(true)}
+          className={`miora-btn-secondary miora-filters-dropdown-trigger ${dropdownOpen ? 'is-open' : ''}`}
+          aria-expanded={dropdownOpen}
+          aria-controls="mothers-filters-dropdown-panel"
+          onClick={() => setDropdownOpen((prev) => !prev)}
         >
-          <DashboardIcon name="filter" size={16} />
+          <DashboardIcon name="filter" size={15} strokeWidth={1.85} />
           <span>
             Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
           </span>
+          <DashboardIcon name={dropdownOpen ? 'chevronUp' : 'chevronDown'} size={14} strokeWidth={2} />
         </button>
+        {activeFilterCount > 0 && (
+          <button
+            type="button"
+            className="miora-clear-filters-btn"
+            style={{ width: 'auto', padding: '7px 12px' }}
+            onClick={onClearFilters}
+          >
+            <DashboardIcon name="refresh" size={13} strokeWidth={1.9} />
+            <span>Clear Filters</span>
+          </button>
+        )}
       </div>
 
-      <aside className="miora-card miora-filters-sidebar" aria-label="Registry filters">
-        {panelContent}
-      </aside>
-
-      {mobileOpen && (
+      {dropdownOpen && (
         <div
-          className="miora-filters-drawer-backdrop"
-          role="presentation"
-          onClick={() => setMobileOpen(false)}
+          id="mothers-filters-dropdown-panel"
+          className="miora-card miora-filters-dropdown-panel"
+          role="region"
+          aria-label="Registry filters"
         >
-          <div
-            className="miora-filters-drawer"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Filter mother registry"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {panelContent}
-          </div>
+          {panelContent}
         </div>
       )}
-    </>
+    </div>
   );
 }
 
