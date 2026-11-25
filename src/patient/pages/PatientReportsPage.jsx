@@ -503,9 +503,10 @@ export function PatientReportsPage() {
             </div>
           ) : (
             <div className="patient-card reports-tab-card">
-              <h2 className="reports-tab-heading">Detailed AI Screening Assessment</h2>
+              <h2 className="reports-tab-heading">Screening Assessment Report</h2>
               <p className="reports-tab-sub">
-                Full multimodal screening report conducted on 17 Nov 2026 with Dr. Elena Rostova's maternal care unit.
+                Your latest screening assessment recorded on{' '}
+                <strong>{screening?.completedDateTime || screening?.date || 'Latest session'}</strong>.
               </p>
 
               <div className="screening-tab-details-grid">
@@ -516,21 +517,25 @@ export function PatientReportsPage() {
                       ? `${screening.totalScore} / 30`
                       : screening?.epdsResult?.total_score !== undefined
                         ? `${screening.epdsResult.total_score} / ${screening.epdsResult.maximum_score || 30}`
-                        : '14 / 30'}
+                        : 'Recorded'}
                   </span>
                   <span className="detail-stat-sub">
-                    {screening?.riskLabel || 'Moderate Risk Category'}
+                    {screening?.riskLabel || 'Assessed'}
                   </span>
                 </div>
                 <div className="detail-stat-box">
-                  <span className="detail-stat-label">Session Duration</span>
-                  <span className="detail-stat-val">04:12</span>
-                  <span className="detail-stat-sub">Acoustic &amp; Conversational</span>
+                  <span className="detail-stat-label">Risk Score</span>
+                  <span className="detail-stat-val">
+                    {screening?.riskScore !== undefined ? `${screening.riskScore}%` : 'Reviewed'}
+                  </span>
+                  <span className="detail-stat-sub">Multimodal Screening</span>
                 </div>
                 <div className="detail-stat-box">
-                  <span className="detail-stat-label">Consent &amp; Privacy</span>
-                  <span className="detail-stat-val">Verified</span>
-                  <span className="detail-stat-sub">Encrypted Storage</span>
+                  <span className="detail-stat-label">Clinician Status</span>
+                  <span className="detail-stat-val">Finalized</span>
+                  <span className="detail-stat-sub">
+                    {carePlan?.clinicianReview?.clinician_name || 'Verified Record'}
+                  </span>
                 </div>
               </div>
 
@@ -538,7 +543,7 @@ export function PatientReportsPage() {
                 <button
                   type="button"
                   className="patient-btn-primary"
-                  onClick={() => downloadReport({ title: 'Full Screening Report', filename: `Miora_Screening_${screening?.date ? screening.date.replace(/\s+/g, '_') : 'Report'}.pdf`, type: 'pdf', authorized: true })}
+                  onClick={() => downloadReport({ title: 'Full Screening Report', filename: `AANCHAL_Screening_${screening?.date ? screening.date.replace(/\s+/g, '_') : 'Report'}.pdf`, type: 'pdf', authorized: true })}
                 >
                   <PatientIcon name="download" size={14} />
                   <span>Download Official PDF</span>
@@ -571,11 +576,48 @@ export function PatientReportsPage() {
               </button>
             </div>
 
+            {/* Doctor-Finalized Clinical Review (from Clinical Review page) */}
+            {carePlan?.clinicianReview && (
+              <article
+                style={{
+                  backgroundColor: '#fff9fa',
+                  border: '1px solid #f1dede',
+                  borderRadius: '10px',
+                  padding: '20px',
+                  marginTop: '16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                  <div>
+                    <span style={{ fontSize: '11px', fontWeight: '700', color: '#ba1e53', background: '#fde7ec', padding: '3px 10px', borderRadius: '999px', display: 'inline-block', marginBottom: '6px' }}>
+                      Clinician Review Finalized
+                    </span>
+                    <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#2b2326', margin: 0 }}>
+                      Clinical Assessment by {carePlan.clinicianReview.clinician_name}
+                    </h3>
+                  </div>
+                  {carePlan.clinicianReview.final_risk_classification && (
+                    <span style={{ fontSize: '12px', fontWeight: '700', color: '#ba1e53', background: '#fde7ec', padding: '4px 12px', borderRadius: '999px', textTransform: 'capitalize' }}>
+                      {carePlan.clinicianReview.final_risk_classification} Risk
+                    </span>
+                  )}
+                </div>
+                {carePlan.clinicianReview.clinical_notes && (
+                  <p style={{ margin: 0, fontSize: '13.5px', lineHeight: 1.55, color: '#271218', whiteSpace: 'pre-line' }}>
+                    {carePlan.clinicianReview.clinical_notes}
+                  </p>
+                )}
+              </article>
+            )}
+
             {/* List of Simplified Consultation Reports */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
-              {patientReports.length === 0 ? (
+              {patientReports.length === 0 && !carePlan?.clinicianReview ? (
                 <p style={{ color: '#7a6870', fontStyle: 'italic', padding: '16px 0' }}>
-                  No consultation reports have been published yet. Once you complete a consultation with your doctor, your simplified report will appear here.
+                  No clinical reports have been finalized by your doctor yet. Once your doctor finalizes your clinical review or consultation report, it will appear here.
                 </p>
               ) : (
                 patientReports.map((r) => (
@@ -655,37 +697,6 @@ export function PatientReportsPage() {
                   </article>
                 ))
               )}
-            </div>
-
-            {/* Existing Doctor Consultations / Appointments strip */}
-            <div style={{ marginTop: '28px', borderTop: '1px solid #f0e1d8', paddingTop: '18px' }}>
-              <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#2b2326', marginBottom: '12px' }}>
-                Your Scheduled &amp; Past Appointments
-              </h3>
-              <div className="consultations-tab-list">
-                {(consultations || []).map((c) => (
-                  <div key={c.id} className="consultation-tab-row">
-                    <div className="consultation-row-details">
-                      <div className="consultation-row-top">
-                        <strong>{c.doctorName} &bull; {c.role}</strong>
-                        <span className={`connect-status-badge ${c.status === 'Scheduled' ? 'status-scheduled' : 'status-completed'}`}>
-                          {c.status}
-                        </span>
-                      </div>
-                      <p className="consultation-row-meta">
-                        {c.clinic} &bull; {c.date} at {c.time} ({c.type})
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      className="patient-btn-secondary"
-                      onClick={() => navigate('/patient/connect-doctor')}
-                    >
-                      View Details
-                    </button>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
 
