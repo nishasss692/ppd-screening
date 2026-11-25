@@ -60,7 +60,12 @@ export const PATIENT_SIDEBAR_ITEMS = [
   },
 ];
 
-export function PatientSidebar({ mobileOpen = false, onCloseMobile }) {
+export function PatientSidebar({
+  mobileOpen = false,
+  onCloseMobile,
+  collapsed = false,
+  onToggleCollapse,
+}) {
   const location = useLocation();
   const { patient } = usePatient();
   const authUser = getCurrentUser();
@@ -90,6 +95,17 @@ export function PatientSidebar({ mobileOpen = false, onCloseMobile }) {
             <BrandWordmark />
           </Link>
           <span className="dash-sidebar-portal-tag patient-portal-tag">Patient</span>
+          {onToggleCollapse && !mobileOpen && (
+            <button
+              type="button"
+              className="dash-sidebar-collapse-btn"
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              onClick={onToggleCollapse}
+            >
+              <DashboardIcon name={collapsed ? 'chevronRight' : 'chevronLeft'} size={15} />
+            </button>
+          )}
           {mobileOpen && (
             <button
               type="button"
@@ -113,6 +129,7 @@ export function PatientSidebar({ mobileOpen = false, onCloseMobile }) {
                 <li key={item.to} className="dash-sidebar-item">
                   <NavLink
                     to={item.to}
+                    title={collapsed ? item.label : undefined}
                     className={({ isActive }) =>
                       `dash-sidebar-link ${isActive || extraActive ? 'is-active' : ''}`
                     }

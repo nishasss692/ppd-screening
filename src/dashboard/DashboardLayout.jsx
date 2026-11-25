@@ -6,9 +6,10 @@ import { AddMotherModal } from './components/AddMotherModal.jsx';
 
 export function DashboardLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
-    <div className="miora-app-shell dash-enterprise-shell">
+    <div className={`miora-app-shell dash-enterprise-shell ${sidebarCollapsed ? 'is-sidebar-collapsed' : ''}`}>
       <a className="skip-link" href="#dashboard-main">
         Skip to dashboard content
       </a>
@@ -17,6 +18,8 @@ export function DashboardLayout() {
       <DashboardSidebar
         mobileOpen={mobileNavOpen}
         onCloseMobile={() => setMobileNavOpen(false)}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
       />
 
       {/* Main Content Workspace */}

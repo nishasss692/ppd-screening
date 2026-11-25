@@ -6,9 +6,10 @@ import '../styles/patientLayout.css';
 
 export function PatientLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
-    <div className="miora-app-shell patient-app-shell dash-enterprise-shell">
+    <div className={`miora-app-shell patient-app-shell dash-enterprise-shell ${sidebarCollapsed ? 'is-sidebar-collapsed' : ''}`}>
       <a className="skip-link" href="#patient-main">
         Skip to patient content
       </a>
@@ -17,6 +18,8 @@ export function PatientLayout() {
       <PatientSidebar
         mobileOpen={mobileNavOpen}
         onCloseMobile={() => setMobileNavOpen(false)}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
       />
 
       {/* Main Content Workspace */}
