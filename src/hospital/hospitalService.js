@@ -39,24 +39,6 @@ function getHospitalHeaders() {
 }
 
 export async function loginHospital(emailOrId, password) {
-  const trimmedId = (emailOrId || '').trim().toLowerCase();
-  const trimmedPw = (password || '').trim();
-
-  // Demo mode bypass — matches the demo hospital credentials without a backend
-  if (
-    (trimmedId === 'apollo@hospital.miora.health' || trimmedId === 'hosp-001') &&
-    trimmedPw === 'password123'
-  ) {
-    const demoHospital = {
-      id: 'HOSP-001',
-      name: "Apollo Women's Hospital",
-      email: 'apollo@hospital.miora.health',
-      role: 'hospital',
-    };
-    setHospitalSession('demo-hospital-token', demoHospital);
-    return { access_token: 'demo-hospital-token', hospital: demoHospital };
-  }
-
   const res = await fetch('/api/hospital/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -179,7 +161,7 @@ export async function fetchHospitalReports(params = {}) {
         report_code: 'REP-2026-001',
         patient_name: 'Amara',
         patient_identifier: 'M-108',
-        doctor_name: 'Dr. Elena Rostova',
+        doctor_name: 'Dr. Priya Mehta',
         doctor_specialization: 'Perinatal Psychiatry Lead',
         hospital_name: "Apollo Women's Hospital",
         department: 'Perinatal Mental Health',
@@ -210,7 +192,7 @@ export async function fetchHospitalReportDetail(reportId) {
       patient_name: 'Amara',
       patient_identifier: 'M-108',
       appointment_id: 'appt-demo-001',
-      doctor_name: 'Dr. Elena Rostova',
+      doctor_name: 'Dr. Priya Mehta',
       doctor_specialization: 'Perinatal Psychiatry Lead',
       hospital_id: 'HOSP-001',
       hospital_name: "Apollo Women's Hospital",
@@ -243,4 +225,48 @@ export async function fetchHospitalReportDetail(reportId) {
       updated_at: new Date().toISOString(),
     };
   }
+}
+
+export async function fetchHospitalNotifications() {
+  const res = await fetch('/api/notifications', {
+    headers: getHospitalHeaders(),
+  });
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export async function markHospitalNotificationRead(notificationId) {
+  const res = await fetch(`/api/notifications/${encodeURIComponent(notificationId)}/read`, {
+    method: 'PUT',
+    headers: getHospitalHeaders(),
+  });
+  return res.ok ? res.json() : null;
+}
+
+export async function markAllHospitalNotificationsRead() {
+  const res = await fetch('/api/notifications/read-all', {
+    method: 'PUT',
+    headers: getHospitalHeaders(),
+  });
+  return res.ok ? res.json() : null;
+}
+
+export async function downloadHospitalScreeningPdfBlob(screeningId) {
+  const token = getHospitalToken();
+  const res = await fetch(`/api/hospital/screenings/${encodeURIComponent(screeningId)}/report.pdf`, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/pdf',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${res.status}: Failed to download screening PDF`);
+  }
+  const blob = await res.blob();
+  if (!blob || blob.size < 100) {
+    throw new Error('Server returned an empty or invalid PDF file.');
+  }
+  return blob;
 }

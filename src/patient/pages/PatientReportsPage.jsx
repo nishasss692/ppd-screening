@@ -79,8 +79,8 @@ export function PatientReportsPage() {
     const list = screening?.reports && screening.reports.length > 0
       ? screening.reports
       : [
-        { id: 'rep-pdf', title: 'Screening Report', filename: 'Miora_Screening_Report_17Nov2026.pdf', size: '2.4 MB', type: 'pdf', authorized: true, format: '.pdf' },
-        { id: 'rep-txt', title: 'Conversation Transcript', filename: 'Miora_Conversation_Transcript_17Nov2026.txt', size: '24 KB', type: 'txt', authorized: true, format: '.txt' },
+        { id: 'rep-pdf', title: 'Screening Report', filename: 'AANCHAL_Screening_Report_17Nov2026.pdf', size: '2.4 MB', type: 'pdf', authorized: true, format: '.pdf' },
+        { id: 'rep-txt', title: 'Conversation Transcript', filename: 'AANCHAL_Conversation_Transcript_17Nov2026.txt', size: '24 KB', type: 'txt', authorized: true, format: '.txt' },
       ];
     return list.filter((rep) => {
       const type = (rep.type || '').toLowerCase();
@@ -456,7 +456,7 @@ export function PatientReportsPage() {
                   <div className="summary-step-item">
                     <span className="step-num-circle">2</span>
                     <div>
-                      <strong>Virtual Check-in with Dr. Elena Rostova</strong>
+                      <strong>Virtual Check-in with Dr. Priya Mehta</strong>
                       <p>Next scheduled telehealth consultation on 20 Nov 2026 at 11:00 AM.</p>
                     </div>
                   </div>

@@ -24,7 +24,7 @@ function renderLiveScreening(initialEntry = '/live-screening') {
   );
 }
 
-describe('Clinic & Doctor Screening Workspace (LiveScreeningPage)', () => {
+describe('Doctor Dashboard Screening Review Workspace (LiveScreeningPage)', () => {
   beforeEach(() => {
     window.localStorage.clear();
   });
@@ -33,44 +33,25 @@ describe('Clinic & Doctor Screening Workspace (LiveScreeningPage)', () => {
     vi.restoreAllMocks();
   });
 
-  it('renders In-Clinic Patient Screening by default with the exact 4 patient screening tabs', () => {
+  it('renders the 3 read-only clinician tabs: AI Screening, EPDS, and Results & Reports', () => {
     renderLiveScreening();
-
-    expect(screen.getByText('IN-CLINIC PATIENT SCREENING')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 1, name: /Maternal Screening Session/i })).toBeInTheDocument();
-    expect(screen.getByLabelText('Select patient for in-clinic screening')).toBeInTheDocument();
 
     const tabList = screen.getByRole('tablist', { name: 'Screening sections' });
     expect(tabList).toBeInTheDocument();
-
-    const tabs = screen.getAllByRole('tab');
-    expect(tabs.length).toBe(4);
-    expect(tabs[0]).toHaveTextContent('AI Screening');
-    expect(tabs[1]).toHaveTextContent('Wellbeing & Support');
-    expect(tabs[2]).toHaveTextContent('EPDS');
-    expect(tabs[3]).toHaveTextContent('Results & Reports');
-    expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
-  });
-
-  it('allows switching between In-Clinic Screening and Cohort Review modes', () => {
-    renderLiveScreening();
-
-    // Switch to Cohort Review
-    fireEvent.click(screen.getByRole('button', { name: 'Cohort Review' }));
-    expect(screen.getByText('PATIENT SCREENING REVIEW')).toBeInTheDocument();
 
     const tabs = screen.getAllByRole('tab');
     expect(tabs.length).toBe(3);
     expect(tabs[0]).toHaveTextContent('AI Screening');
     expect(tabs[1]).toHaveTextContent('EPDS');
     expect(tabs[2]).toHaveTextContent('Results & Reports');
+    expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
 
     expect(screen.getByLabelText('Clinician AI Screening Overview')).toBeInTheDocument();
     expect(screen.getByText('Authorized Patient Screening Cohort')).toBeInTheDocument();
   });
 
-  it('allows switching to EPDS and Results & Reports in Cohort Review mode', () => {
-    renderLiveScreening('/live-screening?mode=review');
+  it('switches to EPDS and Results & Reports tabs', () => {
+    renderLiveScreening();
 
     fireEvent.click(screen.getByRole('tab', { name: /EPDS/i }));
     expect(screen.getByLabelText('Clinician EPDS Overview')).toBeInTheDocument();

@@ -39,9 +39,8 @@ def client():
     with TestingSessionLocal() as db:
         seed_default_users(db)
 
-    with TestClient(app) as tc:
-        yield tc
-
+    tc = TestClient(app)
+    yield tc
     app.dependency_overrides.clear()
 
 
@@ -148,3 +147,84 @@ def test_doctor_consultation_report_visible_and_downloadable_by_patient(client: 
     assert dl_res.status_code == 200
     assert "AANCHAL — DOCTOR CONSULTATION REPORT" in dl_res.text
     assert "Your doctor reviewed your wellbeing" in dl_res.text
+
+
+def test_amara_to_dr_priya_mehta_appointment_and_screening_workflow(client: TestClient):
+    patient_token = _login(client, "patient@miora.health")
+    doctor_token = _login(client, "doctor@miora.health")
+
+    # 1. Amara submits EPDS screening
+    answers = [
+        {"question_id": f"EPDS_Q{i:02d}", "selected_index": 2 if i in (1, 2, 4) else 1, "raw_response": "Often"}
+        for i in range(1, 11)
+    ]
+    sub_res = client.post(
+        "/api/patients/me/screenings",
+        headers={"Authorization": f"Bearer {patient_token}"},
+        json={"answers": answers, "notes": "Experiencing postpartum anxiety and low mood."},
+    )
+    assert sub_res.status_code in (200, 201), sub_res.text
+    screening_id = sub_res.json()["id"]
+    epds_total = sub_res.json()["total_score"]
+
+    # 2. Amara books appointment specifically with Dr. Priya Mehta (DR-001)
+    booking_payload = {
+        "doctor_name": "Dr. Priya Mehta",
+        "doctor_id": "DR-001",
+        "role": "Perinatal Psychiatry",
+        "hospital_id": "HOSP-001",
+        "hospital_name": "Apollo Women's Hospital",
+        "hospital_location": "Bangalore, Karnataka",
+        "phone": "+91-98765-43210",
+        "date": "2026-11-28",
+        "time": "12:00 PM",
+        "type": "Telehealth Video",
+        "clinic": "Apollo Women's Hospital",
+        "reason": "Review screening results and clinical follow-up.",
+    }
+    book_res = client.post(
+        "/api/patients/me/appointments",
+        headers={"Authorization": f"Bearer {patient_token}"},
+        json=booking_payload,
+    )
+    assert book_res.status_code in (200, 201), book_res.text
+    booked = book_res.json()
+    assert booked["doctor_name"] == "Dr. Priya Mehta"
+
+    # 3. Dr. Priya Mehta retrieves assigned appointments on her dashboard
+    appts_res = client.get(
+        "/api/dashboard/appointments",
+        headers={"Authorization": f"Bearer {doctor_token}"},
+    )
+    assert appts_res.status_code == 200, appts_res.text
+    appts = appts_res.json()
+    matched = [a for a in appts if a.get("doctorId") in ("DR-001", "DR-001".lower()) or "Priya" in a.get("assignedDoctorName", "")]
+    assert len(matched) > 0, "Dr. Priya Mehta should have assigned appointments"
+
+    amara_appt = next((a for a in matched if "Amara" in a.get("patientName", "")), matched[0])
+    assert amara_appt["doctorId"] == "DR-001"
+    assert amara_appt["screeningId"] is not None
+    assert amara_appt["epdsScore"] is not None
+
+    # 4. Dr. Priya Mehta downloads official AANCHAL screening report PDF
+    doc_pdf = client.get(
+        f"/api/screenings/{screening_id}/report.pdf",
+        headers={"Authorization": f"Bearer {doctor_token}"},
+    )
+    assert doc_pdf.status_code == 200
+    assert doc_pdf.headers["content-type"] == "application/pdf"
+    assert "AANCHAL" in doc_pdf.headers.get("content-disposition", "")
+    assert doc_pdf.content.startswith(b"%PDF")
+    assert b"AANCHAL" in doc_pdf.content
+
+    # 5. Patient downloads official AANCHAL screening report PDF
+    pat_pdf = client.get(
+        f"/api/patients/me/screenings/{screening_id}/report.pdf",
+        headers={"Authorization": f"Bearer {patient_token}"},
+    )
+    assert pat_pdf.status_code == 200
+    assert pat_pdf.headers["content-type"] == "application/pdf"
+    assert "AANCHAL" in pat_pdf.headers.get("content-disposition", "")
+    assert pat_pdf.content.startswith(b"%PDF")
+    assert b"AANCHAL" in pat_pdf.content
+

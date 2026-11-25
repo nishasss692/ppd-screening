@@ -305,7 +305,7 @@ export function CareSuggestionsPage() {
               <div className="support-text-wrap">
                 <h2 className="support-title">Need Clinical Support?</h2>
                 <p className="support-desc">
-                  Connect directly with Dr. Elena Rostova for personalized psychiatric evaluations and guided care adjustments.
+                  Connect directly with Dr. Priya Mehta for personalized psychiatric evaluations and guided care adjustments.
                 </p>
               </div>
             </div>

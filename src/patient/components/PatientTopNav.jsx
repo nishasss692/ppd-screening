@@ -254,15 +254,6 @@ export function PatientTopNav({ onToggleMobile }) {
                     <PatientIcon name="settings" size={15} />
                     <span>Settings</span>
                   </Link>
-                  <Link
-                    to="/dashboard"
-                    className="patient-popover-item"
-                    role="menuitem"
-                    onClick={() => setOpenMenu(null)}
-                  >
-                    <PatientIcon name="doctor" size={15} />
-                    <span>Switch to Clinician Dashboard</span>
-                  </Link>
                   <div className="patient-popover-divider" />
                   <button
                     type="button"

@@ -85,7 +85,7 @@ export function ExportReportModal({ isOpen, onClose, screening, mother }) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `miora-screening-${String(screening.motherId).toLowerCase()}-${String(screening.id).toLowerCase()}.txt`;
+      link.download = `AANCHAL_Screening_${String(screening.motherId).toLowerCase()}_${String(screening.id).toLowerCase()}.txt`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

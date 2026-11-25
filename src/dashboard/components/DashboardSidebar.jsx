@@ -7,9 +7,9 @@ import { CLINICIAN_PROFILE } from '../data/mockClinicalData.js';
 
 export const NAV_ITEMS = [
   { label: 'Mothers & Cases', to: '/mothers', icon: 'users' },
+  { label: 'Appointments', to: '/appointments', icon: 'calendar' },
   { label: 'Screening', to: '/live-screening', matchPaths: ['/live-screening', '/upload-analyze'], icon: 'video' },
   { label: 'Results', to: '/results', icon: 'fileText' },
-  { label: 'Discordance', to: '/discordance', icon: 'layers' },
   { label: 'Insights & Care', to: '/insights', icon: 'barChart' },
   { label: 'Clinical Review', to: '/clinical-review', matchPaths: ['/clinical-review', '/create-consultation-report', '/consultation-report'], icon: 'clipboardCheck' },
 ];

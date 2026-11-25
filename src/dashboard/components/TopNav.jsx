@@ -18,7 +18,15 @@ const BREADCRUMB_MAP = {
 };
 
 export function TopNav({ onToggleMobileNav }) {
-  const { alerts, mothers, screenings, isLiveSynced } = useClinicalData();
+  const {
+    alerts,
+    doctorNotifications = [],
+    markDoctorNotificationRead,
+    markAllDoctorNotificationsRead,
+    mothers,
+    screenings,
+    isLiveSynced,
+  } = useClinicalData();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -209,44 +217,90 @@ export function TopNav({ onToggleMobileNav }) {
           </div>
 
           <div className="dash-utility-wrap">
-            <button
-              type="button"
-              className={`dash-icon-btn dash-bell-btn ${openMenu === 'alerts' ? 'is-open' : ''}`}
-              aria-label={`Notifications (${alerts.length} clinical alerts)`}
-              aria-expanded={openMenu === 'alerts'}
-              onClick={() => setOpenMenu((prev) => (prev === 'alerts' ? null : 'alerts'))}
-            >
-              <DashboardIcon name="bell" size={18} strokeWidth={1.8} />
-              {alerts.length > 0 && <span className="dash-bell-dot" aria-hidden="true" />}
-            </button>
+            {(() => {
+              const unreadNotifs = doctorNotifications.filter((n) => !n.isRead && !n.read);
+              const totalBadge = unreadNotifs.length + alerts.length;
+              return (
+                <>
+                  <button
+                    type="button"
+                    className={`dash-icon-btn dash-bell-btn ${openMenu === 'alerts' ? 'is-open' : ''}`}
+                    aria-label={`Notifications (${unreadNotifs.length} unread)`}
+                    aria-expanded={openMenu === 'alerts'}
+                    onClick={() => setOpenMenu((prev) => (prev === 'alerts' ? null : 'alerts'))}
+                  >
+                    <DashboardIcon name="bell" size={18} strokeWidth={1.8} />
+                    {totalBadge > 0 && <span className="dash-bell-dot" aria-hidden="true" />}
+                  </button>
 
-            {openMenu === 'alerts' && (
-              <div className="dash-popover dash-alerts-popover" role="dialog" aria-label="Clinical alerts">
-                <div className="dash-popover-header">
-                  <span>Clinical Notifications</span>
-                  <span className="dash-popover-count">{alerts.length} active</span>
-                </div>
-                <div className="dash-alerts-list">
-                  {alerts.map((alert) => (
-                    <button
-                      key={alert.id}
-                      type="button"
-                      className="dash-alert-item"
-                      onClick={() => {
-                        setOpenMenu(null);
-                        navigate(`/mothers/${alert.motherId}`);
-                      }}
-                    >
-                      <span className={`dash-alert-dot severity-${alert.severity}`} aria-hidden="true" />
-                      <div className="dash-alert-copy">
-                        <p>{alert.title}</p>
-                        <span>{alert.time}</span>
+                  {openMenu === 'alerts' && (
+                    <div className="dash-popover dash-alerts-popover" role="dialog" aria-label="Clinical notifications">
+                      <div className="dash-popover-header">
+                        <span>Clinical Notifications</span>
+                        {unreadNotifs.length > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => markAllDoctorNotificationsRead?.()}
+                            style={{ background: 'none', border: 'none', color: '#a3485e', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
+                          >
+                            Mark all read ({unreadNotifs.length})
+                          </button>
+                        ) : (
+                          <span className="dash-popover-count">{doctorNotifications.length + alerts.length} total</span>
+                        )}
                       </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+                      <div className="dash-alerts-list">
+                        {doctorNotifications.map((n) => (
+                          <button
+                            key={n.id}
+                            type="button"
+                            className="dash-alert-item"
+                            style={{ background: !n.isRead ? '#fdf2f6' : 'transparent' }}
+                            onClick={() => {
+                              markDoctorNotificationRead?.(n.id);
+                              setOpenMenu(null);
+                              if (n.relatedAppointmentId) {
+                                navigate(`/appointments?appt=${encodeURIComponent(n.relatedAppointmentId)}`);
+                              } else {
+                                navigate('/appointments');
+                              }
+                            }}
+                          >
+                            <span className={`dash-alert-dot ${!n.isRead ? 'severity-high' : 'severity-low'}`} aria-hidden="true" />
+                            <div className="dash-alert-copy">
+                              <p style={{ fontWeight: !n.isRead ? 700 : 500 }}>{n.message}</p>
+                              <span>
+                                {n.metadata?.date ? `${n.metadata.date} · ${n.metadata.time || ''} · ` : ''}
+                                {n.metadata?.hospitalName || n.date}
+                                {' · '}
+                                <strong style={{ color: '#a3485e' }}>View Consultation →</strong>
+                              </span>
+                            </div>
+                          </button>
+                        ))}
+                        {alerts.map((alert) => (
+                          <button
+                            key={alert.id}
+                            type="button"
+                            className="dash-alert-item"
+                            onClick={() => {
+                              setOpenMenu(null);
+                              navigate(`/mothers/${alert.motherId}`);
+                            }}
+                          >
+                            <span className={`dash-alert-dot severity-${alert.severity}`} aria-hidden="true" />
+                            <div className="dash-alert-copy">
+                              <p>{alert.title}</p>
+                              <span>{alert.time}</span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
 
           <div className="dash-utility-wrap">

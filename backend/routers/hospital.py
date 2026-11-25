@@ -56,8 +56,8 @@ HOSPITAL_ASSOCIATED_DOCTORS = {
     "HOSP-001": [
         {
             "doctor_id": "DR-001",
-            "name": "Dr. Sunita Rao",
-            "specialization": "Perinatal Psychiatrist",
+            "name": "Dr. Priya Mehta",
+            "specialization": "Perinatal Psychiatry",
             "years_experience": 14,
             "availability": "Mon, Wed, Fri · 10:00 AM – 2:00 PM",
             "consultation_types": ["In-person", "Telehealth"],
@@ -693,5 +693,75 @@ def get_hospital_report_detail(
         submitted_at=report.submitted_at.isoformat() if report.submitted_at else None,
         created_at=report.created_at.isoformat() if report.created_at else datetime.now(timezone.utc).isoformat(),
         updated_at=report.updated_at.isoformat() if report.updated_at else datetime.now(timezone.utc).isoformat(),
+    )
+
+
+@router.get(
+    "/screenings/{screening_id}/report.pdf",
+    summary="Download patient AANCHAL screening PDF report (Hospital access with permission check)",
+)
+def download_hospital_screening_pdf(
+    screening_id: uuid.UUID,
+    user: User = Depends(require_hospital),
+    db: Session = Depends(get_db),
+):
+    """Stream the patient's AANCHAL screening PDF if the patient has an appointment at this hospital."""
+    from fastapi.responses import Response
+    from backend.models.screening import Screening
+    from backend.services.patient_report_pdf import generate_patient_screening_pdf
+    from backend.services.questionnaire_service import questionnaire_service
+
+    hosp_prof = get_user_hospital_profile(user)
+    target_hid = hosp_prof["hospital_id"]
+
+    screening = db.get(Screening, screening_id)
+    if not screening:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Screening not found.")
+
+    # Verify this hospital has an appointment or report for this mother
+    plans = db.scalars(select(CarePlan).where(CarePlan.mother_id == screening.mother_id)).all()
+    reports = db.scalars(select(ConsultationReport).where(ConsultationReport.mother_id == screening.mother_id)).all()
+
+    authorized = any(
+        _parse_care_plan_meta(cp).get("hospital_id") == target_hid
+        or (cp.referral_destination and target_hid in cp.referral_destination)
+        for cp in plans
+    ) or any(r.hospital_id == target_hid for r in reports)
+
+    if not authorized:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: Patient is not associated with your hospital organization.",
+        )
+
+    mother = db.get(Mother, screening.mother_id)
+    patient_name = mother.name if mother else "Patient"
+    patient_id_label = f"P-{str(screening.mother_id)[:8].upper()}"
+
+    q_resp = questionnaire_service.get_questionnaire()
+    questions = [q.model_dump() if hasattr(q, "model_dump") else q for q in q_resp.questions]
+
+    pdf_bytes = generate_patient_screening_pdf(
+        patient_name=patient_name,
+        patient_id=patient_id_label,
+        screening_date=screening.screening_date,
+        total_score=screening.total_score,
+        risk_classification=screening.risk_classification,
+        q10_safety_alert=screening.q10_safety_alert,
+        submitted_answers=screening.submitted_answers or {},
+        item_scores=screening.item_scores or {},
+        questions=questions,
+        notes=screening.notes,
+        multimodal_scores=screening.multimodal_scores,
+        clinical_prediction=screening.clinical_model_prediction,
+        discordance_flag=bool(getattr(screening, "discordance_flag", False)),
+    )
+
+    safe_first = (patient_name.split()[0] if patient_name else "Patient").strip(".,")
+    filename = f"AANCHAL_Screening_Report_{safe_first}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 

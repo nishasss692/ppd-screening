@@ -173,10 +173,36 @@ def create_consultation_report(
     is_final = payload.status.lower() == "final"
     now_dt = datetime.now(timezone.utc)
 
-    pf = _generate_patient_friendly_version(payload)
+    # Resolve doctor dynamically from consultation/appointment relationship first, then authenticated user
+    assigned_doc_name = None
+    assigned_doc_id = None
+    if payload.appointment_id:
+        from backend.models.care_plan import CarePlan
+        try:
+            cp_uuid = uuid.UUID(str(payload.appointment_id))
+            cp = db.get(CarePlan, cp_uuid)
+            if cp:
+                cp_meta = {}
+                if cp.notes and cp.notes.strip().startswith("{"):
+                    try:
+                        cp_meta = json.loads(cp.notes)
+                    except Exception:
+                        cp_meta = {}
+                assigned_doc_name = cp_meta.get("assigned_doctor_name") or cp_meta.get("doctor_name") or cp.assigned_clinician_id
+                assigned_doc_id = cp_meta.get("assigned_doctor_id") or cp_meta.get("doctor_id")
+        except ValueError:
+            pass
 
-    doctor_name = payload.doctor_name or user.full_name or "Dr. Elena Rostova"
-    doctor_id = payload.doctor_id or f"DR-{str(user.id)[:6]}"
+    doctor_name = (assigned_doc_name or user.full_name or payload.doctor_name or "").strip()
+    if not doctor_name:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Assigned doctor name is missing for this consultation report.",
+        )
+    doctor_id = assigned_doc_id or payload.doctor_id or f"DR-{str(user.id)[:6]}"
+
+    payload_copy = payload.model_copy(update={"doctor_name": doctor_name}) if hasattr(payload, "model_copy") else payload
+    pf = _generate_patient_friendly_version(payload_copy)
 
     report = ConsultationReport(
         report_code=report_code,
