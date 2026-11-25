@@ -112,9 +112,19 @@ export function PatientProfilePage() {
       {/* Main Personal Profile Card */}
       <div className="patient-profile-card">
         <div className="patient-profile-user-row">
-          <div className="patient-profile-avatar-large">
-            {patient?.avatarInitials || 'P'}
-          </div>
+          <img
+            src="/assets/care-mother-feathered.png"
+            alt=""
+            aria-hidden="true"
+            style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '50%',
+              objectFit: 'cover',
+              border: '2px solid #f2d5de',
+              flexShrink: 0,
+            }}
+          />
           <div className="patient-profile-user-meta">
             <h2 className="patient-profile-name">
               {patient?.fullName || 'Patient'}

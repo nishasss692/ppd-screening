@@ -17,10 +17,10 @@ export function PatientScreeningPage() {
     rawTab === 'psychosocial' || rawTab === 'wellbeing'
       ? 'psychosocial'
       : rawTab === 'epds'
-      ? 'epds'
-      : rawTab === 'results' || rawTab === 'reports' || rawTab === 'results-reports'
-      ? 'results'
-      : 'ai-screening';
+        ? 'epds'
+        : rawTab === 'results' || rawTab === 'reports' || rawTab === 'results-reports'
+          ? 'results'
+          : 'ai-screening';
 
   const handleTabChange = (tabKey) => {
     setSearchParams({ tab: tabKey });
@@ -42,8 +42,21 @@ export function PatientScreeningPage() {
       </div>
 
       {/* Hero Header Box with Page Heading & 4-Stage Progress Tracker */}
-      <div className="patient-hero-box screening-hero-box" style={{ marginBottom: '20px' }}>
-        <div className="patient-hero-box-text">
+      <div className="patient-hero-box screening-hero-box" style={{ marginBottom: '20px', position: 'relative', overflow: 'hidden' }}>
+        <div className="patient-hero-box-text" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <img
+            src="/assets/care-header-mother-baby.png"
+            alt=""
+            aria-hidden="true"
+            style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '14px',
+              objectFit: 'cover',
+              border: '1px solid #f2dce4',
+              flexShrink: 0,
+            }}
+          />
           {activeTab === 'results' ? (
             <h1 className="screening-page-title">
               Results &amp; Reports

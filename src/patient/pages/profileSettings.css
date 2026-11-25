@@ -62,7 +62,7 @@
 }
 
 .patient-profile-page-heading {
-  font-family: var(--patient-font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  font-family: var(--patient-font-serif, 'Playfair Display', Georgia, serif);
   font-size: 24px;
   font-weight: 700;
   color: var(--patient-ink, #2d3748);
@@ -71,7 +71,7 @@
 }
 
 .patient-profile-name {
-  font-family: var(--patient-font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  font-family: var(--patient-font-serif, 'Playfair Display', Georgia, serif);
   font-size: 20px;
   font-weight: 600;
   color: var(--patient-ink);
@@ -240,7 +240,7 @@
 }
 
 .clinical-info-title {
-  font-family: var(--patient-font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  font-family: var(--patient-font-serif, 'Playfair Display', Georgia, serif);
   font-size: 18px;
   font-weight: 700;
   color: var(--patient-ink, #2d3748);
@@ -283,7 +283,7 @@
 }
 
 .clinical-sub-heading {
-  font-family: var(--patient-font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  font-family: var(--patient-font-serif, 'Playfair Display', Georgia, serif);
   font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;

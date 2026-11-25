@@ -177,13 +177,28 @@ export function MothersCasesPage() {
       <div className="miora-command-frame">
         {/* Page Header */}
         <section className="miora-dash-header" aria-labelledby="mothers-cases-heading">
-          <div className="miora-dash-header-copy">
-            <div className="miora-dash-eyebrow">
-              <span className="miora-dash-eyebrow-text">MOTHERS &amp; CASES</span>
+          <div className="miora-dash-header-copy" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <img
+              src="/assets/medical-history-illustration-clean.png"
+              alt=""
+              aria-hidden="true"
+              style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '14px',
+                objectFit: 'cover',
+                border: '1px solid #f2dce4',
+                flexShrink: 0,
+              }}
+            />
+            <div>
+              <div className="miora-dash-eyebrow">
+                <span className="miora-dash-eyebrow-text">MOTHERS &amp; CASES</span>
+              </div>
+              <h1 id="mothers-cases-heading" className="miora-dash-title">
+                Mother Registry &amp; Case Management
+              </h1>
             </div>
-            <h1 id="mothers-cases-heading" className="miora-dash-title">
-              Mother Registry &amp; Case Management
-            </h1>
           </div>
 
           <div className="miora-dash-header-actions">
