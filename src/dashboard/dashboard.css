@@ -1161,7 +1161,7 @@
   position: relative;
   z-index: 2;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 24px;
   margin-bottom: 22px;
@@ -4174,8 +4174,13 @@
 .miora-results-header-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  gap: 8px;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+}
+
+.miora-results-header-actions button {
+  white-space: nowrap;
 }
 
 .miora-results-status-wrap {

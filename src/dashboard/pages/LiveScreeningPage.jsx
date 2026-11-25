@@ -45,10 +45,10 @@ export function LiveScreeningPage() {
     rawTab === 'psychosocial' || rawTab === 'wellbeing'
       ? 'psychosocial'
       : rawTab === 'epds'
-      ? 'epds'
-      : rawTab === 'results' || rawTab === 'reports' || rawTab === 'results-reports'
-      ? 'results'
-      : 'ai-screening';
+        ? 'epds'
+        : rawTab === 'results' || rawTab === 'reports' || rawTab === 'results-reports'
+          ? 'results'
+          : 'ai-screening';
 
   const handleTabChange = (nextTab) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -77,7 +77,7 @@ export function LiveScreeningPage() {
             </h1>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'nowrap', flexShrink: 0 }}>
             {viewMode === 'in-clinic' && mothers.length > 0 && (
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#5c4750', fontWeight: 600 }}>
                 <span>Patient:</span>

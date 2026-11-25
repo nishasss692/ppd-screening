@@ -44,7 +44,7 @@ describe('Miora Screen 05: Maternal Screening Results', () => {
     expect(screen.getByText('N. R.')).toBeInTheDocument();
     expect(screen.getByText('Week 2')).toBeInTheDocument();
     expect(screen.getByText('Apr 16, 2026 · 10:24 AM')).toBeInTheDocument();
-    expect(screen.getByText('Screening Completed')).toBeInTheDocument();
+    expect(screen.queryByText('Screening Completed')).not.toBeInTheDocument();
 
     // Row 1: Overall Risk, Modality-wise Analysis
     expect(screen.getByRole('heading', { name: 'Overall Risk Assessment' })).toBeInTheDocument();
@@ -98,7 +98,7 @@ describe('Miora Screen 05: Maternal Screening Results', () => {
   it('handles partial modality availability, missing historical trend, and missing mother record', () => {
     renderResults('/results/M-112');
 
-    expect(screen.getByText('Screening Pending')).toBeInTheDocument();
+    expect(screen.queryByText('Screening Pending')).not.toBeInTheDocument();
     expect(screen.getAllByText('Unavailable').length).toBeGreaterThanOrEqual(2);
     expect(
       screen.getByText('No historical screening trend available yet for this mother.')

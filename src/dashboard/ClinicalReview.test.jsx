@@ -55,7 +55,7 @@ describe('Miora Screen 08: Clinical Review & Assessment', () => {
     expect(screen.getByText('N. R.')).toBeInTheDocument();
     expect(screen.getByText('Week 2')).toBeInTheDocument();
     expect(screen.getByText('Apr 16, 2026')).toBeInTheDocument();
-    expect(screen.getByText('Under Clinical Review')).toBeInTheDocument();
+    expect(screen.queryByText('Under Clinical Review')).not.toBeInTheDocument();
 
     // Row 1: Full-width Clinical Assessment
     expect(screen.queryByRole('heading', { name: 'AI Screening Summary' })).not.toBeInTheDocument();
@@ -150,7 +150,6 @@ describe('Miora Screen 08: Clinical Review & Assessment', () => {
     await waitFor(() => {
       expect(screen.getByRole('status')).toHaveTextContent(/Clinical review finalized for M-108/i);
     });
-    expect(screen.getByText('Clinical Review Finalized')).toBeInTheDocument();
     expect(screen.getByText('Moderate Risk')).toBeInTheDocument();
   });
 

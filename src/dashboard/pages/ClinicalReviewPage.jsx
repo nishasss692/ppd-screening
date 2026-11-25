@@ -445,17 +445,6 @@ export function ClinicalReviewPage({ reviewSubmitter = submitClinicalReview }) {
                 <strong>{summary?.screeningDateShort || activeMother.lastScreeningDate}</strong>
               </div>
             </div>
-
-            <div className="miora-results-status-wrap">
-              <span className="miora-results-status-pill is-completed">
-                <DashboardIcon name="checkCircle" size={15} strokeWidth={1.8} />
-                <span>
-                  {isReviewedForCurrentSession
-                    ? 'Clinical Review Finalized'
-                    : 'Under Clinical Review'}
-                </span>
-              </span>
-            </div>
           </section>
         )}
 

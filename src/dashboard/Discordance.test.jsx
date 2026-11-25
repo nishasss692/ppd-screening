@@ -46,7 +46,7 @@ describe('Miora Screen 06: Cross-Modal Discordance', () => {
     expect(screen.getByText('Week 2')).toBeInTheDocument();
     expect(screen.getByText('Multimodal (Text · Voice · Video)')).toBeInTheDocument();
     expect(screen.getByText('Apr 16, 2026 · 10:24 AM')).toBeInTheDocument();
-    expect(screen.getByText('Analysis Completed')).toBeInTheDocument();
+    expect(screen.queryByText('Analysis Completed')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Record/i })).toHaveAttribute(
       'href',
       '/mothers/M-108'
@@ -87,7 +87,7 @@ describe('Miora Screen 06: Cross-Modal Discordance', () => {
     renderDiscordance('/discordance/M-112');
 
     expect(screen.getByLabelText('Select mother for discordance analysis')).toHaveValue('M-112');
-    expect(screen.getByText('Analysis Pending')).toBeInTheDocument();
+    expect(screen.queryByText('Analysis Pending')).not.toBeInTheDocument();
     expect(screen.getByText('Insufficient Modalities')).toBeInTheDocument();
 
     renderDiscordance('/discordance/M-999');

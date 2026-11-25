@@ -46,7 +46,7 @@ describe('Miora Screen 07: Personalized Insights & Care', () => {
     expect(screen.getByText('N. R.')).toBeInTheDocument();
     expect(screen.getByText('Week 2')).toBeInTheDocument();
     expect(screen.getByText('Apr 16, 2026')).toBeInTheDocument();
-    expect(screen.getByText('Care Plan Ready')).toBeInTheDocument();
+    expect(screen.queryByText('Care Plan Ready')).not.toBeInTheDocument();
 
     // Row 1
     expect(screen.getByRole('heading', { name: 'Key Insights' })).toBeInTheDocument();
@@ -120,7 +120,6 @@ describe('Miora Screen 07: Personalized Insights & Care', () => {
 
     // Finalize Care Plan
     fireEvent.click(screen.getByRole('button', { name: /Finalize Care Plan/i }));
-    expect(screen.getByText('Care Plan Finalized')).toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent(
       /Care plan finalized for M-108/i
     );

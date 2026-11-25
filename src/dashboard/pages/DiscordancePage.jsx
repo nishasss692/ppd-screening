@@ -240,22 +240,6 @@ export function DiscordancePage() {
                 <strong>{activeScreening.screeningDateTime || activeScreening.completedAgo}</strong>
               </div>
             </div>
-
-            <div className="miora-results-status-wrap">
-              <span
-                className={`miora-results-status-pill ${isCompleted ? 'is-completed' : 'is-pending'
-                  }`}
-              >
-                <DashboardIcon
-                  name={isCompleted ? 'checkCircle' : 'clock'}
-                  size={15}
-                  strokeWidth={1.8}
-                />
-                <span>
-                  {isCompleted ? 'Analysis Completed' : `Analysis ${activeScreening.status}`}
-                </span>
-              </span>
-            </div>
           </section>
         )}
 
