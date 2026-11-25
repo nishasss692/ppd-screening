@@ -11,11 +11,13 @@ import './reports.css';
 export function PatientReportsPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const initialTab = searchParams.get('tab') || 'overview';
+  const rawTab = searchParams.get('tab');
+  const initialTab = rawTab === 'consultations' ? 'consultations' : 'screening';
 
   const {
     patient,
     screening,
+    carePlan,
     notifications,
     markNotificationRead,
     markAllNotificationsRead,
@@ -29,6 +31,10 @@ export function PatientReportsPage() {
   const [isEmptyStateDemo, setIsEmptyStateDemo] = useState(false);
   const [patientReports, setPatientReports] = useState([]);
   const [selectedReportForView, setSelectedReportForView] = useState(null);
+
+  const isDoctorFinalized = Boolean(
+    carePlan?.clinicianReview || carePlan?.clinicianPlan || patientReports.length > 0
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -73,9 +79,9 @@ export function PatientReportsPage() {
     const list = screening?.reports && screening.reports.length > 0
       ? screening.reports
       : [
-          { id: 'rep-pdf', title: 'Screening Report', filename: 'Miora_Screening_Report_17Nov2026.pdf', size: '2.4 MB', type: 'pdf', authorized: true, format: '.pdf' },
-          { id: 'rep-txt', title: 'Conversation Transcript', filename: 'Miora_Conversation_Transcript_17Nov2026.txt', size: '24 KB', type: 'txt', authorized: true, format: '.txt' },
-        ];
+        { id: 'rep-pdf', title: 'Screening Report', filename: 'Miora_Screening_Report_17Nov2026.pdf', size: '2.4 MB', type: 'pdf', authorized: true, format: '.pdf' },
+        { id: 'rep-txt', title: 'Conversation Transcript', filename: 'Miora_Conversation_Transcript_17Nov2026.txt', size: '24 KB', type: 'txt', authorized: true, format: '.txt' },
+      ];
     return list.filter((rep) => {
       const type = (rep.type || '').toLowerCase();
       const title = (rep.title || '').toLowerCase();
@@ -128,11 +134,8 @@ export function PatientReportsPage() {
   const areaD = `${pathD} L ${points[points.length - 1].x} ${plotBottom} L ${points[0].x} ${plotBottom} Z`;
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: 'bar-chart' },
     { id: 'screening', label: 'Screening Reports', icon: 'clipboard' },
-    { id: 'consultations', label: 'Consultation Reports', icon: 'file-text' },
-    { id: 'mood', label: 'Mood Tracking', icon: 'trending-up' },
-    { id: 'all-reports', label: 'All Reports', icon: 'file-text' },
+    { id: 'consultations', label: 'Clinical Reports', icon: 'file-text' },
   ];
 
   return (
@@ -197,18 +200,10 @@ export function PatientReportsPage() {
             );
           })}
         </div>
-
-        <button
-          type="button"
-          className="reports-empty-state-toggle-btn"
-          onClick={() => setIsEmptyStateDemo((prev) => !prev)}
-        >
-          {isEmptyStateDemo ? 'Show Demo Data' : 'Simulate Empty State'}
-        </button>
       </nav>
 
-      {/* Tab 1: Overview Dashboard */}
-      {activeTab === 'overview' && (
+      {/* Overview removed per user request — keep only Screening Reports & Clinical Reports */}
+      {false && activeTab === 'overview' && (
         <div className="reports-overview-grid">
           {/* Top Row: 3 KPI / Summary Cards */}
           <div className="reports-top-cards-row">
@@ -489,64 +484,80 @@ export function PatientReportsPage() {
         </div>
       )}
 
-      {/* Tab 2: Screening Reports View */}
+      {/* Tab 1: Screening Reports View (only visible after doctor finalization) */}
       {activeTab === 'screening' && (
         <div className="reports-tab-view">
-          <div className="patient-card reports-tab-card">
-            <h2 className="reports-tab-heading">Detailed AI Screening Assessment</h2>
-            <p className="reports-tab-sub">
-              Full multimodal screening report conducted on 17 Nov 2026 with Dr. Elena Rostova's maternal care unit.
-            </p>
-
-            <div className="screening-tab-details-grid">
-              <div className="detail-stat-box">
-                <span className="detail-stat-label">Edinburgh PPD Score</span>
-                <span className="detail-stat-val">
-                  {screening?.totalScore !== undefined
-                    ? `${screening.totalScore} / 30`
-                    : screening?.epdsResult?.total_score !== undefined
-                    ? `${screening.epdsResult.total_score} / ${screening.epdsResult.maximum_score || 30}`
-                    : '14 / 30'}
-                </span>
-                <span className="detail-stat-sub">
-                  {screening?.riskLabel || 'Moderate Risk Category'}
-                </span>
-              </div>
-              <div className="detail-stat-box">
-                <span className="detail-stat-label">Session Duration</span>
-                <span className="detail-stat-val">04:12</span>
-                <span className="detail-stat-sub">Acoustic &amp; Conversational</span>
-              </div>
-              <div className="detail-stat-box">
-                <span className="detail-stat-label">Consent &amp; Privacy</span>
-                <span className="detail-stat-val">Verified</span>
-                <span className="detail-stat-sub">Encrypted Storage</span>
-              </div>
-            </div>
-
-            <div className="reports-tab-action-row">
+          {!isDoctorFinalized ? (
+            <div className="patient-card reports-tab-card" style={{ textAlign: 'center', padding: '36px 24px' }}>
+              <h2 className="reports-tab-heading">Pending Clinician Finalization</h2>
+              <p className="reports-tab-sub" style={{ maxWidth: '520px', margin: '8px auto 18px' }}>
+                Your screening reports will be visible here once your doctor reviews and finalizes your assessment.
+              </p>
               <button
                 type="button"
-                className="patient-btn-primary"
-                onClick={() => downloadReport({ title: 'Full Screening Report', filename: `Miora_Screening_${screening?.date ? screening.date.replace(/\s+/g, '_') : 'Report'}.pdf`, type: 'pdf', authorized: true })}
+                className="patient-btn-secondary"
+                onClick={() => navigate('/patient/screening')}
               >
-                <PatientIcon name="download" size={14} />
-                <span>Download Official PDF</span>
+                <span>Go to Screening</span>
               </button>
             </div>
-          </div>
+          ) : (
+            <div className="patient-card reports-tab-card">
+              <h2 className="reports-tab-heading">Detailed AI Screening Assessment</h2>
+              <p className="reports-tab-sub">
+                Full multimodal screening report conducted on 17 Nov 2026 with Dr. Elena Rostova's maternal care unit.
+              </p>
+
+              <div className="screening-tab-details-grid">
+                <div className="detail-stat-box">
+                  <span className="detail-stat-label">Edinburgh PPD Score</span>
+                  <span className="detail-stat-val">
+                    {screening?.totalScore !== undefined
+                      ? `${screening.totalScore} / 30`
+                      : screening?.epdsResult?.total_score !== undefined
+                        ? `${screening.epdsResult.total_score} / ${screening.epdsResult.maximum_score || 30}`
+                        : '14 / 30'}
+                  </span>
+                  <span className="detail-stat-sub">
+                    {screening?.riskLabel || 'Moderate Risk Category'}
+                  </span>
+                </div>
+                <div className="detail-stat-box">
+                  <span className="detail-stat-label">Session Duration</span>
+                  <span className="detail-stat-val">04:12</span>
+                  <span className="detail-stat-sub">Acoustic &amp; Conversational</span>
+                </div>
+                <div className="detail-stat-box">
+                  <span className="detail-stat-label">Consent &amp; Privacy</span>
+                  <span className="detail-stat-val">Verified</span>
+                  <span className="detail-stat-sub">Encrypted Storage</span>
+                </div>
+              </div>
+
+              <div className="reports-tab-action-row">
+                <button
+                  type="button"
+                  className="patient-btn-primary"
+                  onClick={() => downloadReport({ title: 'Full Screening Report', filename: `Miora_Screening_${screening?.date ? screening.date.replace(/\s+/g, '_') : 'Report'}.pdf`, type: 'pdf', authorized: true })}
+                >
+                  <PatientIcon name="download" size={14} />
+                  <span>Download Official PDF</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Tab 3: Consultation Reports View */}
+      {/* Tab 2: Clinical Reports View */}
       {activeTab === 'consultations' && (
         <div className="reports-tab-view">
           <div className="patient-card reports-tab-card">
             <div className="tab-card-header-row">
               <div>
-                <h2 className="reports-tab-heading">Consultation Reports</h2>
+                <h2 className="reports-tab-heading">Clinical Reports</h2>
                 <p className="reports-tab-sub">
-                  Simplified, doctor-approved summaries of your consultations, medication instructions, and care guidance.
+                  Doctor-finalized clinical reviews, consultation summaries, medication instructions, and care guidance.
                 </p>
               </div>
 
@@ -792,75 +803,6 @@ export function PatientReportsPage() {
               </div>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Tab 4: Mood Tracking View */}
-      {activeTab === 'mood' && (
-        <div className="reports-tab-view">
-          <div className="patient-card reports-tab-card">
-            <h2 className="reports-tab-heading">Mood &amp; Emotional State Tracking</h2>
-            <p className="reports-tab-sub">
-              Weekly progress records across conversational checkpoints and self-checkins.
-            </p>
-
-            <div className="mood-progress-table-wrap">
-              <table className="mood-progress-table">
-                <thead>
-                  <tr>
-                    <th>Check-in Period</th>
-                    <th>Emotional Score</th>
-                    <th>Clinical Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {trendData.map((d) => (
-                    <tr key={d.week}>
-                      <td>{d.week}</td>
-                      <td><strong>{d.score}%</strong></td>
-                      <td>
-                        <span className={`connect-status-badge ${d.score > 60 ? 'status-scheduled' : 'status-completed'}`}>
-                          {d.score > 60 ? 'Moderate Alert' : 'Mild Strain'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Tab 5: All Reports Archive */}
-      {activeTab === 'all-reports' && (
-        <div className="reports-tab-view">
-          <div className="patient-card reports-tab-card">
-            <h2 className="reports-tab-heading">Authorized Clinical Records Archive</h2>
-            <p className="reports-tab-sub">
-              Secure archive of all official reports and health summaries for {patient?.name || 'Amara'}.
-            </p>
-
-            <div className="reports-download-items-list">
-              {downloadableReports.map((rep) => (
-                <div key={rep.id} className="reports-download-row">
-                  <div className="download-row-info">
-                    <strong className="download-row-title">{rep.title}</strong>
-                    <span className="download-row-sub">{rep.filename} &bull; {rep.size} &bull; Confidential (Patient Authorized)</span>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="patient-btn-secondary download-action-btn"
-                    onClick={() => downloadReport(rep)}
-                  >
-                    <PatientIcon name="download" size={13} />
-                    <span>Download</span>
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       )}
 

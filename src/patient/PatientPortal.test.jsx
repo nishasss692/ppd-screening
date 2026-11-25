@@ -213,60 +213,38 @@ describe('Miora Patient Portal Visual Refinement & Six Screens', () => {
     expect(screen.getByText(/Consultation successfully scheduled with Dr. Elena Rostova!/i)).toBeInTheDocument();
   });
 
-  it('Screen 5 — My Reports: renders overview metrics, risk score gauge, trend chart, and tab switching', async () => {
+  it('Screen 5 — My Reports: shows only Screening Reports and Clinical Reports tabs gated until doctor finalization', async () => {
     renderPatientApp('/patient/reports');
 
     // Title
     expect(screen.getByRole('heading', { level: 1, name: /My Reports & Analytics/i })).toBeInTheDocument();
 
-    // Cards in Overview
-    expect(screen.getByText('Latest Screening Result')).toBeInTheDocument();
-    expect(screen.getByText('64%')).toBeInTheDocument();
-    expect(screen.getByText('Moderate Risk for PPD')).toBeInTheDocument();
-    expect(screen.getByText('Emotional Well-being Trend')).toBeInTheDocument();
-    expect(screen.getByText('Download Reports')).toBeInTheDocument();
-    expect(screen.getByText('Key Insights & Clinical Signals')).toBeInTheDocument();
-
-    // Download action
-    const downloadBtn = screen.getAllByRole('button', { name: /Download/i })[0];
-    fireEvent.click(downloadBtn);
-    expect(await screen.findByText(/Downloaded/i)).toBeInTheDocument();
-
-    // Tab switching to Screening Reports
+    // Only Screening Reports & Clinical Reports tabs
     const screeningTab = screen.getByRole('tab', { name: /Screening Reports/i });
-    fireEvent.click(screeningTab);
-    expect(screen.getByText('Detailed AI Screening Assessment')).toBeInTheDocument();
-    expect(screen.getByText('14 / 30')).toBeInTheDocument();
+    const clinicalTab = screen.getByRole('tab', { name: /Clinical Reports/i });
+    expect(screeningTab).toBeInTheDocument();
+    expect(clinicalTab).toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: /^Overview$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: /Mood Tracking/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: /All Reports/i })).not.toBeInTheDocument();
+
+    // Pending clinician finalization state before doctor finalizes
+    expect(screen.getByText('Pending Clinician Finalization')).toBeInTheDocument();
+
+    // Switching to Clinical Reports tab
+    fireEvent.click(clinicalTab);
+    expect(screen.getByRole('heading', { name: 'Clinical Reports' })).toBeInTheDocument();
   });
 
-  it('Screen 6 — Care Suggestions: renders recovery plan, exercise cards, and interactive progress checklist', () => {
+  it('Screen 6 — Care Suggestions: gates personalized care plan until doctor finalizes', () => {
     renderPatientApp('/patient/care-suggestions');
 
     // Title
     expect(screen.getByRole('heading', { level: 1, name: /Personalised Care Suggestions/i })).toBeInTheDocument();
 
-    // 4-Week plan
-    expect(screen.getByText(/Your 4-Week Postpartum Recovery Plan/i)).toBeInTheDocument();
-
-    // Exercise cards
-    expect(screen.getByText('4-7-8 Breathing')).toBeInTheDocument();
-    expect(screen.getByText('Sleep Restoration')).toBeInTheDocument();
-    expect(screen.getByText('Daily Reflection')).toBeInTheDocument();
-
-    // Daily Checklist & task toggling
-    expect(screen.getByText('Daily Checklist')).toBeInTheDocument();
-    const journalTask = screen.getByText('Journaling');
-    expect(journalTask).toBeInTheDocument();
-
-    // Toggle task
-    fireEvent.click(journalTask);
-
-    // Interactive modal for breathing exercise
-    const startBreathingBtn = screen.getByRole('button', { name: /Start \(5 min\)/i });
-    fireEvent.click(startBreathingBtn);
-    expect(screen.getByText('4-7-8 Breathing Exercise')).toBeInTheDocument();
-    const completeModalBtn = screen.getByRole('button', { name: /Complete Exercise & Mark Done/i });
-    fireEvent.click(completeModalBtn);
+    // Pending clinician finalization state when doctor has not finalized
+    expect(screen.getByText('Pending Clinician Finalization')).toBeInTheDocument();
+    expect(screen.queryByText(/Your 4-Week Postpartum Recovery Plan/i)).not.toBeInTheDocument();
   });
 
   it('Patient Dashboard default route: renders the simplified 3-section minimal homepage with static 2D sculpture at /patient/dashboard', () => {

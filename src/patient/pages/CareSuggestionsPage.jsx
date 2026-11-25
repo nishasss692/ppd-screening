@@ -19,6 +19,8 @@ export function CareSuggestionsPage() {
   const [activeModal, setActiveModal] = useState(null); // 'breathing' | 'sleep' | 'journaling'
   const [journalEntry, setJournalEntry] = useState('');
 
+  const isDoctorFinalized = Boolean(carePlan?.clinicianPlan || carePlan?.clinicianReview);
+
   // Tasks from patient context
   const tasks = carePlan?.tasks || [
     { id: 'task-1', title: 'Breathing exercise', completed: true },
@@ -137,7 +139,24 @@ export function CareSuggestionsPage() {
         })}
       </nav>
 
-      {/* Main Two-Column Content Grid */}
+      {/* Main Content: Only visible once the doctor finalizes care plan or clinical review */}
+      {!isDoctorFinalized ? (
+        <section
+          className="patient-card care-plan-card"
+          aria-label="Pending Clinician Finalization"
+          style={{ flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '40px 24px', gap: '10px' }}
+        >
+          <div className="plan-badge-icon" aria-hidden="true">
+            <PatientIcon name="stethoscope" size={22} />
+          </div>
+          <h2 className="plan-title" style={{ margin: 0 }}>
+            Pending Clinician Finalization
+          </h2>
+          <p className="plan-desc" style={{ maxWidth: '540px', margin: 0 }}>
+            Your personalized insights and care suggestions will appear here once your doctor finalizes your care plan.
+          </p>
+        </section>
+      ) : (
       <div className="care-main-grid">
         {/* Left Column: Plan & Daily Suggestions */}
         <div className="care-main-left">
@@ -445,6 +464,7 @@ export function CareSuggestionsPage() {
           </section>
         </div>
       </div>
+      )}
 
       {/* Interactive Modals */}
       {/* 1. Breathing Exercise Modal */}
