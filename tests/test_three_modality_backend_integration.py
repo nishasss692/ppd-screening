@@ -574,3 +574,47 @@ def test_endpoint_four_modality_analysis(test_client, sample_audio_features, sam
         assert "disclaimer" in resp
     finally:
         app.dependency_overrides.pop(get_current_user, None)
+
+
+def test_typed_only_with_clinical_and_video_retains_clinical_in_fusion(sample_video_features):
+    """Verify clinical is included in fusion when audio is absent (typed-only screening)."""
+    svc = ThreeModalityInferenceService()
+    svc.startup()
+
+    clinical_data = {
+        "Age": 29,
+        "Number of the latest pregnancy": 2,
+        "Residence": "Urban",
+        "Education Level": "Postgraduate",
+        "Marital status": "Married",
+        "Monthly income before latest pregnancy": "High",
+        "Current monthly income": "High",
+        "Relationship with husband": "Good",
+        "Relationship with the newborn": "Good",
+        "Feeling about motherhood": "Positive",
+        "Recieved Support": "Yes",
+        "Need for Support": "Low",
+        "Depression before pregnancy (PHQ2)": "No",
+        "Depression during pregnancy (PHQ2)": "No",
+    }
+
+    res_tv = svc.analyze(
+        text="I feel overwhelmed and exhausted.",
+        video_features=sample_video_features,
+        clinical_features=clinical_data,
+    )
+    assert res_tv["modality_status"]["audio"] == "not_requested"
+    assert res_tv["modality_status"]["clinical"] == "completed"
+    assert res_tv["fusion_status"] == "completed"
+    assert res_tv["fusion_method"] == "weighted_clinical_text_video"
+    assert res_tv["fusion_score"] is not None
+
+    res_t = svc.analyze(
+        text="I feel overwhelmed and exhausted.",
+        clinical_features=clinical_data,
+    )
+    assert res_t["modality_status"]["audio"] == "not_requested"
+    assert res_t["modality_status"]["video"] == "not_requested"
+    assert res_t["fusion_status"] == "completed"
+    assert res_t["fusion_method"] == "weighted_clinical_text"
+    assert res_t["fusion_score"] is not None

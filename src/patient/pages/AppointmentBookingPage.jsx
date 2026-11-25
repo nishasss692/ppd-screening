@@ -510,11 +510,6 @@ export function AppointmentBookingPage() {
           <h1 className="miora-dash-title patient-page-heading">
             {confirmedDetails ? 'Booking Confirmed' : <>Book an <em>Appointment</em></>}
           </h1>
-          <p className="miora-dash-subtitle patient-page-subheading">
-            {confirmedDetails
-              ? 'Your appointment request has been recorded in this session.'
-              : 'Review the doctor details below and choose your preferred date and time.'}
-          </p>
         </div>
       </div>
 

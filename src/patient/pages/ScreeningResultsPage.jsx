@@ -93,7 +93,7 @@ export function ScreeningResultsPage() {
           return Math.round(prob <= 1 ? prob * 100 : prob);
         }
       }
-    } catch (e) {}
+    } catch (e) { }
 
     try {
       const mmRaw = localStorage.getItem('aanchal_multimodal_screening_result');
@@ -104,7 +104,7 @@ export function ScreeningResultsPage() {
           return Math.round(fs <= 1 ? fs * 100 : fs);
         }
       }
-    } catch (e) {}
+    } catch (e) { }
 
     try {
       const epdsRaw = localStorage.getItem('aanchal_submitted_epds_assessment');
@@ -114,7 +114,7 @@ export function ScreeningResultsPage() {
           return Math.round((Number(epds.totalScore) / 30) * 100);
         }
       }
-    } catch (e) {}
+    } catch (e) { }
 
     if (screening?.riskScore != null) {
       return Number(screening.riskScore);
@@ -161,9 +161,6 @@ export function ScreeningResultsPage() {
           <h1 className="miora-dash-title patient-page-heading screening-page-title">
             Screening <em>Results</em>
           </h1>
-          <p className="miora-dash-subtitle patient-page-subheading screening-page-sub">
-            Your AI screening has been analysed. Here's a clear, supportive overview of your assessment.
-          </p>
         </div>
 
         {/* 4-Stage Progress Tracker */}

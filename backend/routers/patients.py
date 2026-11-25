@@ -1140,6 +1140,54 @@ def download_screening_report_pdf(
     q_resp = questionnaire_service.get_questionnaire()
     questions = [q.model_dump() if hasattr(q, "model_dump") else q for q in q_resp.questions]
 
+    from backend.models.care_plan import CarePlan
+    from backend.models.clinical_review import ClinicalReview
+
+    latest_review = db.scalar(
+        select(ClinicalReview)
+        .where(ClinicalReview.mother_id == user.mother_id)
+        .order_by(desc(ClinicalReview.reviewed_at), desc(ClinicalReview.created_at))
+        .limit(1)
+    )
+    latest_care_plan = db.scalar(
+        select(CarePlan)
+        .where(CarePlan.mother_id == user.mother_id)
+        .order_by(desc(CarePlan.updated_at), desc(CarePlan.created_at))
+        .limit(1)
+    )
+
+    multimodal_summary = {
+        "clinical_score": screening.clinical_score,
+        "text_score": screening.text_score,
+        "audio_score": screening.audio_score,
+        "video_score": screening.video_score,
+        "fusion_score": screening.fusion_score,
+        "fusion_status": screening.fusion_status,
+        "fusion_method": screening.fusion_method,
+        "modality_status": screening.modality_status or {},
+        "disagreement_flag": screening.disagreement_flag,
+    }
+    clinical_review_dict = (
+        {
+            "clinician_name": latest_review.clinician_name,
+            "final_risk_classification": latest_review.final_risk_classification,
+            "review_status": latest_review.review_status,
+            "clinical_notes": latest_review.clinical_notes,
+        }
+        if latest_review
+        else None
+    )
+    care_plan_dict = (
+        {
+            "intervention_type": latest_care_plan.intervention_type,
+            "priority": latest_care_plan.priority,
+            "scheduled_followup_date": str(latest_care_plan.scheduled_followup_date) if latest_care_plan.scheduled_followup_date else None,
+            "notes": latest_care_plan.notes,
+        }
+        if latest_care_plan
+        else None
+    )
+
     pdf_bytes = generate_patient_screening_pdf(
         patient_name=patient_name,
         patient_id=patient_id_label,

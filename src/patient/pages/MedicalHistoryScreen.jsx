@@ -51,9 +51,6 @@ const HeroSection = () => (
       <h1 className="miora-dash-title patient-page-heading">
         Medical <em>History</em>
       </h1>
-      <p className="miora-dash-subtitle patient-page-subheading">
-        Help us understand your background for a more accurate and personalised emotional wellbeing screening.
-      </p>
     </div>
     <div className="patient-hero-box-illu" aria-hidden="true">
       <img

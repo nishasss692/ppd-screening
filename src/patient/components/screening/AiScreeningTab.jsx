@@ -112,6 +112,7 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
   const sessionTimerRef = useRef(null);
   const silenceTimerRef = useRef(null);
   const chatBottomRef = useRef(null);
+  const usedVoiceForQuestionRef = useRef(false);
 
   // Auto-scroll chat to bottom
   useEffect(() => {
@@ -358,6 +359,7 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
         }
         const combined = (finalTranscript + interimTranscript).trim();
         if (combined) {
+          usedVoiceForQuestionRef.current = true;
           setInputText(combined);
         }
 
@@ -417,7 +419,8 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
     handleStopVoice();
 
     const currentQ = CONVERSATIONAL_SCREENING_QUESTIONS[currentQuestionIdx];
-    const isVoice = Boolean(isListening || speechError === null);
+    const isVoice = usedVoiceForQuestionRef.current;
+    usedVoiceForQuestionRef.current = false;
 
     // 1. Add Mother's message to chat
     const motherMsg = {
@@ -516,78 +519,33 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
       formData.append('consent_confirmed', 'true');
       formData.append('text_content', combinedNarrative);
 
-      // 7 physiological acoustic features
-      const realisticAudioFeatures = {
-        f0_mean_hz: 208.4,
-        f0_std_hz: 29.8,
-        jitter_local_percent: 1.35,
-        shimmer_local_percent: 3.85,
-        hnr_db: 17.8,
-        speech_rate_syllables_per_sec: 3.9,
-        pause_ratio: 0.27,
-      };
-      formData.append('audio_features', JSON.stringify(realisticAudioFeatures));
-
-      // 220 video features (Action Units & facial/gaze dynamics)
-      const seedFeatures = [];
-      for (let i = 0; i < 220; i++) {
-        seedFeatures.push(Number((Math.sin(i * 0.45) * 0.75).toFixed(4)));
-      }
-      formData.append('video_features', JSON.stringify(seedFeatures));
-
-      // 46 clinical survey features for 4-modality stacking fusion
-      let clinicalFeatures = null;
+      // Merge real clinical profile (37 features) + psychosocial answers (9 features) if available
+      const mergedClinical = {};
+      try {
+        const storedProfile = localStorage.getItem('aanchal_clinical_profile_features');
+        if (storedProfile) Object.assign(mergedClinical, JSON.parse(storedProfile));
+      } catch (e) { }
+      try {
+        const storedPsychosocial = localStorage.getItem('aanchal_psychosocial_answers');
+        if (storedPsychosocial) Object.assign(mergedClinical, JSON.parse(storedPsychosocial));
+      } catch (e) { }
       try {
         const storedClinical = localStorage.getItem('aanchal_clinical_features');
-        if (storedClinical) {
-          clinicalFeatures = JSON.parse(storedClinical);
-        }
+        if (storedClinical) Object.assign(mergedClinical, JSON.parse(storedClinical));
       } catch (e) { }
-
-      if (!clinicalFeatures) {
-        clinicalFeatures = {
-          Age: 28,
-          'Number of the latest pregnancy': 1,
-          Residence: 'Urban',
-          'Education Level': 'Graduate',
-          'Marital status': 'Married',
-          'Monthly income before latest pregnancy': 'Middle',
-          'Current monthly income': 'Middle',
-          'Relationship with husband': 'Good',
-          'Relationship with the newborn': 'Good',
-          'Feeling about motherhood': 'Positive',
-          'Recieved Support': 'Yes',
-          'Need for Support': 'Low',
-          'Depression before pregnancy (PHQ2)': 'No',
-          'Depression during pregnancy (PHQ2)': 'No',
-        };
+      if (Object.keys(mergedClinical).length > 0) {
+        formData.append('clinical_features', JSON.stringify(mergedClinical));
       }
-      formData.append('clinical_features', JSON.stringify(clinicalFeatures));
 
       multimodalResult = await submitMultimodalScreening(formData).catch((err) => {
         console.warn('Backend multimodal inference notice:', err);
         return null;
       });
-      if (!multimodalResult) {
-        multimodalResult = {
-          status: 'completed',
-          fusion_score: 0.31,
-          fusion_method: 'learned_stacking_four_modality',
-          clinical_score: 0.28,
-          audio_score: 0.26,
-          video_score: 0.35,
-          text_score: 0.29,
-          modality_status: {
-            audio: 'completed',
-            video: 'completed',
-            text: 'completed',
-            clinical: 'completed',
-          },
-          disagreement_flag: false,
-          disclaimer: 'Experimental research prototype. Uncalibrated research risk score. Not a clinical diagnosis.',
-        };
+      if (multimodalResult) {
+        localStorage.setItem('aanchal_multimodal_screening_result', JSON.stringify(multimodalResult));
+      } else {
+        localStorage.removeItem('aanchal_multimodal_screening_result');
       }
-      localStorage.setItem('aanchal_multimodal_screening_result', JSON.stringify(multimodalResult));
     } catch (mmErr) {
       console.warn('Backend multimodal inference notice:', mmErr);
     }
@@ -602,11 +560,11 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
       hasContinuousVideo: true,
       language: currentLanguage || 'en',
       responses: allResponses,
-      clinicalModelStatus: multimodalResult?.modalities?.clinical?.status || 'completed',
-      audioModelStatus: multimodalResult?.modalities?.audio?.status || 'completed',
-      videoModelStatus: multimodalResult?.modalities?.video?.status || 'completed',
-      textModelStatus: multimodalResult?.modalities?.text?.status || 'completed',
-      multimodalAssessmentStatus: multimodalResult?.status || 'completed',
+      clinicalModelStatus: multimodalResult?.modality_status?.clinical || multimodalResult?.modalities?.clinical?.status || 'not_requested',
+      audioModelStatus: multimodalResult?.modality_status?.audio || multimodalResult?.modalities?.audio?.status || 'not_requested',
+      videoModelStatus: multimodalResult?.modality_status?.video || multimodalResult?.modalities?.video?.status || 'not_requested',
+      textModelStatus: multimodalResult?.modality_status?.text || multimodalResult?.modalities?.text?.status || 'unavailable',
+      multimodalAssessmentStatus: multimodalResult?.status || 'unavailable',
       multimodalResult,
       status: 'completed',
     };

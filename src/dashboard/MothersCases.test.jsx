@@ -75,6 +75,9 @@ describe('Miora Screen 02: Mothers & Cases', () => {
     expect(screen.getByRole('heading', { name: 'Mothers & Cases (1)' })).toBeInTheDocument();
     expect(screen.getByText('Showing 1 – 1 of 1 mothers')).toBeInTheDocument();
 
+    // Open Filters dropdown above table
+    fireEvent.click(screen.getByRole('button', { name: /Filters/i }));
+
     // Clear filters/search
     fireEvent.click(screen.getAllByRole('button', { name: /Clear Filters/i })[0]);
     expect(screen.getByRole('heading', { name: 'Mothers & Cases (328)' })).toBeInTheDocument();

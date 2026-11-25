@@ -8,7 +8,7 @@
   position: sticky;
   top: 0;
   left: 0;
-  background: rgba(253, 249, 247, 0.95);
+  background: #ffffff;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border-right: 1px solid var(--patient-blush-border);

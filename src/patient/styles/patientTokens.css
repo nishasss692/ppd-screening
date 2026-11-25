@@ -23,15 +23,15 @@
   --patient-brand-rose-light: #ea3a7a;
   --patient-brand-rose-subtle: #fde7ec;
 
-  --patient-cream: #fdf8f4;
-  --patient-cream-deep: #fcf6f2;
+  --patient-cream: #fdf2f6;
+  --patient-cream-deep: #fcecf2;
   --patient-blush-soft: #fdf0f3;
   --patient-blush-pill: #fde7ec;
   --patient-blush-border: #f0dfe2;
   --patient-blush-border-light: rgba(226, 194, 206, 0.55);
 
   --patient-surface: #ffffff;
-  --patient-surface-subtle: #fdfaf9;
+  --patient-surface-subtle: #fdf5f8;
 
   /* Status Colors */
   --patient-success-bg: #eaf7ee;
@@ -51,7 +51,7 @@
   --patient-info-border: #cde2fb;
 
   /* Gradients */
-  --patient-page-bg: radial-gradient(circle at 88% 8%, #fcecef 0%, #fdf8f4 46%, #fcf6f2 100%);
+  --patient-page-bg: radial-gradient(circle at 88% 8%, #fce6ee 0%, #fdf2f6 48%, #fcecf2 100%);
   --patient-primary-gradient: linear-gradient(90deg, #ea3a7a 0%, #ca2261 100%);
   --patient-primary-gradient-hover: linear-gradient(90deg, #f04e8a 0%, #d82b6c 100%);
 

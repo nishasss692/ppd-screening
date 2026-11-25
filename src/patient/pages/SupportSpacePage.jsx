@@ -546,19 +546,36 @@ export function SupportSpacePage({ initialTab = 'community' }) {
       {/* --------------------------------------------------------------------
          Hero Header & Tab Navigation
          -------------------------------------------------------------------- */}
-      <section className="moments-hero">
-        <div className="moments-hero-badge">
-          <PatientIcon name="heart" size={14} />
-          <span>AANCHAL Moments</span>
-        </div>
-        <h1 className="moments-hero-title">Private Motherhood Community & Family Circle</h1>
-        <p className="moments-hero-subtitle">
-          A gentle, supportive space designed exclusively for mothers to share real everyday milestones,
-          uplift one another with emotional support, preserve digital memory letters, and maintain private
-          family connections.
-        </p>
+      <section className="patient-card reports-hero-card moments-hero" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px' }}>
+          <div className="reports-hero-text">
+            <div className="miora-dash-eyebrow">
+              <span>SUPPORT SPACE &bull; AANCHAL MOMENTS</span>
+              <span className="miora-dash-eyebrow-line" aria-hidden="true" />
+            </div>
+            <h1 className="miora-dash-title patient-page-heading reports-title">
+              Private Motherhood <em>Community &amp; Family Circle</em>
+            </h1>
+            <p className="miora-dash-subtitle patient-page-subheading reports-subtitle">
+              A gentle, supportive space designed exclusively for mothers to share real everyday milestones,
+              uplift one another with emotional support, preserve digital memory letters, and maintain private
+              family connections.
+            </p>
+          </div>
 
-        <nav className="moments-tabs-nav" aria-label="Moments Sections">
+          <div className="reports-hero-illu-wrap" aria-hidden="true">
+            <img
+              src="/assets/mother-baby-header-crop.png"
+              alt=""
+              className="reports-hero-illustration"
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
+          </div>
+        </div>
+
+        <nav className="moments-tabs-nav" aria-label="Moments Sections" style={{ marginTop: 0 }}>
           <button
             type="button"
             className={`moments-tab-btn ${activeTab === 'community' ? 'active' : ''}`}

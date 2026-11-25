@@ -67,9 +67,6 @@ export function PatientSettingsPage() {
         <h1 className="miora-dash-title patient-page-heading">
           Account &amp; <em>Privacy Settings</em>
         </h1>
-        <p className="miora-dash-subtitle patient-page-subheading">
-          Configure confidential screening device permissions, clinical consultation alerts, and privacy rules. Saved in PostgreSQL.
-        </p>
       </div>
 
       {saveSuccess && (

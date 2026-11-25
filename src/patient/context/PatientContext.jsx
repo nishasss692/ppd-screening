@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { getCurrentUser, getAuthToken } from '../../auth/authService.js';
+import { buildMultiPagePdfBlob } from '../../utils/pdfBuilder.js';
 import {
   fetchPatientProfile,
   updatePatientProfile as apiUpdatePatientProfile,

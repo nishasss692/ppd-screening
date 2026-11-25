@@ -41,31 +41,37 @@ export function PatientScreeningPage() {
         <span className="screening-breadcrumb-current">AI Screening Session</span>
       </div>
 
-      {/* Hero Header Box with Page Heading & 4-Stage Progress Tracker */}
-      <div className="patient-hero-box screening-hero-box" style={{ marginBottom: '20px', position: 'relative', overflow: 'hidden' }}>
-        <div className="patient-hero-box-text" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+      {/* Hero Header Box matching Reports & Analytics */}
+      <div className="patient-card reports-hero-card screening-hero-box" style={{ marginBottom: '20px', position: 'relative', overflow: 'hidden' }}>
+        <div className="reports-hero-text" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <img
             src="/assets/care-header-mother-baby.png"
             alt=""
             aria-hidden="true"
             style={{
-              width: '56px',
-              height: '56px',
+              width: '64px',
+              height: '64px',
               borderRadius: '14px',
               objectFit: 'cover',
               border: '1px solid #f2dce4',
               flexShrink: 0,
             }}
           />
-          {activeTab === 'results' ? (
-            <h1 className="screening-page-title">
-              Results &amp; Reports
-            </h1>
-          ) : (
-            <h1 className="screening-page-title">
-              AI Screening Session
-            </h1>
-          )}
+          <div>
+            <div className="miora-dash-eyebrow">
+              <span>MATERNAL SCREENING</span>
+              <span className="miora-dash-eyebrow-line" aria-hidden="true" />
+            </div>
+            {activeTab === 'results' ? (
+              <h1 className="miora-dash-title patient-page-heading reports-title">
+                Results &amp; <em>Reports</em>
+              </h1>
+            ) : (
+              <h1 className="miora-dash-title patient-page-heading reports-title">
+                AI Screening <em>Session</em>
+              </h1>
+            )}
+          </div>
         </div>
 
         {/* 4-Stage Progress Tracker */}

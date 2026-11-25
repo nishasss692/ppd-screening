@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchHospitalDoctors, fetchHospitalReports } from './hospitalService.js';
+import { buildMultiPagePdfBlob, triggerBlobDownload } from '../utils/pdfBuilder.js';
 import './hospital.css';
 
 export function HospitalReportsPage() {
@@ -96,7 +97,28 @@ export function HospitalReportsPage() {
 
   const handleDownloadPdf = (e, report) => {
     e.stopPropagation();
-    window.print();
+    const lines = [
+      'AANCHAL - DOCTOR CONSULTATION REPORT',
+      `Report Code: ${report.report_code || report.id}`,
+      `Consultation Date: ${report.consultation_date || 'N/A'}`,
+      `Patient: ${report.patient_name || 'N/A'} | Doctor: ${report.doctor_name || 'N/A'}`,
+      `Hospital: ${report.hospital_name || 'N/A'} | Status: ${report.status || 'final'}`,
+      '--------------------------------------------------------------------------------',
+      '1. CONSULTATION SUMMARY',
+      report.summary || 'No summary recorded.',
+      '',
+      '2. MEDICATION INSTRUCTIONS',
+      report.medications_instructions || 'None prescribed.',
+      '',
+      '3. RECOMMENDATIONS & SELF-CARE',
+      report.recommendations || 'None recorded.',
+      '',
+      '4. FOLLOW-UP INSTRUCTIONS',
+      report.followup_instructions || 'As advised.',
+      `Next Follow-up Date: ${report.next_followup_date || 'Scheduled as needed'}`,
+    ];
+    const blob = buildMultiPagePdfBlob(lines);
+    triggerBlobDownload(blob, `AANCHAL_Consultation_${report.report_code || report.id}.pdf`);
   };
 
   return (

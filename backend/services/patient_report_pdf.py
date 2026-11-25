@@ -30,7 +30,7 @@ def generate_patient_screening_pdf(
     clinical_prediction: Optional[Dict[str, Any]] = None,
     discordance_flag: bool = False,
 ) -> bytes:
-    """Generate a clinical PDF report for an EPDS screening session and return bytes."""
+    """Generate a comprehensive clinical PDF report for the entire screening session."""
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer,
@@ -110,6 +110,7 @@ def generate_patient_screening_pdf(
 
     # 2. Patient & Session Meta Table
     formatted_date = screening_date.strftime("%d %B %Y at %I:%M %p UTC")
+    week_label = f"Week {postpartum_week}" if postpartum_week is not None else "Not specified"
     meta_data = [
         [
             Paragraph("<b>Patient Name:</b>", body_style),
@@ -120,8 +121,14 @@ def generate_patient_screening_pdf(
         [
             Paragraph("<b>Screening Date:</b>", body_style),
             Paragraph(formatted_date, body_style),
-            Paragraph("<b>Instrument:</b>", body_style),
-            Paragraph("10-Item EPDS (Canonical)", body_style),
+            Paragraph("<b>Postpartum Week:</b>", body_style),
+            Paragraph(week_label, body_style),
+        ],
+        [
+            Paragraph("<b>Session ID:</b>", body_style),
+            Paragraph(str(screening_id or "Latest Session"), body_style),
+            Paragraph("<b>Instruments:</b>", body_style),
+            Paragraph("Multimodal AI + Clinical + 10-Item EPDS", body_style),
         ],
     ]
     meta_table = Table(meta_data, colWidths=[1.3 * inch, 2.3 * inch, 1.2 * inch, 2.2 * inch])
@@ -230,7 +237,7 @@ def generate_patient_screening_pdf(
         story.append(Spacer(1, 14))
 
     # 4. Item Breakdown
-    story.append(Paragraph("Item Response Breakdown", heading2_style))
+    story.append(Paragraph("EPDS 10-Item Response Breakdown", heading2_style))
 
     # Default questions text if not provided
     default_q_texts = {
@@ -258,12 +265,13 @@ def generate_patient_screening_pdf(
     ]]
 
     for i in range(1, 11):
-        qid = f"epds_{i}"
-        q_text = q_map.get(qid) or default_q_texts.get(qid, f"EPDS Question {i}")
-        score_val = item_scores.get(qid, 0)
+        qid_legacy = f"epds_{i}"
+        qid_canonical = f"EPDS_Q{i:02d}"
+        q_text = q_map.get(qid_canonical) or q_map.get(qid_legacy) or default_q_texts.get(qid_legacy, f"EPDS Question {i}")
+        score_val = item_scores.get(qid_canonical, item_scores.get(qid_legacy, 0))
 
         # Submitted answer details
-        ans_info = submitted_answers.get(qid, {})
+        ans_info = submitted_answers.get(qid_canonical) or submitted_answers.get(qid_legacy) or {}
         if isinstance(ans_info, dict):
             raw_text = ans_info.get("raw_response") or f"Option index {ans_info.get('selected_index', 0)}"
         else:
