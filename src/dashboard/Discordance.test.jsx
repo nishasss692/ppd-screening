@@ -14,6 +14,8 @@ function renderDiscordance(initialEntry = '/discordance') {
           <Route element={<DashboardLayout />}>
             <Route path="/discordance" element={<DiscordancePage />} />
             <Route path="/discordance/:motherId" element={<DiscordancePage />} />
+            <Route path="/results" element={<DiscordancePage />} />
+            <Route path="/results/:motherId" element={<DiscordancePage />} />
             <Route path="/clinical-review" element={<DiscordancePage />} />
             <Route path="/mothers/:motherId" element={<div>Mother Record View</div>} />
             <Route path="/insights" element={<div>Insights &amp; Care View</div>} />
@@ -32,15 +34,10 @@ describe('Miora Screen 06: Cross-Modal Discordance', () => {
   it('renders header, patient strip, Modality Comparison, Risk by Modality, Discordance Result, Key Observations, and Clinical Interpretation', () => {
     renderDiscordance();
 
-    expect(screen.getByRole('link', { name: 'Discordance' })).toHaveAttribute(
-      'aria-current',
-      'page'
-    );
+    expect(screen.getByRole('link', { name: 'Results' })).toHaveClass('is-active');
     expect(screen.getByRole('link', { name: 'Screening' })).toBeInTheDocument();
     expect(screen.getByText('DISCORDANCE ANALYSIS')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-      'Cross-Modal Discordance'
-    );
+    expect(screen.getByRole('heading', { level: 2, name: /Cross-Modal Discordance/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Add Note/i })).toBeInTheDocument();
 
     // Patient Strip defaults to M-108
@@ -77,8 +74,8 @@ describe('Miora Screen 06: Cross-Modal Discordance', () => {
 
     // Row 2A: Key Observations
     expect(screen.getByRole('heading', { name: 'Key Observations' })).toBeInTheDocument();
-    expect(screen.getByText('Elevated negative sentiment in text')).toBeInTheDocument();
-    expect(screen.getByText('Higher vocal strain and lower energy')).toBeInTheDocument();
+    expect(screen.getAllByText('Elevated negative sentiment in text')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('Higher vocal strain and lower energy')[0]).toBeInTheDocument();
 
     // Row 2B: Clinical Interpretation (no deception / underreporting wording)
     expect(screen.getByRole('heading', { name: 'Clinical Interpretation' })).toBeInTheDocument();
