@@ -238,3 +238,20 @@ export async function downloadClinicianScreeningTxtBlob(screeningId) {
   return res.blob();
 }
 
+/**
+ * Submit an in-clinic patient screening session via POST /api/mothers/{mother_id}/screenings.
+ */
+export async function submitInClinicScreening(motherUuid, payload) {
+  const url = `${getApiBase()}/api/mothers/${encodeURIComponent(motherUuid)}/screenings`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${res.status}: Failed to save in-clinic screening`);
+  }
+  return res.json();
+}
+

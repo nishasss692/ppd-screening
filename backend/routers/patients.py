@@ -559,6 +559,16 @@ def submit_and_save_screening(
     if not mother:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mother record not found.")
 
+    return persist_epds_screening_for_mother(db=db, mother=mother, payload=payload)
+
+
+def persist_epds_screening_for_mother(
+    db: Session,
+    mother: Mother,
+    payload: ScreeningSubmissionSaveRequest,
+) -> PatientScreeningSummaryResponse:
+    """Shared persistence pipeline for patient-portal and in-clinic EPDS + multimodal screenings."""
+
     def _normalize_qid(qid: str) -> str:
         s = str(qid).strip().upper()
         if s.startswith("EPDS_Q"):

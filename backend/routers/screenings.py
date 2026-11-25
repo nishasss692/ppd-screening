@@ -17,6 +17,10 @@ from backend.database.connection import get_db
 from backend.models.mother import Mother
 from backend.models.screening import Screening
 from backend.schemas.handoff import ScreeningHandoffRequest, ScreeningHandoffResponse
+from backend.schemas.patient_portal import (
+    PatientScreeningSummaryResponse,
+    ScreeningSubmissionSaveRequest,
+)
 from backend.schemas.screening import ScreeningResponse
 from backend.services.audit_service import audit_service
 from backend.services.patient_report_pdf import generate_patient_screening_pdf
@@ -44,6 +48,29 @@ def list_screenings(
     """Retrieve all recent screening records across the clinic, newest first."""
     screenings = service.get_all_screenings(db, limit=limit, skip=skip)
     return [ScreeningResponse.model_validate(s) for s in screenings]
+
+
+@router.post(
+    "/api/mothers/{mother_id}/screenings",
+    response_model=PatientScreeningSummaryResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Submit an in-clinic screening session for a specific mother",
+)
+def submit_in_clinic_screening(
+    mother_id: uuid.UUID,
+    payload: ScreeningSubmissionSaveRequest,
+    db: Session = Depends(get_db),
+) -> PatientScreeningSummaryResponse:
+    """Score EPDS + Clinical Random Forest + 4-modality results for an in-clinic patient screening."""
+    from backend.routers.patients import persist_epds_screening_for_mother
+
+    mother = db.get(Mother, mother_id)
+    if not mother:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Mother with ID '{mother_id}' was not found.",
+        )
+    return persist_epds_screening_for_mother(db=db, mother=mother, payload=payload)
 
 
 @router.get(
