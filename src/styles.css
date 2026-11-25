@@ -27,7 +27,7 @@ body {
   margin: 0;
   max-width: 100%;
   overflow-x: hidden;
-  background: var(--cream);
+  background: radial-gradient(circle at 88% 8%, #fcecef 0%, #fdf8f4 46%, #fcf6f2 100%);
   color: var(--ink);
   font-family: var(--sans);
   -webkit-font-smoothing: antialiased;
