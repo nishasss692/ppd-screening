@@ -141,6 +141,109 @@ export function CareSuggestionsPage() {
       <div className="care-main-grid">
         {/* Left Column: Plan & Daily Suggestions */}
         <div className="care-main-left">
+          {/* Clinician-Finalized Insights & Care Plan (synced from Doctor Dashboard) */}
+          {(carePlan?.clinicianPlan || carePlan?.clinicianReview) && (
+            <section
+              className="patient-card care-plan-card"
+              aria-label="Doctor Finalized Insights and Care Plan"
+              style={{ flexDirection: 'column', alignItems: 'stretch', gap: '14px' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div className="plan-badge-icon" aria-hidden="true">
+                    <PatientIcon name="stethoscope" size={20} />
+                  </div>
+                  <div>
+                    <h2 className="plan-title" style={{ margin: 0 }}>
+                      Doctor-Finalized Insights &amp; Care Plan
+                    </h2>
+                    <p className="plan-desc" style={{ margin: '2px 0 0' }}>
+                      Updated directly from your clinician&apos;s review and care planning session.
+                    </p>
+                  </div>
+                </div>
+                {carePlan?.clinicianReview?.final_risk_classification && (
+                  <span
+                    style={{
+                      padding: '4px 12px',
+                      borderRadius: '999px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      background: '#fde7ec',
+                      color: '#ba1e53',
+                      textTransform: 'capitalize',
+                    }}
+                  >
+                    Clinical Assessment: {carePlan.clinicianReview.final_risk_classification} Risk
+                  </span>
+                )}
+              </div>
+
+              {carePlan?.clinicianPlan && (
+                <div
+                  style={{
+                    background: '#fff9fa',
+                    border: '1px solid #f0dfe2',
+                    borderRadius: '12px',
+                    padding: '12px 14px',
+                    display: 'grid',
+                    gap: '6px',
+                  }}
+                >
+                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', fontSize: '12.5px', color: '#6b585f' }}>
+                    <span>
+                      <strong>Care Focus:</strong>{' '}
+                      <span style={{ textTransform: 'capitalize' }}>
+                        {(carePlan.clinicianPlan.intervention_type || 'counseling').replace('_', ' ')}
+                      </span>
+                    </span>
+                    <span>
+                      <strong>Priority:</strong>{' '}
+                      <span style={{ textTransform: 'capitalize' }}>
+                        {carePlan.clinicianPlan.priority || 'routine'}
+                      </span>
+                    </span>
+                    {carePlan.clinicianPlan.scheduled_followup_date && (
+                      <span>
+                        <strong>Next Follow-up:</strong> {carePlan.clinicianPlan.scheduled_followup_date}
+                      </span>
+                    )}
+                  </div>
+                  {carePlan.clinicianPlan.notes && (
+                    <p style={{ margin: 0, fontSize: '13.5px', lineHeight: 1.55, color: '#271218', whiteSpace: 'pre-line' }}>
+                      {carePlan.clinicianPlan.notes}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {carePlan?.clinicianReview && (
+                <div
+                  style={{
+                    background: '#fdfaf9',
+                    border: '1px solid #f0dfe2',
+                    borderRadius: '12px',
+                    padding: '12px 14px',
+                    display: 'grid',
+                    gap: '4px',
+                  }}
+                >
+                  <div style={{ fontSize: '12.5px', color: '#6b585f' }}>
+                    <strong>Reviewed by:</strong> {carePlan.clinicianReview.clinician_name}
+                    {carePlan.clinicianReview.reviewed_at && (
+                      <> · {new Date(carePlan.clinicianReview.reviewed_at).toLocaleDateString()}</>
+                    )}
+                  </div>
+                  {carePlan.clinicianReview.clinical_notes && (
+                    <p style={{ margin: 0, fontSize: '13.5px', lineHeight: 1.55, color: '#271218', whiteSpace: 'pre-line' }}>
+                      {carePlan.clinicianReview.clinical_notes}
+                    </p>
+                  )}
+                </div>
+              )}
+            </section>
+          )}
+
           {/* Personalised Care Plan Hero Card */}
           <section className="patient-card care-plan-card" aria-label="Personalised Care Plan Overview">
             <div className="plan-info-left">

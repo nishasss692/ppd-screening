@@ -1611,12 +1611,62 @@ def get_patient_care_plan(
         meta["care_tasks"] = tasks
         _save_mother_portal_meta(mother, meta, db)
 
+    from backend.models.care_plan import CarePlan
+    from backend.models.clinical_review import ClinicalReview
+
+    latest_plan = db.scalars(
+        select(CarePlan)
+        .where(CarePlan.mother_id == user.mother_id)
+        .order_by(desc(CarePlan.updated_at), desc(CarePlan.created_at))
+    ).first()
+
+    latest_review = db.scalars(
+        select(ClinicalReview)
+        .where(ClinicalReview.mother_id == user.mother_id)
+        .order_by(desc(ClinicalReview.reviewed_at), desc(ClinicalReview.created_at))
+    ).first()
+
+    clinician_plan = (
+        {
+            "id": str(latest_plan.id),
+            "priority": latest_plan.priority,
+            "intervention_type": latest_plan.intervention_type,
+            "referral_destination": latest_plan.referral_destination,
+            "scheduled_followup_date": (
+                latest_plan.scheduled_followup_date.isoformat()
+                if latest_plan.scheduled_followup_date
+                else None
+            ),
+            "status": latest_plan.status,
+            "notes": latest_plan.notes,
+            "updated_at": latest_plan.updated_at.isoformat() if latest_plan.updated_at else None,
+        }
+        if latest_plan
+        else None
+    )
+
+    clinician_review = (
+        {
+            "id": str(latest_review.id),
+            "clinician_name": latest_review.clinician_name,
+            "review_status": latest_review.review_status,
+            "final_risk_classification": latest_review.final_risk_classification,
+            "clinical_notes": latest_review.clinical_notes,
+            "required_immediate_escalation": latest_review.required_immediate_escalation,
+            "reviewed_at": latest_review.reviewed_at.isoformat() if latest_review.reviewed_at else None,
+        }
+        if latest_review
+        else None
+    )
+
     return {
         "duration": "2 Weeks",
         "totalDays": 14,
         "currentDay": 1,
         "focusAreas": ["Mood", "Sleep", "Stress", "Support"],
         "tasks": tasks,
+        "clinicianPlan": clinician_plan,
+        "clinicianReview": clinician_review,
     }
 
 
