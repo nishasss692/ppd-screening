@@ -146,8 +146,10 @@ export function PatientSidebar({
                     <span className="dash-sidebar-icon" aria-hidden="true">
                       {item.icon === 'home' && <PatientIcon name="home" size={18} />}
                       {item.icon === 'clipboard-check' && <PatientIcon name="clipboard-check" size={18} />}
-                      {item.icon === 'sparkle' && <DashboardIcon name="messageCircle" size={18} />}
-                      {item.icon === 'heart' && <DashboardIcon name="heart" size={18} />}
+                      {item.icon === 'reports' && <PatientIcon name="reports" size={18} />}
+                      {item.icon === 'insights' && <PatientIcon name="insights" size={18} />}
+                      {item.icon === 'sparkle' && <PatientIcon name="ai-assistant" size={18} />}
+                      {item.icon === 'heart' && <PatientIcon name="heart" size={18} />}
                       {item.icon === 'user' && <PatientIcon name="user" size={18} />}
                     </span>
                     <span className="dash-sidebar-label">{item.label}</span>

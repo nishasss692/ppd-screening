@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { usePatient } from '../context/PatientContext.jsx';
 import { PatientIcon } from '../components/PatientIcons.jsx';
@@ -12,8 +12,6 @@ export function CareSuggestionsPage() {
     carePlan,
     toggleCareTask,
   } = usePatient();
-
-  const [activeTab, setActiveTab] = useState('care-plan');
 
   // Modals for interactive actions
   const [activeModal, setActiveModal] = useState(null); // 'breathing' | 'sleep' | 'journaling'
@@ -40,15 +38,6 @@ export function CareSuggestionsPage() {
   const circumference = 2 * Math.PI * radius;
   const progressRatio = totalTasks > 0 ? completedCount / totalTasks : 0;
   const strokeDashoffset = circumference - progressRatio * circumference;
-
-  // Tabs configuration
-  const tabs = [
-    { id: 'care-plan', label: 'My Care Plan', icon: 'feather-leaf' },
-    { id: 'self-care', label: 'Self-Care', icon: 'lotus' },
-    { id: 'mood-support', label: 'Mood Support', icon: 'smile-face' },
-    { id: 'lifestyle', label: 'Lifestyle', icon: 'apple' },
-    { id: 'resources', label: 'Resources', icon: 'book-open' },
-  ];
 
   const handleStartBreathing = () => {
     setActiveModal('breathing');
@@ -118,26 +107,6 @@ export function CareSuggestionsPage() {
           />
         </div>
       </div>
-
-      {/* Categories Tabs Navigation */}
-      <nav className="care-tabs-nav" aria-label="Care Suggestion Categories">
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              className={`care-tab-btn ${isActive ? 'is-active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <span className="care-tab-icon">
-                <PatientIcon name={tab.icon} size={15} />
-              </span>
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </nav>
 
       {/* Main Content: Only visible once the doctor finalizes care plan or clinical review */}
       {!isDoctorFinalized ? (
