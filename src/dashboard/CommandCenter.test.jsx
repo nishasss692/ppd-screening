@@ -46,7 +46,7 @@ describe('Miora Screen 01: Dashboard', () => {
     expect(screen.getByRole('link', { name: 'Results' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Discordance' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Insights & Care' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Clinician profile menu' })).toHaveTextContent('DR');
+    expect(screen.getByRole('button', { name: 'Clinician profile menu' })).toHaveTextContent('PM');
 
     // Dashboard Header
     expect(screen.getByText('DASHBOARD')).toBeInTheDocument();
@@ -118,7 +118,7 @@ describe('Miora Screen 01: Dashboard', () => {
     expect(screen.getByRole('heading', { name: 'Amara K.' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('link', { name: 'Screening' }));
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Maternal Screening Session/i);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Maternal Screening Review/i);
     expect(screen.getByRole('tab', { name: /AI Screening/i })).toBeInTheDocument();
   });
 

@@ -9,7 +9,7 @@ export function ScheduleFollowUpModal({ isOpen, onClose, motherId, onSave }) {
 
   const [date, setDate] = useState(defaultDate);
   const [type, setType] = useState('Follow-up screening');
-  const [clinician, setClinician] = useState('Dr. Elena Rostova');
+  const [clinician, setClinician] = useState('Dr. Priya Mehta');
   const [description, setDescription] = useState(
     'Reassess maternal emotional wellbeing and review screening cues.'
   );
@@ -100,7 +100,7 @@ export function ScheduleFollowUpModal({ isOpen, onClose, motherId, onSave }) {
           <label className="miora-field">
             <span>Responsible Clinician</span>
             <select value={clinician} onChange={(e) => setClinician(e.target.value)}>
-              <option value="Dr. Elena Rostova">Dr. Elena Rostova (Perinatal Psychiatry)</option>
+              <option value="Dr. Priya Mehta">Dr. Priya Mehta (Perinatal Psychiatry)</option>
               <option value="Assigned OB/GYN Clinician">Assigned OB/GYN Clinician</option>
               <option value="Postpartum Care Coordinator">Postpartum Care Coordinator</option>
             </select>

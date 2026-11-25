@@ -39,6 +39,28 @@ import { DiscordancePage } from './dashboard/pages/DiscordancePage.jsx';
 import { InsightsCarePage } from './dashboard/pages/InsightsCarePage.jsx';
 import { ClinicalReviewPage } from './dashboard/pages/ClinicalReviewPage.jsx';
 import { CreateConsultationReportPage } from './dashboard/pages/CreateConsultationReportPage.jsx';
+import { DoctorAppointmentsPage } from './dashboard/pages/DoctorAppointmentsPage.jsx';
+import { getAuthToken, getCurrentUser } from './auth/authService.js';
+import { getHospitalToken, getHospitalUser } from './hospital/hospitalService.js';
+
+function RequireRole({ allowedRoles, redirectTo, children }) {
+  if (allowedRoles.includes('hospital')) {
+    const hToken = getHospitalToken();
+    const hUser = getHospitalUser();
+    if (!hToken || !hUser) {
+      return <Navigate to={redirectTo} replace />;
+    }
+    return children;
+  }
+
+  const user = getCurrentUser();
+  const token = getAuthToken();
+  const role = (user?.role || '').toLowerCase();
+  if (!user || !token || !allowedRoles.includes(role)) {
+    return <Navigate to={redirectTo} replace />;
+  }
+  return children;
+}
 
 export function App() {
   return (
@@ -48,6 +70,8 @@ export function App() {
           <Routes>
             <Route path="/" element={<LandingPageRoute />} />
             <Route path="/login" element={<LoginScreen />} />
+            <Route path="/patient/login" element={<LoginScreen portalMode="patient" />} />
+            <Route path="/doctor/login" element={<LoginScreen portalMode="doctor" />} />
             <Route path="/signin" element={<Navigate to="/login" replace />} />
             <Route path="/create-account" element={<CreateAccountScreen />} />
             <Route path="/register" element={<CreateAccountScreen />} />
@@ -56,7 +80,7 @@ export function App() {
             {/* Hospital Portal Routes */}
             <Route path="/hospital-login" element={<Navigate to="/login?portal=hospital" replace />} />
             <Route path="/hospital" element={<Navigate to="/hospital/dashboard" replace />} />
-            <Route element={<HospitalLayout />}>
+            <Route element={<RequireRole allowedRoles={['hospital', 'admin']} redirectTo="/login?portal=hospital"><HospitalLayout /></RequireRole>}>
               <Route path="/hospital/dashboard" element={<HospitalDashboardPage />} />
               <Route path="/hospital/appointments" element={<HospitalAppointmentsPage />} />
               <Route path="/hospital/appointments/:id" element={<HospitalAppointmentDetailPage />} />
@@ -71,7 +95,7 @@ export function App() {
             <Route path="/family" element={<Navigate to="/family/moments" replace />} />
 
             {/* Patient Portal Routes with Unified Patient Shell */}
-            <Route element={<PatientLayout />}>
+            <Route element={<RequireRole allowedRoles={['patient', 'family']} redirectTo="/patient/login"><PatientLayout /></RequireRole>}>
               <Route path="/patient/dashboard" element={<PatientHomePage />} />
               <Route path="/patient/home" element={<PatientHomePage />} />
               <Route path="/patient" element={<Navigate to="/patient/dashboard" replace />} />
@@ -135,17 +159,20 @@ export function App() {
             </Route>
 
             {/* Clinician Dashboard */}
-            <Route element={<DashboardLayout />}>
-              <Route path="/dashboard" element={<Navigate to="/mothers" replace />} />
+            <Route element={<RequireRole allowedRoles={['doctor', 'admin']} redirectTo="/doctor/login"><DashboardLayout /></RequireRole>}>
+              <Route path="/dashboard" element={<Navigate to="/doctor/dashboard" replace />} />
+              <Route path="/doctor/dashboard" element={<DoctorAppointmentsPage />} />
               <Route path="/command-center" element={<Navigate to="/mothers" replace />} />
               <Route path="/mothers" element={<MothersCasesPage />} />
               <Route path="/mothers/:motherId" element={<MothersCasesPage />} />
+              <Route path="/appointments" element={<DoctorAppointmentsPage />} />
+              <Route path="/doctor/appointments" element={<Navigate to="/appointments" replace />} />
               <Route path="/live-screening" element={<LiveScreeningPage />} />
               <Route path="/upload-analyze" element={<UploadAnalyzePage />} />
               <Route path="/results" element={<ResultsPage />} />
               <Route path="/results/:motherId" element={<ResultsPage />} />
-              <Route path="/discordance" element={<DiscordancePage />} />
-              <Route path="/discordance/:motherId" element={<DiscordancePage />} />
+              <Route path="/discordance" element={<Navigate to="/results" replace />} />
+              <Route path="/discordance/:motherId" element={<Navigate to="/results" replace />} />
               <Route path="/clinical-review" element={<ClinicalReviewPage />} />
               <Route path="/clinical-review/:motherId" element={<ClinicalReviewPage />} />
               <Route path="/create-consultation-report" element={<CreateConsultationReportPage />} />

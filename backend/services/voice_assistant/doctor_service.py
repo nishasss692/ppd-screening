@@ -36,7 +36,7 @@ DOCTOR_SYSTEM_PROMPT_PATH = Path(__file__).resolve().parent / "doctor_system_pro
 
 FALLBACK_DOCTOR_RESPONSES = {
     "discordance": (
-        "Cross-modal discordance in Miora analyzes divergence between a mother's subjective self-report "
+        "Cross-modal discordance in AANCHAL analyzes divergence between a mother's subjective self-report "
         "(EPDS score) and objective nonverbal acoustic and facial affective signals. When a mother reports "
         "low distress but displays flat affect, psychomotor retardation, or reduced vocal dynamics, the system "
         "flags a potential masked depression pattern for clinician review. This is an exploratory screening signal, "

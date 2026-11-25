@@ -160,10 +160,126 @@ export function CareSuggestionsPage() {
                       </p>
                     )}
                   </div>
-                )}
-              </section>
-            )}
-          </div>
+                  {carePlan.clinicianPlan.notes && (
+                    <p style={{ margin: 0, fontSize: '13.5px', lineHeight: 1.55, color: '#271218', whiteSpace: 'pre-line' }}>
+                      {carePlan.clinicianPlan.notes}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {carePlan?.clinicianReview && (
+                <div
+                  style={{
+                    background: '#fdfaf9',
+                    border: '1px solid #f0dfe2',
+                    borderRadius: '12px',
+                    padding: '12px 14px',
+                    display: 'grid',
+                    gap: '4px',
+                  }}
+                >
+                  <div style={{ fontSize: '12.5px', color: '#6b585f' }}>
+                    <strong>Reviewed by:</strong> {carePlan.clinicianReview.clinician_name}
+                    {carePlan.clinicianReview.reviewed_at && (
+                      <> · {new Date(carePlan.clinicianReview.reviewed_at).toLocaleDateString()}</>
+                    )}
+                  </div>
+                  {carePlan.clinicianReview.clinical_notes && (
+                    <p style={{ margin: 0, fontSize: '13.5px', lineHeight: 1.55, color: '#271218', whiteSpace: 'pre-line' }}>
+                      {carePlan.clinicianReview.clinical_notes}
+                    </p>
+                  )}
+                </div>
+              )}
+            </section>
+          )}
+        </div>
+
+        {/* Right Column: Progress Tracker & Doctor Connection */}
+        <div className="care-main-right">
+          {/* Progress Tracker Card */}
+          <section className="patient-card care-progress-card" aria-label="Care Plan Progress">
+            <h2 className="progress-card-title">Daily Checklist</h2>
+            <div className="progress-body-row">
+              {/* Circular Gauge */}
+              <div className="progress-gauge-wrap">
+                <svg className="progress-gauge-svg" viewBox="0 0 90 90" aria-hidden="true">
+                  <circle
+                    className="progress-gauge-track"
+                    cx="45"
+                    cy="45"
+                    r={radius}
+                  />
+                  <circle
+                    className="progress-gauge-bar"
+                    cx="45"
+                    cy="45"
+                    r={radius}
+                    strokeDasharray={circumference}
+                    strokeDashoffset={strokeDashoffset}
+                  />
+                </svg>
+                <div className="progress-gauge-text">
+                  <span className="gauge-fraction">
+                    {completedCount}/{totalTasks}
+                  </span>
+                  <span className="gauge-subtext">Tasks<br />Done</span>
+                </div>
+              </div>
+
+              {/* Checklist */}
+              <ul className="progress-tasks-list">
+                {tasks.map((task) => (
+                  <li
+                    key={task.id}
+                    className={`progress-task-item ${task.completed ? 'is-completed' : ''}`}
+                    onClick={() => toggleCareTask(task.id)}
+                    role="checkbox"
+                    aria-checked={task.completed}
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === ' ' || e.key === 'Enter') {
+                        toggleCareTask(task.id);
+                      }
+                    }}
+                    title="Click to toggle completion"
+                  >
+                    <span className={`task-check-circle ${task.completed ? 'completed' : 'pending'}`}>
+                      {task.completed && (
+                        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="2.5 6 4.8 8.5 9.5 3.5" />
+                        </svg>
+                      )}
+                    </span>
+                    <span className="task-name">{task.title}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+
+          {/* Need More Support? Card */}
+          <section className="patient-card care-support-card" aria-label="Clinical Support">
+            <div className="support-header-row">
+              <div className="support-icon-wrap" aria-hidden="true">
+                <PatientIcon name="connect-doctor" size={18} />
+              </div>
+              <div className="support-text-wrap">
+                <h2 className="support-title">Need Clinical Support?</h2>
+                <p className="support-desc">
+                  Connect directly with Dr. Priya Mehta for personalized psychiatric evaluations and guided care adjustments.
+                </p>
+              </div>
+            </div>
+
+            <NavLink to="/patient/connect-doctor" className="patient-btn-primary support-action-btn">
+              <span>Connect to a Doctor</span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </NavLink>
+          </section>
         </div>
       )}
 

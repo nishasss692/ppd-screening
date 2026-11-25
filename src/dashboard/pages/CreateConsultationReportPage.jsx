@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useClinicalData } from '../context/ClinicalContext.jsx';
 import { DashboardIcon } from '../components/DashboardIcon.jsx';
 import { createConsultationReport } from '../services/doctorApiService.js';
+import { getCurrentUser } from '../../auth/authService.js';
 import '../dashboard.css';
 
 export function CreateConsultationReportPage() {
@@ -91,13 +92,17 @@ export function CreateConsultationReportPage() {
     setStatusMessage('');
     setIsSubmitting(true);
 
+    const currentDoc = getCurrentUser();
+    const resolvedDocName = currentDoc?.fullName || currentDoc?.name || '';
+    const resolvedDocId = currentDoc?.doctorId || (resolvedDocName.toLowerCase().includes('priya') ? 'DR-001' : currentDoc?.id || 'DR-001');
+
     const payload = {
       patient_identifier: activeMother?.rawUuid || patientId,
       patient_name: patientName,
       appointment_id: appointmentId || null,
-      doctor_id: 'DR-005',
-      doctor_name: 'Dr. Elena Rostova',
-      doctor_specialization: 'Perinatal Psychiatry Lead',
+      doctor_id: resolvedDocId,
+      doctor_name: resolvedDocName,
+      doctor_specialization: currentDoc?.specialization || 'Perinatal Psychiatry',
       hospital_id: 'HOSP-001',
       hospital_name: "Apollo Women's Hospital",
       department: 'Perinatal Mental Health',

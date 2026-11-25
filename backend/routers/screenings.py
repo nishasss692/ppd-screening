@@ -211,9 +211,13 @@ def download_clinician_screening_pdf(
         item_scores=screening.item_scores or {},
         questions=questions,
         notes=screening.notes,
+        multimodal_scores=screening.multimodal_scores,
+        clinical_prediction=screening.clinical_model_prediction,
+        discordance_flag=bool(getattr(screening, "discordance_flag", False)),
     )
 
-    filename = f"AANCHAL_Screening_Report_{screening.screening_date.strftime('%d%b%Y')}.pdf"
+    safe_first = (patient_name.split()[0] if patient_name else "Patient").strip(".,")
+    filename = f"AANCHAL_Screening_Report_{safe_first}.pdf"
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",

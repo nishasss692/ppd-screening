@@ -89,7 +89,7 @@ const Icons = {
   ),
 };
 
-export function LoginScreen() {
+export function LoginScreen({ portalMode = null }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -97,8 +97,14 @@ export function LoginScreen() {
   const [activeTab, setActiveTab] = useState('signin');
 
   // Selected role: 'patient' (default) | 'doctor' | 'family' | 'hospital'
-  const initialRoleParam = (searchParams.get('role') || searchParams.get('portal') || '').toLowerCase();
-  const [selectedRole, setSelectedRole] = useState(initialRoleParam === 'hospital' ? 'hospital' : 'patient');
+  const initialRoleParam = (portalMode || searchParams.get('role') || searchParams.get('portal') || '').toLowerCase();
+  const [selectedRole, setSelectedRole] = useState(
+    initialRoleParam === 'hospital'
+      ? 'hospital'
+      : initialRoleParam === 'doctor'
+        ? 'doctor'
+        : 'patient'
+  );
 
   // Form fields
   const [name, setName] = useState('');
@@ -164,7 +170,7 @@ export function LoginScreen() {
           selectedRole,
         });
         const targetUrl = (result?.user?.role === 'doctor' || selectedRole === 'doctor' || result?.redirectUrl === '/dashboard' || result?.redirectUrl === '/mothers')
-          ? '/mothers'
+          ? '/doctor/dashboard'
           : '/patient/dashboard';
         navigate(targetUrl);
       } else {
@@ -175,7 +181,7 @@ export function LoginScreen() {
           role: selectedRole,
         });
         const targetUrl = (result?.user?.role === 'doctor' || selectedRole === 'doctor' || result?.redirectUrl === '/dashboard' || result?.redirectUrl === '/mothers')
-          ? '/mothers'
+          ? '/doctor/dashboard'
           : '/patient/dashboard';
         navigate(targetUrl);
       }
@@ -195,7 +201,7 @@ export function LoginScreen() {
     try {
       const result = await authenticateWithGoogle(selectedRole);
       const targetUrl = (result?.user?.role === 'doctor' || selectedRole === 'doctor' || result?.redirectUrl === '/dashboard' || result?.redirectUrl === '/mothers')
-        ? '/mothers'
+        ? '/doctor/dashboard'
         : '/patient/dashboard';
       navigate(targetUrl);
     } catch (err) {
@@ -377,11 +383,23 @@ export function LoginScreen() {
               <h2 className="login-card-title">
                 {selectedRole === 'hospital'
                   ? 'Hospital Portal Sign In'
-                  : activeTab === 'signin' ? 'Welcome Back' : 'Create Your Account'}
+                  : portalMode === 'doctor'
+                    ? 'Doctor Portal Sign In'
+                    : portalMode === 'patient'
+                      ? 'Patient Portal Sign In'
+                      : activeTab === 'signin' ? 'Welcome Back' : 'Create Your Account'}
               </h2>
               {selectedRole === 'hospital' ? (
                 <p className="login-card-subtext">
                   Sign in with your registered hospital email or organisation ID.
+                </p>
+              ) : portalMode === 'doctor' ? (
+                <p className="login-card-subtext">
+                  Clinical workspace for Dr. Priya Mehta &amp; perinatal specialists.
+                </p>
+              ) : portalMode === 'patient' ? (
+                <p className="login-card-subtext">
+                  Sign in to access your AANCHAL screening, reports, and consultations.
                 </p>
               ) : activeTab === 'signin' ? (
                 <p className="login-card-subtext sr-only">
@@ -408,16 +426,18 @@ export function LoginScreen() {
 
             {/* Main Form */}
             <form id="panel-auth" onSubmit={handleSubmit} noValidate>
-              {/* Role Selection */}
+              {/* Role Selection — hidden when locked to a dedicated portal route */}
               <div className="login-role-section">
-                <label className="login-role-label" id="role-select-label">
-                  I am a<span className="login-required-star">*</span>
-                </label>
-                <div
-                  className="login-role-grid"
-                  role="radiogroup"
-                  aria-labelledby="role-select-label"
-                >
+                {!portalMode && (
+                  <>
+                    <label className="login-role-label" id="role-select-label">
+                      I am a<span className="login-required-star">*</span>
+                    </label>
+                    <div
+                      className="login-role-grid"
+                      role="radiogroup"
+                      aria-labelledby="role-select-label"
+                    >
                   {/* Patient Card (Selected by default) */}
                   <button
                     type="button"
@@ -550,38 +570,48 @@ export function LoginScreen() {
                     </span>
                   </button>
                 </div>
+                  </>
+                )}
 
                 {/* Quick 1-Click Demo Fill */}
                 <div className="login-demo-bar">
                   <span className="login-demo-label">Try Demo:</span>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectDemo('patient')}
-                    className={`login-demo-chip ${selectedRole === 'patient' ? 'is-active' : ''}`}
-                  >
-                    Patient (Amara)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectDemo('doctor')}
-                    className={`login-demo-chip ${selectedRole === 'doctor' ? 'is-active' : ''}`}
-                  >
-                    Doctor (Dr. Elena)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectDemo('family')}
-                    className={`login-demo-chip ${selectedRole === 'family' ? 'is-active' : ''}`}
-                  >
-                    Patient's Family (Raj)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectDemo('hospital')}
-                    className={`login-demo-chip ${selectedRole === 'hospital' ? 'is-hospital-active' : ''}`}
-                  >
-                    Hospital (Apollo)
-                  </button>
+                  {(!portalMode || portalMode === 'patient') && (
+                    <button
+                      type="button"
+                      onClick={() => handleSelectDemo('patient')}
+                      className={`login-demo-chip ${selectedRole === 'patient' ? 'is-active' : ''}`}
+                    >
+                      Patient (Amara)
+                    </button>
+                  )}
+                  {(!portalMode || portalMode === 'doctor') && (
+                    <button
+                      type="button"
+                      onClick={() => handleSelectDemo('doctor')}
+                      className={`login-demo-chip ${selectedRole === 'doctor' ? 'is-active' : ''}`}
+                    >
+                      Doctor (Dr. Priya Mehta)
+                    </button>
+                  )}
+                  {!portalMode && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => handleSelectDemo('family')}
+                        className={`login-demo-chip ${selectedRole === 'family' ? 'is-active' : ''}`}
+                      >
+                        Patient's Family (Raj)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSelectDemo('hospital')}
+                        className={`login-demo-chip ${selectedRole === 'hospital' ? 'is-hospital-active' : ''}`}
+                      >
+                        Hospital (Apollo)
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 

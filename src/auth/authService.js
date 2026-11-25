@@ -20,8 +20,9 @@ export const DEMO_ACCOUNTS = {
     email: 'doctor@miora.health',
     password: 'password123',
     role: 'doctor',
-    name: 'Dr. Elena Rostova',
-    clinic: 'Miora Maternal Care Unit',
+    name: 'Dr. Priya Mehta',
+    clinic: "Apollo Women's Hospital",
+    doctorId: 'DR-001',
   },
   family: {
     email: 'family@miora.health',
@@ -99,6 +100,7 @@ export function setCurrentUser(user) {
     } else {
       window.localStorage.removeItem(STORAGE_SESSION_KEY);
     }
+    window.dispatchEvent(new Event('aanchal-auth-changed'));
   } catch (err) {
     console.error('Error setting current user', err);
   }
@@ -310,13 +312,14 @@ export async function authenticate({ email, password, selectedRole }) {
     name:
       accountName ||
       (accountRole === 'doctor'
-        ? 'Dr. Elena Rostova'
+        ? 'Dr. Priya Mehta'
         : accountRole === 'family'
           ? 'Raj K.'
           : 'Amara K.'),
     authenticatedAt: new Date().toISOString(),
   };
 
+  setAuthToken('local-demo-session');
   setCurrentUser(authenticatedUser);
 
   return {

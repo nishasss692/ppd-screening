@@ -163,7 +163,7 @@ describe('Miora Screen 04: Upload & Analyze', () => {
     renderUploadPage();
     fireEvent.click(screen.getByRole('button', { name: /Back to Screening/i }));
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-      'Maternal Screening Session'
+      'Maternal Screening Review'
     );
   });
 });

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useClinicalData } from '../../context/ClinicalContext.jsx';
 import canonicalQuestionsJson from '../../../../data/questions.json';
 import { DashboardIcon } from '../DashboardIcon.jsx';
@@ -9,8 +9,14 @@ export function DoctorEpdsTab({ defaultMotherId }) {
   const questions = useMemo(() => canonicalQuestionsJson.questions || [], []);
 
   const [selectedMotherId, setSelectedMotherId] = useState(
-    defaultMotherId || (mothers.find((m) => m.id === 'M-108') ? 'M-108' : mothers[0]?.id || 'M-104')
+    defaultMotherId || (mothers.find((m) => m.id === 'M-104') ? 'M-104' : mothers[0]?.id || 'M-104')
   );
+
+  useEffect(() => {
+    if (defaultMotherId) {
+      setSelectedMotherId(defaultMotherId);
+    }
+  }, [defaultMotherId]);
 
   const activeMother = useMemo(
     () => mothers.find((m) => m.id === selectedMotherId) || mothers[0] || null,

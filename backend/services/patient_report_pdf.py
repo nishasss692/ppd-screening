@@ -26,12 +26,9 @@ def generate_patient_screening_pdf(
     item_scores: Dict[str, int],
     questions: Optional[List[Dict[str, Any]]] = None,
     notes: Optional[str] = None,
-    screening_id: Optional[str] = None,
-    postpartum_week: Optional[int] = None,
-    multimodal_summary: Optional[Dict[str, Any]] = None,
-    clinical_review: Optional[Dict[str, Any]] = None,
-    care_plan: Optional[Dict[str, Any]] = None,
-    clinical_profile: Optional[Dict[str, Any]] = None,
+    multimodal_scores: Optional[Dict[str, Any]] = None,
+    clinical_prediction: Optional[Dict[str, Any]] = None,
+    discordance_flag: bool = False,
 ) -> bytes:
     """Generate a comprehensive clinical PDF report for the entire screening session."""
     buffer = io.BytesIO()
@@ -42,6 +39,9 @@ def generate_patient_screening_pdf(
         leftMargin=36,
         topMargin=36,
         bottomMargin=36,
+        title="AANCHAL Maternal Emotional Intelligence Screening Report",
+        author="AANCHAL Clinical System",
+        pageCompression=0,
     )
 
     styles = getSampleStyleSheet()
@@ -105,7 +105,7 @@ def generate_patient_screening_pdf(
 
     # 1. Header
     story.append(Paragraph("AANCHAL · Maternal Emotional Intelligence", title_style))
-    story.append(Paragraph("Comprehensive Maternal Screening Report (Multimodal AI, Clinical Profile, Clinician Review &amp; EPDS)", subtitle_style))
+    story.append(Paragraph("Clinical Screening Report · Edinburgh Postnatal Depression Scale (EPDS)", subtitle_style))
     story.append(HRFlowable(width="100%", thickness=1.5, color=brand_color, spaceAfter=14))
 
     # 2. Patient & Session Meta Table
@@ -190,125 +190,51 @@ def generate_patient_screening_pdf(
     story.append(summary_table)
     story.append(Spacer(1, 14))
 
-    # 3B. Multimodal AI Screening Breakdown
-    mm = multimodal_summary or {}
-    modality_status = mm.get("modality_status") or {}
-    if mm or modality_status:
-        story.append(Paragraph("Multimodal AI Screening &amp; Modality Breakdown", heading2_style))
+    # 3b. AI Multimodal & Combined Risk Assessment (when available)
+    mm = multimodal_scores if isinstance(multimodal_scores, dict) else {}
+    cp = clinical_prediction if isinstance(clinical_prediction, dict) else {}
+    if mm or cp or discordance_flag:
+        story.append(Paragraph("AI Multimodal & Combined Risk Assessment", heading2_style))
+        mm_rows = []
+        text_score = mm.get("text_risk") or mm.get("text") or mm.get("text_score")
+        voice_score = mm.get("voice_risk") or mm.get("audio_risk") or mm.get("voice") or mm.get("audio")
+        video_score = mm.get("video_risk") or mm.get("video")
+        combined_prob = cp.get("predicted_risk_probability") or mm.get("combined_risk") or mm.get("fusion_score")
+        combined_tier = cp.get("predicted_risk_label") or cp.get("risk_level") or risk_label
+        disc_score = mm.get("discordance_score")
+        disc_level = mm.get("discordance_level") or ("Notable Difference" if discordance_flag else "Aligned")
 
-        def _fmt_score(val: Any, status_val: Optional[str]) -> str:
-            if isinstance(val, (int, float)):
-                return f"{round(float(val) * 100)}% ({float(val):.4f})"
-            if status_val == "not_requested":
-                return "Not requested"
-            if status_val == "unavailable":
-                return "Unavailable"
-            return status_val.replace("_", " ").title() if status_val else "Not recorded"
+        if text_score is not None:
+            mm_rows.append([Paragraph("<b>Narrative / Text Risk:</b>", body_style), Paragraph(f"{float(text_score):.2f}" if isinstance(text_score, (int, float)) else str(text_score), body_style)])
+        if voice_score is not None:
+            mm_rows.append([Paragraph("<b>Voice / Acoustic Risk:</b>", body_style), Paragraph(f"{float(voice_score):.2f}" if isinstance(voice_score, (int, float)) else str(voice_score), body_style)])
+        if video_score is not None:
+            mm_rows.append([Paragraph("<b>Facial / Video Risk:</b>", body_style), Paragraph(f"{float(video_score):.2f}" if isinstance(video_score, (int, float)) else str(video_score), body_style)])
+        if combined_prob is not None:
+            pct = f"{float(combined_prob) * 100:.1f}%" if isinstance(combined_prob, (int, float)) and float(combined_prob) <= 1.0 else f"{combined_prob}"
+            mm_rows.append([Paragraph("<b>Combined Risk Assessment:</b>", body_style), Paragraph(f"{combined_tier} ({pct})", bold_style)])
+        else:
+            mm_rows.append([Paragraph("<b>Combined Risk Assessment:</b>", body_style), Paragraph(f"{risk_label} Risk", bold_style)])
 
-        fusion_score_str = _fmt_score(mm.get("fusion_score"), mm.get("fusion_status"))
-        fusion_method = (mm.get("fusion_method") or "None").replace("_", " ").title()
-        disagreement_str = "Detected (clinician review advised)" if mm.get("disagreement_flag") else "No significant divergence"
+        disc_text = f"{disc_level}" + (f" (Score: {float(disc_score):.2f})" if isinstance(disc_score, (int, float)) else "")
+        mm_rows.append([Paragraph("<b>Modality Discordance:</b>", body_style), Paragraph(disc_text, body_style)])
 
-        mm_rows = [
-            [Paragraph("<b>Screening Component</b>", bold_style), Paragraph("<b>Status</b>", bold_style), Paragraph("<b>Score / Outcome</b>", bold_style)],
-            [Paragraph("Clinical Numerical Model (46 Features)", body_style), Paragraph(str(modality_status.get("clinical", "not_requested")).replace("_", " ").title(), body_style), Paragraph(_fmt_score(mm.get("clinical_score"), modality_status.get("clinical")), body_style)],
-            [Paragraph("Narrative Text Model (TF-IDF + LR)", body_style), Paragraph(str(modality_status.get("text", "not_requested")).replace("_", " ").title(), body_style), Paragraph(_fmt_score(mm.get("text_score"), modality_status.get("text")), body_style)],
-            [Paragraph("Acoustic Voice Model", body_style), Paragraph(str(modality_status.get("audio", "not_requested")).replace("_", " ").title(), body_style), Paragraph(_fmt_score(mm.get("audio_score"), modality_status.get("audio")), body_style)],
-            [Paragraph("Facial / Video Model", body_style), Paragraph(str(modality_status.get("video", "not_requested")).replace("_", " ").title(), body_style), Paragraph(_fmt_score(mm.get("video_score"), modality_status.get("video")), body_style)],
-            [Paragraph(f"Multimodal Fusion ({fusion_method})", bold_style), Paragraph(str(mm.get("fusion_status") or "not_available").replace("_", " ").title(), bold_style), Paragraph(fusion_score_str, bold_style)],
-            [Paragraph("Cross-Modal Disagreement", body_style), Paragraph("Checked", body_style), Paragraph(disagreement_str, body_style)],
-        ]
-        mm_table = Table(mm_rows, colWidths=[2.8 * inch, 1.6 * inch, 2.6 * inch])
+        mm_table = Table(mm_rows, colWidths=[2.1 * inch, 4.9 * inch])
         mm_table.setStyle(
             TableStyle(
                 [
-                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#f1f5f9")),
-                    ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
+                    ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#f8fafc")),
+                    ("BOX", (0, 0), (-1, -1), 0.75, colors.HexColor("#e2e8f0")),
                     ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#e2e8f0")),
                     ("TOPPADDING", (0, 0), (-1, -1), 5),
                     ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
-                    ("LEFTPADDING", (0, 0), (-1, -1), 7),
-                    ("RIGHTPADDING", (0, 0), (-1, -1), 7),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 8),
                 ]
             )
         )
         story.append(mm_table)
         story.append(Spacer(1, 14))
-
-    # 3C. Clinician Finalized Review & Care Plan
-    if clinical_review or care_plan:
-        story.append(Paragraph("Clinician Finalized Assessment &amp; Care Plan", heading2_style))
-        rev_rows = []
-        if clinical_review:
-            rev_rows.append([Paragraph("<b>Reviewing Clinician:</b>", body_style), Paragraph(str(clinical_review.get("clinician_name") or "Assigned Clinician"), body_style)])
-            if clinical_review.get("final_risk_classification"):
-                rev_rows.append([Paragraph("<b>Final Risk Classification:</b>", body_style), Paragraph(str(clinical_review["final_risk_classification"]).title() + " Risk", bold_style)])
-            if clinical_review.get("review_status"):
-                rev_rows.append([Paragraph("<b>Review Decision:</b>", body_style), Paragraph(str(clinical_review["review_status"]).title(), body_style)])
-            if clinical_review.get("clinical_notes"):
-                rev_rows.append([Paragraph("<b>Clinician Notes:</b>", body_style), Paragraph(str(clinical_review["clinical_notes"]), body_style)])
-        if care_plan:
-            focus = str(care_plan.get("intervention_type") or "Supportive Care").replace("_", " ").title()
-            priority = str(care_plan.get("priority") or "Routine").title()
-            rev_rows.append([Paragraph("<b>Care Focus &amp; Priority:</b>", body_style), Paragraph(f"{focus} ({priority} priority)", body_style)])
-            if care_plan.get("scheduled_followup_date"):
-                rev_rows.append([Paragraph("<b>Scheduled Follow-up:</b>", body_style), Paragraph(str(care_plan["scheduled_followup_date"]), body_style)])
-            if care_plan.get("notes"):
-                rev_rows.append([Paragraph("<b>Care Plan Guidance:</b>", body_style), Paragraph(str(care_plan["notes"]), body_style)])
-
-        if rev_rows:
-            rev_table = Table(rev_rows, colWidths=[1.9 * inch, 5.1 * inch])
-            rev_table.setStyle(
-                TableStyle(
-                    [
-                        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#fff9fb")),
-                        ("BOX", (0, 0), (-1, -1), 0.75, border_color),
-                        ("INNERGRID", (0, 0), (-1, -1), 0.5, border_color),
-                        ("TOPPADDING", (0, 0), (-1, -1), 5),
-                        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
-                        ("LEFTPADDING", (0, 0), (-1, -1), 8),
-                        ("RIGHTPADDING", (0, 0), (-1, -1), 8),
-                    ]
-                )
-            )
-            story.append(rev_table)
-            story.append(Spacer(1, 14))
-
-    # 3D. Maternal Clinical & Psychosocial Context
-    if clinical_profile and isinstance(clinical_profile, dict):
-        highlight_keys = [
-            ("Age", "Maternal Age"),
-            ("Residence", "Residence"),
-            ("Mode of delivery", "Delivery Mode"),
-            ("Feeling about motherhood", "Feeling About Motherhood"),
-            ("Relationship with husband", "Partner Relationship"),
-            ("Recieved Support", "Support Received"),
-            ("Need for Support", "Support Needed"),
-            ("Depression before pregnancy (PHQ2)", "Pre-Pregnancy Depression"),
-        ]
-        profile_rows = [
-            [Paragraph(f"<b>{label}:</b>", body_style), Paragraph(str(clinical_profile[k]), body_style)]
-            for k, label in highlight_keys
-            if k in clinical_profile and clinical_profile[k] not in (None, "", "Missing")
-        ]
-        if profile_rows:
-            story.append(Paragraph("Maternal Clinical &amp; Psychosocial Context", heading2_style))
-            prof_table = Table(profile_rows, colWidths=[2.2 * inch, 4.8 * inch])
-            prof_table.setStyle(
-                TableStyle(
-                    [
-                        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#f8fafc")),
-                        ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#e2e8f0")),
-                        ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#e2e8f0")),
-                        ("TOPPADDING", (0, 0), (-1, -1), 4),
-                        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-                        ("LEFTPADDING", (0, 0), (-1, -1), 8),
-                        ("RIGHTPADDING", (0, 0), (-1, -1), 8),
-                    ]
-                )
-            )
-            story.append(prof_table)
-            story.append(Spacer(1, 14))
 
     # 4. Item Breakdown
     story.append(Paragraph("EPDS 10-Item Response Breakdown", heading2_style))

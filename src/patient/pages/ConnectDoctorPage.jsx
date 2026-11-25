@@ -1,10 +1,47 @@
 import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useSearchParams } from 'react-router-dom';
 import { usePatient } from '../context/PatientContext.jsx';
 import { PatientIcon } from '../components/PatientIcons.jsx';
 import './reports.css'; // shares report and consultation styles
 
+export const AVAILABLE_DOCTORS = [
+  {
+    doctorId: 'DR-ROSTOVA',
+    name: 'Dr. Elena Rostova',
+    fullName: 'Dr. Elena Rostova, MD',
+    initials: 'ER',
+    role: 'Perinatal Psychiatry Lead',
+    clinic: 'AANCHAL Maternal Care Unit',
+    hospitalId: 'HOSP-001',
+    hospitalName: 'AANCHAL Maternal Care Unit',
+    bio: 'Specializing in perinatal depression, anxiety disorders, and maternal emotional wellbeing. Dr. Rostova works collaboratively with mothers through compassionate clinical evaluation and evidence-based recovery regimens.',
+  },
+  {
+    doctorId: 'DR-001',
+    name: 'Dr. Priya Mehta',
+    fullName: 'Dr. Priya Mehta, MD',
+    initials: 'PM',
+    role: 'Perinatal Psychiatry Lead',
+    clinic: "Apollo Women's Hospital",
+    hospitalId: 'HOSP-001',
+    hospitalName: "Apollo Women's Hospital",
+    bio: "Specializing in perinatal depression, anxiety disorders, and maternal emotional wellbeing. Dr. Priya Mehta works collaboratively with mothers through compassionate clinical evaluation and evidence-based recovery regimens at Apollo Women's Hospital.",
+  },
+];
+
 export function ConnectDoctorPage() {
+  const [searchParams] = useSearchParams();
+  const urlDoctorId = searchParams.get('doctorId') || searchParams.get('doctor');
+
+  const [selectedDoctorId, setSelectedDoctorId] = useState(() => {
+    if (urlDoctorId && (urlDoctorId.toLowerCase().includes('priya') || urlDoctorId.toLowerCase() === 'dr-001')) {
+      return 'DR-001';
+    }
+    return 'DR-ROSTOVA';
+  });
+
+  const activeDoctor = AVAILABLE_DOCTORS.find((d) => d.doctorId === selectedDoctorId) || AVAILABLE_DOCTORS[0];
+
   const { consultations: contextConsultations, patient, bookAppointment } = usePatient();
 
   const [consultationsList, setConsultationsList] = useState(
@@ -21,13 +58,13 @@ export function ConnectDoctorPage() {
       },
       {
         id: 'c-100',
-        doctorName: 'Dr. Elena Rostova',
+        doctorName: 'Dr. Priya Mehta',
         role: 'Perinatal Psychiatry Lead',
         date: '03 Nov 2026',
         time: '02:30 PM',
         status: 'Completed',
         type: 'Audio Consult',
-        clinic: 'AANCHAL Maternal Care Unit',
+        clinic: "Apollo Women's Hospital",
       },
     ]
   );
@@ -49,19 +86,22 @@ export function ConnectDoctorPage() {
 
   const handleBookConsultation = (e) => {
     e.preventDefault();
-    setBookingNotice('Consultation successfully scheduled with Dr. Elena Rostova!');
+    setBookingNotice(`Consultation successfully scheduled with ${activeDoctor.name}!`);
     setBookingModalOpen(false);
     setBookingReason('');
     setTimeout(() => setBookingNotice(''), 5000);
 
     if (bookAppointment) {
       bookAppointment({
-        doctor_name: 'Dr. Elena Rostova',
-        role: 'Perinatal Psychiatry Lead',
+        doctor_name: activeDoctor.name,
+        doctor_id: activeDoctor.doctorId,
+        role: activeDoctor.role,
         date: bookingDate,
         time: bookingTime,
         type: selectedType,
-        clinic: 'AANCHAL Maternal Care Unit',
+        clinic: activeDoctor.clinic,
+        hospital_id: activeDoctor.hospitalId,
+        hospital_name: activeDoctor.hospitalName,
         reason: bookingReason,
       })
         .then((booked) => {
@@ -75,13 +115,13 @@ export function ConnectDoctorPage() {
     } else {
       const newConsultation = {
         id: `c-${Date.now()}`,
-        doctorName: 'Dr. Elena Rostova',
-        role: 'Perinatal Psychiatry Lead',
+        doctorName: activeDoctor.name,
+        role: activeDoctor.role,
         date: new Date(bookingDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
         time: bookingTime,
         status: 'Scheduled',
         type: selectedType,
-        clinic: 'AANCHAL Maternal Care Unit',
+        clinic: activeDoctor.clinic,
       };
       setConsultationsList((prev) => [newConsultation, ...prev]);
     }
@@ -117,6 +157,9 @@ export function ConnectDoctorPage() {
           <h1 className="miora-dash-title patient-page-heading">
             Connect to a <em>Doctor</em>
           </h1>
+          <p className="miora-dash-subtitle patient-page-subheading">
+            Confidential telehealth consultations, clinical evaluations, and ongoing postpartum emotional guidance coordinated with Dr. Priya Mehta.
+          </p>
         </div>
         <div className="patient-hero-box-illu" aria-hidden="true">
           <img
@@ -159,16 +202,42 @@ export function ConnectDoctorPage() {
       {joiningRoomNotice && (
         <div className="connect-joining-banner" role="status">
           <span className="connect-joining-spinner" aria-hidden="true" />
-          <span>Connecting to Dr. Elena Rostova's private telehealth room...</span>
+          <span>Connecting to Dr. Priya Mehta's private telehealth room...</span>
         </div>
       )}
+
+      {/* Doctor Selection Tabs */}
+      <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#68454b' }}>Select Doctor:</span>
+        {AVAILABLE_DOCTORS.map((doc) => (
+          <button
+            key={doc.doctorId}
+            type="button"
+            onClick={() => setSelectedDoctorId(doc.doctorId)}
+            style={{
+              padding: '0.45rem 0.95rem',
+              borderRadius: '20px',
+              border: '1px solid',
+              borderColor: selectedDoctorId === doc.doctorId ? '#a3485e' : '#e5d7d7',
+              background: selectedDoctorId === doc.doctorId ? '#a3485e' : '#ffffff',
+              color: selectedDoctorId === doc.doctorId ? '#ffffff' : '#57333b',
+              fontWeight: 600,
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {doc.name}
+          </button>
+        ))}
+      </div>
 
       {/* Doctor Profile Card */}
       <section className="patient-card connect-doctor-card" aria-labelledby="doctor-profile-title">
         <div className="connect-doctor-main">
           <div className="connect-doctor-avatar-wrap">
             <div className="connect-doctor-avatar-circle">
-              ER
+              {activeDoctor.initials}
             </div>
             <span className="connect-doctor-online-pill">
               <span className="connect-online-dot" />
@@ -180,10 +249,10 @@ export function ConnectDoctorPage() {
             <div className="connect-doctor-header-row">
               <div>
                 <h2 id="doctor-profile-title" className="connect-doctor-name">
-                  Dr. Elena Rostova, MD
+                  {activeDoctor.fullName}
                 </h2>
                 <p className="connect-doctor-designation">
-                  Perinatal Psychiatry Lead &bull; AANCHAL Maternal Care Unit
+                  {activeDoctor.role} &bull; {activeDoctor.clinic}
                 </p>
               </div>
 
@@ -205,7 +274,7 @@ export function ConnectDoctorPage() {
             </div>
 
             <p className="connect-doctor-bio">
-              Specializing in perinatal depression, anxiety disorders, and maternal emotional wellbeing. Dr. Rostova works collaboratively with mothers through compassionate clinical evaluation and evidence-based recovery regimens.
+              {activeDoctor.bio}
             </p>
 
             <div className="connect-doctor-tags-row">
@@ -226,7 +295,7 @@ export function ConnectDoctorPage() {
               Consultation Records &amp; Care Notes
             </h3>
             <p className="connect-records-sub">
-              Your scheduled sessions and past clinical summaries with Dr. Rostova.
+              Your scheduled sessions and past clinical summaries with Dr. Priya Mehta.
             </p>
           </div>
 
@@ -388,7 +457,7 @@ export function ConnectDoctorPage() {
                   id="booking-notes"
                   className="booking-textarea"
                   rows={3}
-                  placeholder="Share anything you'd like Dr. Rostova to focus on during your session..."
+                  placeholder="Share anything you'd like Dr. Priya Mehta to focus on during your session..."
                   value={bookingReason}
                   onChange={(e) => setBookingReason(e.target.value)}
                 />

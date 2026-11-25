@@ -17,6 +17,10 @@ import {
   persistClinicalReview,
   persistCarePlan,
   fetchConsultationReports,
+  fetchClinicianAppointments,
+  fetchDoctorNotifications,
+  markDoctorNotificationReadApi,
+  markAllDoctorNotificationsReadApi,
 } from '../services/doctorApiService.js';
 
 const ClinicalContext = createContext(null);
@@ -44,7 +48,7 @@ export const DEFAULT_FOLLOWUP_MILESTONES = [
     timeframe: 'In 7 days',
     title: 'Follow-up screening',
     description: 'Reassess emotional wellbeing and available signals.',
-    clinician: 'Dr. Elena Rostova',
+    clinician: 'Dr. Priya Mehta',
     completed: false,
   },
   {
@@ -52,7 +56,7 @@ export const DEFAULT_FOLLOWUP_MILESTONES = [
     timeframe: 'In 2 weeks',
     title: 'Clinical review',
     description: 'Discuss progress and ongoing concerns.',
-    clinician: 'Dr. Elena Rostova',
+    clinician: 'Dr. Priya Mehta',
     completed: false,
   },
   {
@@ -60,7 +64,7 @@ export const DEFAULT_FOLLOWUP_MILESTONES = [
     timeframe: 'In 4 weeks',
     title: 'Re-evaluation',
     description: 'Review changes and adjust the care plan if appropriate.',
-    clinician: 'Dr. Elena Rostova',
+    clinician: 'Dr. Priya Mehta',
     completed: false,
   },
 ];
@@ -219,25 +223,35 @@ export function ClinicalProvider({ children }) {
   );
   const [backendMetrics, setBackendMetrics] = useState(null);
   const [consultationReports, setConsultationReports] = useState([]);
+  const [appointments, setAppointments] = useState([]);
+  const [doctorNotifications, setDoctorNotifications] = useState([]);
   const [isLiveSynced, setIsLiveSynced] = useState(false);
   const [backendLoading, setBackendLoading] = useState(false);
 
   const syncFromBackend = useCallback(async () => {
     setBackendLoading(true);
     try {
-      const [mList, sList, dMetrics, sActivity, dAlerts, cReports] = await Promise.allSettled([
+      const [mList, sList, dMetrics, sActivity, dAlerts, cReports, cAppts, dNotifs] = await Promise.allSettled([
         fetchMothers(),
         fetchScreenings(),
         fetchDashboardMetrics(),
         fetchScreeningActivity('4w'),
         fetchDashboardAlerts(),
         fetchConsultationReports(),
+        fetchClinicianAppointments(),
+        fetchDoctorNotifications(),
       ]);
 
       const rawBackendMothers = mList.status === 'fulfilled' && Array.isArray(mList.value) ? mList.value : [];
       const rawBackendScreenings = sList.status === 'fulfilled' && Array.isArray(sList.value) ? sList.value : [];
       if (cReports.status === 'fulfilled' && Array.isArray(cReports.value)) {
         setConsultationReports(cReports.value);
+      }
+      if (cAppts.status === 'fulfilled' && Array.isArray(cAppts.value)) {
+        setAppointments(cAppts.value);
+      }
+      if (dNotifs.status === 'fulfilled' && Array.isArray(dNotifs.value)) {
+        setDoctorNotifications(dNotifs.value);
       }
 
       if (dMetrics.status === 'fulfilled' && dMetrics.value) {
@@ -357,9 +371,10 @@ export function ClinicalProvider({ children }) {
           const resolvedMotherName = matchedMother?.name || 'Patient ' + String(bs.mother_id).slice(0, 8);
           const resolvedInitials = matchedMother?.initials || 'P. M.';
 
-          const textScore = typeof mm.text_score === 'number' ? mm.text_score : null;
-          const audioScore = typeof mm.audio_score === 'number' ? mm.audio_score : null;
-          const videoScore = typeof mm.video_score === 'number' ? mm.video_score : null;
+          const mmMods = mm.modalities || {};
+          const textScore = typeof mm.text_score === 'number' ? mm.text_score : (typeof mmMods.text?.score === 'number' ? mmMods.text.score : null);
+          const audioScore = typeof mm.audio_score === 'number' ? mm.audio_score : (typeof mmMods.audio?.score === 'number' ? mmMods.audio.score : null);
+          const videoScore = typeof mm.video_score === 'number' ? mm.video_score : (typeof mmMods.video?.score === 'number' ? mmMods.video.score : null);
           const clinicalScore =
             typeof mm.clinical_score === 'number'
               ? mm.clinical_score
@@ -367,9 +382,16 @@ export function ClinicalProvider({ children }) {
                 ? cmPred.predicted_risk_probability
                 : null;
           const fusionScore = typeof mm.fusion_score === 'number' ? mm.fusion_score : null;
+          const processedAt = mm.processed_at || bs.model_metadata?.processed_at || bs.screening_date || null;
+
+          const textStatus = textScore !== null ? 'completed' : (mmMods.text?.status || cap.text || 'pending');
+          const voiceStatus = audioScore !== null ? 'completed' : (mmMods.audio?.status || cap.audio || cap.voice || 'pending');
+          const videoStatus = videoScore !== null ? 'completed' : (mmMods.video?.status || cap.video || 'pending');
+          const clinicalStatus = clinicalScore !== null || cmPred?.status === 'completed' ? 'completed' : (cap.clinical || 'pending');
 
           return {
             id: bs.id,
+            rawUuid: bs.id,
             motherId: resolvedMotherId,
             rawMotherUuid: bs.mother_id,
             motherName: resolvedMotherName,
@@ -378,33 +400,52 @@ export function ClinicalProvider({ children }) {
             status: 'Completed',
             completedAgo: 'Recently',
             screeningDateTime: bs.screening_date ? new Date(bs.screening_date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Today',
+            processedAt: processedAt ? new Date(processedAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : null,
             risk: capRisk,
-            modality: cap.video ? 'Multimodal (EPDS · Voice · Video · Clinical)' : 'EPDS + Clinical Questionnaire',
-            combinedScore: fusionScore !== null ? Number(fusionScore.toFixed(2)) : Number((score / 30).toFixed(2)),
+            modality: fusionScore !== null ? 'Multimodal (Text · Audio · Video · Clinical · EPDS)' : 'EPDS + Clinical Questionnaire',
+            combinedScore: fusionScore !== null ? Number(fusionScore.toFixed(4)) : null,
             epdsEquivalent: score,
             totalScore: score,
             q10SafetyAlert: Boolean(bs.q10_safety_alert),
-            discordanceScore: typeof mm.disagreement_details?.max_divergence === 'number' ? mm.disagreement_details.max_divergence : 0.14,
+            discordanceDetected: Boolean(mm.disagreement_flag),
+            discordanceScore: typeof mm.disagreement_details?.max_divergence === 'number' ? mm.disagreement_details.max_divergence : null,
+            disagreementDetails: mm.disagreement_details || null,
+            fusionMethod: mm.fusion_method || null,
             preliminaryScore: Number((score / 30).toFixed(2)),
             capturedModalities: {
-              text: Boolean(cap.text === 'completed' || textScore !== null),
-              voice: Boolean(cap.voice === 'completed' || cap.audio === 'completed' || audioScore !== null),
-              video: Boolean(cap.video === 'completed' || cap.video === 'recorded' || videoScore !== null),
-              clinical: Boolean(cap.clinical === 'completed' || cmPred?.status === 'completed'),
+              text: textStatus === 'completed',
+              voice: voiceStatus === 'completed',
+              video: videoStatus === 'completed' || videoStatus === 'recorded',
+              clinical: clinicalStatus === 'completed',
             },
             modalities: {
-              text: cap.text === 'completed' || textScore !== null
-                ? { status: 'completed', score: textScore ?? Number((score / 30).toFixed(2)) }
-                : { status: cap.text || 'unavailable', score: null },
-              voice: cap.audio === 'completed' || cap.voice === 'completed' || audioScore !== null
-                ? { status: 'completed', score: audioScore ?? 0.45 }
-                : { status: cap.audio || cap.voice || 'unavailable', score: null },
-              video: cap.video === 'completed' || cap.video === 'recorded' || videoScore !== null
-                ? { status: cap.video === 'recorded' ? 'recorded' : 'completed', score: videoScore ?? 0.52 }
-                : { status: cap.video || 'unavailable', score: null },
-              clinical: cmPred?.status === 'completed' || cap.clinical === 'completed'
-                ? { status: 'completed', score: clinicalScore, label: cmPred?.predicted_label || cmPred?.risk_category }
-                : { status: cap.clinical || 'unavailable', score: null },
+              text: {
+                status: textStatus,
+                score: textScore,
+                modelVersion: mmMods.text?.model_version || 'text_sgd_logistic_v1',
+                details: mmMods.text?.details || {},
+                error: mmMods.text?.error || null,
+              },
+              voice: {
+                status: voiceStatus,
+                score: audioScore,
+                modelVersion: mmMods.audio?.model_version || 'audio_logistic_regression_v1',
+                details: mmMods.audio?.details || {},
+                error: mmMods.audio?.error || null,
+              },
+              video: {
+                status: videoStatus,
+                score: videoScore,
+                modelVersion: mmMods.video?.model_version || 'video_statistical_baseline_v1',
+                details: mmMods.video?.details || {},
+                error: mmMods.video?.error || null,
+              },
+              clinical: {
+                status: clinicalStatus,
+                score: clinicalScore,
+                label: cmPred?.predicted_label || cmPred?.risk_category || null,
+                modelVersion: cmPred?.model_utilized || 'clinical_random_forest_v1',
+              },
             },
             submittedAnswers: bs.submitted_answers || {},
             itemScores: bs.item_scores || {},
@@ -453,6 +494,36 @@ export function ClinicalProvider({ children }) {
 
   useEffect(() => {
     syncFromBackend();
+
+    const handleAuthChanged = () => {
+      syncFromBackend();
+    };
+    window.addEventListener('aanchal-auth-changed', handleAuthChanged);
+
+    // Poll every 10 seconds for real-time appointments & notifications when doctor is active
+    const interval = setInterval(() => {
+      try {
+        const rawUser = window.localStorage?.getItem('miora_auth_user_v1');
+        const user = rawUser ? JSON.parse(rawUser) : null;
+        if (user && (user.role === 'doctor' || user.role === 'admin')) {
+          Promise.allSettled([fetchDoctorNotifications(), fetchClinicianAppointments()]).then(([nRes, aRes]) => {
+            if (nRes.status === 'fulfilled' && Array.isArray(nRes.value)) {
+              setDoctorNotifications(nRes.value);
+            }
+            if (aRes.status === 'fulfilled' && Array.isArray(aRes.value)) {
+              setAppointments(aRes.value);
+            }
+          });
+        }
+      } catch {
+        // ignore polling error
+      }
+    }, 10000);
+
+    return () => {
+      window.removeEventListener('aanchal-auth-changed', handleAuthChanged);
+      clearInterval(interval);
+    };
   }, [syncFromBackend]);
 
   const metrics = useMemo(() => {
@@ -1073,7 +1144,7 @@ export function ClinicalProvider({ children }) {
         mother_id: resolvedMotherUuid,
         ...(resolvedScreeningUuid ? { screening_id: resolvedScreeningUuid } : {}),
         clinician_id: 'DOC-101',
-        clinician_name: 'Dr. Elena Rostova',
+        clinician_name: (typeof window !== 'undefined' && window.localStorage?.getItem('miora_auth_user_v1') ? JSON.parse(window.localStorage.getItem('miora_auth_user_v1'))?.fullName : null) || 'Dr. Priya Mehta',
         review_status: clinicianAssessment?.decision === 'disagree' ? 'overridden' : 'confirmed',
         final_risk_classification: clinicianAssessment?.risk?.toLowerCase() || 'moderate',
         clinical_notes:
@@ -1090,11 +1161,30 @@ export function ClinicalProvider({ children }) {
     return record;
   };
 
+  const markDoctorNotificationRead = async (notificationId) => {
+    setDoctorNotifications((prev) =>
+      prev.map((n) => (n.id === notificationId ? { ...n, isRead: true, read: true } : n))
+    );
+    try {
+      await markDoctorNotificationReadApi(notificationId);
+    } catch {}
+  };
+
+  const markAllDoctorNotificationsRead = async () => {
+    setDoctorNotifications((prev) => prev.map((n) => ({ ...n, isRead: true, read: true })));
+    try {
+      await markAllDoctorNotificationsReadApi();
+    } catch {}
+  };
+
   const value = {
     mothers,
     screenings,
     weeklyRecords,
     alerts,
+    doctorNotifications,
+    markDoctorNotificationRead,
+    markAllDoctorNotificationsRead,
     metrics,
     priorityCases,
     screeningDrafts,
@@ -1129,6 +1219,7 @@ export function ClinicalProvider({ children }) {
     backendLoading,
     backendMetrics,
     consultationReports,
+    appointments,
     refreshBackendData: syncFromBackend,
   };
 

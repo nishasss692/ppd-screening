@@ -67,7 +67,7 @@ export const DEFAULT_SCREENING = {
       type: 'pdf',
       authorized: true,
       mimeType: 'application/pdf',
-      filename: 'Miora_Screening_Report_17Nov2026.pdf',
+      filename: 'AANCHAL_Screening_Report_17Nov2026.pdf',
     },
     {
       id: 'rep-txt',
@@ -77,7 +77,7 @@ export const DEFAULT_SCREENING = {
       type: 'txt',
       authorized: true,
       mimeType: 'text/plain',
-      filename: 'Miora_Conversation_Transcript_17Nov2026.txt',
+      filename: 'AANCHAL_Conversation_Transcript_17Nov2026.txt',
     },
     {
       id: 'rep-wav',
@@ -87,7 +87,7 @@ export const DEFAULT_SCREENING = {
       type: 'wav',
       authorized: true,
       mimeType: 'audio/wav',
-      filename: 'Miora_Audio_Session_17Nov2026.wav',
+      filename: 'AANCHAL_Audio_Session_17Nov2026.wav',
     },
     {
       id: 'rep-mp4',
@@ -97,7 +97,7 @@ export const DEFAULT_SCREENING = {
       type: 'mp4',
       authorized: true,
       mimeType: 'video/mp4',
-      filename: 'Miora_Video_Session_17Nov2026.mp4',
+      filename: 'AANCHAL_Video_Session_17Nov2026.mp4',
     },
   ],
   nextSteps: [
@@ -127,7 +127,7 @@ export const INITIAL_NOTIFICATIONS = [];
 export const INITIAL_CONSULTATIONS = [
   {
     id: 'c-101',
-    doctorName: 'Dr. Elena Rostova',
+    doctorName: 'Dr. Priya Mehta',
     role: 'Perinatal Psychiatry Lead',
     date: '20 Nov 2026',
     time: '11:00 AM',
@@ -323,6 +323,12 @@ export function PatientProvider({ children }) {
 
   useEffect(() => {
     reloadPatientData();
+
+    const handleAuthChanged = () => {
+      reloadPatientData();
+    };
+    window.addEventListener('aanchal-auth-changed', handleAuthChanged);
+    return () => window.removeEventListener('aanchal-auth-changed', handleAuthChanged);
   }, [reloadPatientData]);
 
   // Update profile handler connected to PostgreSQL
@@ -406,7 +412,7 @@ export function PatientProvider({ children }) {
       console.warn('Booking appointment fallback in offline/test environment:', err);
       const fallbackBooked = {
         id: `c-${Date.now()}`,
-        doctorName: appointmentData.doctor_name || 'Dr. Elena Rostova',
+        doctorName: appointmentData.doctor_name || 'Dr. Priya Mehta',
         role: appointmentData.role || 'Perinatal Psychiatry Lead',
         date: appointmentData.date,
         time: appointmentData.time,
@@ -464,66 +470,17 @@ export function PatientProvider({ children }) {
         blob = await downloadPatientConsultationReportBlob(report.id);
         if (!targetFilename.endsWith('.txt')) targetFilename += '.txt';
       } else if (report.type === 'pdf') {
-        try {
-          blob = await downloadReportPdfBlob(targetScreeningId);
-        } catch {
-          let mm = null;
-          let epdsLocal = null;
-          let profileLocal = null;
-          let psychoLocal = null;
-          try { mm = JSON.parse(localStorage.getItem('aanchal_multimodal_screening_result') || 'null'); } catch { }
-          try { epdsLocal = JSON.parse(localStorage.getItem('aanchal_submitted_epds_assessment') || 'null'); } catch { }
-          try { profileLocal = JSON.parse(localStorage.getItem('aanchal_clinical_profile_features') || 'null'); } catch { }
-          try { psychoLocal = JSON.parse(localStorage.getItem('aanchal_psychosocial_answers') || 'null'); } catch { }
-
-          const fmtPct = (v) => (typeof v === 'number' ? `${Math.round(v * 100)}% (${v.toFixed(4)})` : 'Not recorded');
-          const epdsTotal = epdsLocal?.totalScore ?? screening?.totalScore ?? 'Recorded';
-          const lines = [
-            'AANCHAL - COMPREHENSIVE MATERNAL SCREENING REPORT',
-            `Patient: ${patient?.fullName || patient?.name || 'Patient'} | Postpartum Week: ${patient?.postpartumWeek || 'N/A'}`,
-            `Screening Date: ${screening?.completedDateTime || screening?.date || new Date().toLocaleDateString()}`,
-            '--------------------------------------------------------------------------------',
-            '1. OVERALL SCREENING & EPDS SUMMARY',
-            `EPDS Total Score: ${epdsTotal} / 30`,
-            `Risk Classification: ${screening?.riskLabel || epdsLocal?.riskTier || 'Assessed'}`,
-            `Overall Risk Score: ${screening?.riskScore !== undefined ? `${screening.riskScore}%` : fmtPct(mm?.fusion_score)}`,
-            `Q10 Safety Alert: ${epdsLocal?.q10Alert ? 'TRIGGERED - Immediate evaluation advised' : 'Negative'}`,
-            '',
-            '2. MULTIMODAL AI & CLINICAL MODEL BREAKDOWN',
-            `Clinical Numerical (46 Features): ${fmtPct(mm?.clinical_score)}`,
-            `Narrative Text Model: ${fmtPct(mm?.text_score)}`,
-            `Acoustic Voice Model: ${fmtPct(mm?.audio_score)}`,
-            `Facial / Video Model: ${fmtPct(mm?.video_score)}`,
-            `Fusion Method: ${mm?.fusion_method || 'N/A'} | Status: ${mm?.fusion_status || 'N/A'}`,
-            '',
-            '3. CLINICIAN FINALIZED REVIEW & CARE PLAN',
-            `Reviewed By: ${carePlan?.clinicianReview?.clinician_name || 'Pending / Verified Record'}`,
-            `Final Risk Classification: ${carePlan?.clinicianReview?.final_risk_classification || 'N/A'}`,
-            `Clinical Notes: ${carePlan?.clinicianReview?.clinical_notes || 'No clinician notes recorded.'}`,
-            `Care Focus: ${carePlan?.clinicianPlan?.intervention_type || 'N/A'} | Priority: ${carePlan?.clinicianPlan?.priority || 'N/A'}`,
-            `Care Guidance: ${carePlan?.clinicianPlan?.notes || 'No care plan guidance recorded.'}`,
-            '',
-            '4. CLINICAL & PSYCHOSOCIAL CONTEXT',
-            ...(profileLocal || psychoLocal
-              ? Object.entries({ ...(profileLocal || {}), ...(psychoLocal || {}) })
-                .filter(([, v]) => v !== null && v !== undefined && v !== '' && v !== 'Missing')
-                .slice(0, 14)
-                .map(([k, v]) => `* ${k.trim()}: ${v}`)
-              : ['No additional profile context recorded.']),
-            '',
-            'CONFIDENTIALITY & SAFETY NOTICE',
-            'AANCHAL is a clinical screening aid and does not constitute a standalone diagnosis.',
-            'For urgent support, contact Tele-MANAS (14416 / 1800-891-4416).',
-          ];
-          blob = buildMultiPagePdfBlob(lines);
+        blob = await downloadReportPdfBlob(targetScreeningId);
+        if (!blob || blob.size < 100) {
+          throw new Error('Downloaded PDF file was empty or invalid.');
+        }
+        const firstName = (patient?.name || 'Amara').split(/\s+/)[0].replace(/[^a-zA-Z0-9_-]/g, '');
+        if (!report.filename || report.filename === 'AANCHAL_Screening_Report.pdf') {
+          targetFilename = `AANCHAL_Screening_Report_${firstName || 'Patient'}.pdf`;
         }
         if (!targetFilename.endsWith('.pdf')) targetFilename += '.pdf';
       } else if (report.type === 'txt') {
-        try {
-          blob = await downloadTranscriptTxtBlob(targetScreeningId);
-        } catch {
-          blob = new Blob(['AANCHAL screening transcript'], { type: 'text/plain' });
-        }
+        blob = await downloadTranscriptTxtBlob(targetScreeningId);
         if (!targetFilename.endsWith('.txt')) targetFilename += '.txt';
       } else {
         // Fallback for audio/video media if requested
