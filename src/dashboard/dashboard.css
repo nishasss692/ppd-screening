@@ -6274,6 +6274,19 @@
   color: #d02f66;
 }
 
+.miora-review-row-1 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.miora-review-row-1 .miora-review-textarea {
+  min-height: 170px;
+  font-size: 14px;
+  line-height: 1.55;
+  padding: 14px 16px 28px;
+}
+
 .miora-review-textarea-wrap {
   position: relative;
 }
