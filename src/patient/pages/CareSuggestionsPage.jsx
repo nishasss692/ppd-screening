@@ -19,44 +19,18 @@ export function CareSuggestionsPage() {
 
   const isDoctorFinalized = Boolean(carePlan?.clinicianPlan || carePlan?.clinicianReview);
 
-  // Tasks from patient context
-  const tasks = carePlan?.tasks || [
-    { id: 'task-1', title: 'Breathing exercise', completed: true },
-    { id: 'task-2', title: 'Mood check-in', completed: true },
-    { id: 'task-3', title: 'Sleep routine', completed: true },
-    { id: 'task-4', title: 'Journaling', completed: false },
-    { id: 'task-5', title: 'Light activity', completed: false },
-    { id: 'task-6', title: 'Self-care time', completed: false },
-    { id: 'task-7', title: 'Reflection', completed: false },
-  ];
-
-  const completedCount = tasks.filter((t) => t.completed).length;
-  const totalTasks = tasks.length;
-
-  // Circular gauge calculations
-  const radius = 36;
-  const circumference = 2 * Math.PI * radius;
-  const progressRatio = totalTasks > 0 ? completedCount / totalTasks : 0;
-  const strokeDashoffset = circumference - progressRatio * circumference;
-
   const handleStartBreathing = () => {
     setActiveModal('breathing');
   };
 
   const handleCompleteBreathing = () => {
-    const breathingTask = tasks.find((t) => t.id === 'task-1');
-    if (breathingTask && !breathingTask.completed) {
-      toggleCareTask('task-1');
-    }
+    if (toggleCareTask) toggleCareTask('task-1');
     setActiveModal(null);
   };
 
   const handleSaveJournal = () => {
-    if (journalEntry.trim()) {
-      const journalTask = tasks.find((t) => t.id === 'task-4');
-      if (journalTask && !journalTask.completed) {
-        toggleCareTask('task-4');
-      }
+    if (journalEntry.trim() && toggleCareTask) {
+      toggleCareTask('task-4');
     }
     setActiveModal(null);
     setJournalEntry('');
@@ -91,9 +65,6 @@ export function CareSuggestionsPage() {
           <h1 className="miora-dash-title patient-page-heading care-title">
             Personalised Care <em>Suggestions</em>
           </h1>
-          <p className="miora-dash-subtitle patient-page-subheading care-subtitle">
-            Evidence-based recovery plans, mindful restorative practices, and clinical guidance tailored to your postpartum journey.
-          </p>
         </div>
 
         <div className="care-hero-illu-wrap" aria-hidden="true">
@@ -126,179 +97,80 @@ export function CareSuggestionsPage() {
           </p>
         </section>
       ) : (
-      <div className="care-main-grid">
-        {/* Left Column: Plan & Daily Suggestions */}
-        <div className="care-main-left">
-          {/* Clinician-Finalized Insights & Care Plan (synced from Doctor Dashboard) */}
-          {(carePlan?.clinicianPlan || carePlan?.clinicianReview) && (
-            <section
-              className="patient-card care-plan-card"
-              aria-label="Doctor Finalized Insights and Care Plan"
-              style={{ flexDirection: 'column', alignItems: 'stretch', gap: '14px' }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div className="plan-badge-icon" aria-hidden="true">
-                    <PatientIcon name="stethoscope" size={20} />
+        <div className="care-main-grid">
+          {/* Left Column: Doctor-Finalized Insights, Care Plan & Restorative Tools */}
+          <div className="care-main-left">
+            {/* Clinician-Finalized Insights & Care Plan (synced from Doctor Dashboard) */}
+            {(carePlan?.clinicianPlan || carePlan?.clinicianReview) && (
+              <section
+                className="patient-card care-plan-card care-finalized-hero"
+                aria-label="Doctor Finalized Insights and Care Plan"
+                style={{ flexDirection: 'column', alignItems: 'stretch', gap: '18px' }}
+              >
+                <div className="care-finalized-header">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div className="plan-badge-icon" aria-hidden="true">
+                      <PatientIcon name="stethoscope" size={20} />
+                    </div>
+                    <div>
+                      <span className="care-verified-pill">
+                        <PatientIcon name="shield-check" size={13} />
+                        <span>Clinician Verified</span>
+                      </span>
+                      <h2 className="plan-title" style={{ margin: '4px 0 0' }}>
+                        Doctor-Finalized Insights &amp; Care Plan
+                      </h2>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="plan-title" style={{ margin: 0 }}>
-                      Doctor-Finalized Insights &amp; Care Plan
-                    </h2>
-                    <p className="plan-desc" style={{ margin: '2px 0 0' }}>
-                      Updated directly from your clinician&apos;s review and care planning session.
-                    </p>
-                  </div>
+                  {carePlan?.clinicianReview?.final_risk_classification && (
+                    <span className="care-risk-pill">
+                      Clinical Assessment: {carePlan.clinicianReview.final_risk_classification} Risk
+                    </span>
+                  )}
                 </div>
-                {carePlan?.clinicianReview?.final_risk_classification && (
-                  <span
-                    style={{
-                      padding: '4px 12px',
-                      borderRadius: '999px',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      background: '#fde7ec',
-                      color: '#ba1e53',
-                      textTransform: 'capitalize',
-                    }}
-                  >
-                    Clinical Assessment: {carePlan.clinicianReview.final_risk_classification} Risk
-                  </span>
-                )}
-              </div>
 
-              {carePlan?.clinicianPlan && (
-                <div
-                  style={{
-                    background: '#fff9fa',
-                    border: '1px solid #f0dfe2',
-                    borderRadius: '12px',
-                    padding: '12px 14px',
-                    display: 'grid',
-                    gap: '6px',
-                  }}
-                >
-                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', fontSize: '12.5px', color: '#6b585f' }}>
-                    <span>
-                      <strong>Care Focus:</strong>{' '}
-                      <span style={{ textTransform: 'capitalize' }}>
-                        {(carePlan.clinicianPlan.intervention_type || 'counseling').replace('_', ' ')}
-                      </span>
-                    </span>
-                    <span>
-                      <strong>Priority:</strong>{' '}
-                      <span style={{ textTransform: 'capitalize' }}>
-                        {carePlan.clinicianPlan.priority || 'routine'}
-                      </span>
-                    </span>
-                    {carePlan.clinicianPlan.scheduled_followup_date && (
-                      <span>
-                        <strong>Next Follow-up:</strong> {carePlan.clinicianPlan.scheduled_followup_date}
-                      </span>
-                    )}
-                  </div>
-                  {carePlan.clinicianPlan.notes && (
-                    <p style={{ margin: 0, fontSize: '13.5px', lineHeight: 1.55, color: '#271218', whiteSpace: 'pre-line' }}>
+                {/* Clinician Care Plan Guidance */}
+                {carePlan?.clinicianPlan?.notes && (
+                  <div className="care-guidance-callout">
+                    <div className="care-callout-head">
+                      <PatientIcon name="sparkles" size={15} />
+                      <span>Personalised Care Plan Guidance</span>
+                    </div>
+                    <p className="care-callout-text">
                       {carePlan.clinicianPlan.notes}
                     </p>
-                  )}
-                </div>
-              )}
+                  </div>
+                )}
 
-              {carePlan?.clinicianReview && (
-                <div
-                  style={{
-                    background: '#fdfaf9',
-                    border: '1px solid #f0dfe2',
-                    borderRadius: '12px',
-                    padding: '12px 14px',
-                    display: 'grid',
-                    gap: '4px',
-                  }}
-                >
-                  <div style={{ fontSize: '12.5px', color: '#6b585f' }}>
-                    <strong>Reviewed by:</strong> {carePlan.clinicianReview.clinician_name}
-                    {carePlan.clinicianReview.reviewed_at && (
-                      <> · {new Date(carePlan.clinicianReview.reviewed_at).toLocaleDateString()}</>
+                {/* Clinician Review Notes */}
+                {carePlan?.clinicianReview && (
+                  <div className="care-review-callout">
+                    <div className="care-callout-head">
+                      <PatientIcon name="user" size={15} />
+                      <span>
+                        Reviewed by {carePlan.clinicianReview.clinician_name}
+                        {carePlan.clinicianReview.reviewed_at && (
+                          <> &bull; {new Date(carePlan.clinicianReview.reviewed_at).toLocaleDateString()}</>
+                        )}
+                      </span>
+                    </div>
+                    {carePlan.clinicianReview.clinical_notes && (
+                      <p className="care-callout-text">
+                        {carePlan.clinicianReview.clinical_notes}
+                      </p>
                     )}
                   </div>
-                  {carePlan.clinicianReview.clinical_notes && (
-                    <p style={{ margin: 0, fontSize: '13.5px', lineHeight: 1.55, color: '#271218', whiteSpace: 'pre-line' }}>
-                      {carePlan.clinicianReview.clinical_notes}
-                    </p>
-                  )}
-                </div>
-              )}
-            </section>
-          )}
-        </div>
+                )}
+              </section>
+            )}
+          </div>
 
-        {/* Right Column: Progress Tracker & Doctor Connection */}
-        <div className="care-main-right">
-          {/* Progress Tracker Card */}
-          <section className="patient-card care-progress-card" aria-label="Care Plan Progress">
-            <h2 className="progress-card-title">Daily Checklist</h2>
-            <div className="progress-body-row">
-              {/* Circular Gauge */}
-              <div className="progress-gauge-wrap">
-                <svg className="progress-gauge-svg" viewBox="0 0 90 90" aria-hidden="true">
-                  <circle
-                    className="progress-gauge-track"
-                    cx="45"
-                    cy="45"
-                    r={radius}
-                  />
-                  <circle
-                    className="progress-gauge-bar"
-                    cx="45"
-                    cy="45"
-                    r={radius}
-                    strokeDasharray={circumference}
-                    strokeDashoffset={strokeDashoffset}
-                  />
-                </svg>
-                <div className="progress-gauge-text">
-                  <span className="gauge-fraction">
-                    {completedCount}/{totalTasks}
-                  </span>
-                  <span className="gauge-subtext">Tasks<br />Done</span>
-                </div>
-              </div>
-
-              {/* Checklist */}
-              <ul className="progress-tasks-list">
-                {tasks.map((task) => (
-                  <li
-                    key={task.id}
-                    className={`progress-task-item ${task.completed ? 'is-completed' : ''}`}
-                    onClick={() => toggleCareTask(task.id)}
-                    role="checkbox"
-                    aria-checked={task.completed}
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === ' ' || e.key === 'Enter') {
-                        toggleCareTask(task.id);
-                      }
-                    }}
-                    title="Click to toggle completion"
-                  >
-                    <span className={`task-check-circle ${task.completed ? 'completed' : 'pending'}`}>
-                      {task.completed && (
-                        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="2.5 6 4.8 8.5 9.5 3.5" />
-                        </svg>
-                      )}
-                    </span>
-                    <span className="task-name">{task.title}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </section>
-
-          {/* Need More Support? Card */}
-          <section className="patient-card care-support-card" aria-label="Clinical Support">
-            <div className="support-header-row">
+          {/* Bottom Full-Width: Doctor Connection */}
+          <section
+            className="patient-card care-support-card care-support-bottom-bar"
+            aria-label="Clinical Support"
+          >
+            <div className="support-header-row" style={{ marginBottom: 0 }}>
               <div className="support-icon-wrap" aria-hidden="true">
                 <PatientIcon name="connect-doctor" size={18} />
               </div>
@@ -310,7 +182,7 @@ export function CareSuggestionsPage() {
               </div>
             </div>
 
-            <NavLink to="/patient/connect-doctor" className="patient-btn-primary support-action-btn">
+            <NavLink to="/patient/connect-doctor" className="patient-btn-primary support-action-btn care-support-bottom-btn">
               <span>Connect to a Doctor</span>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <polyline points="9 18 15 12 9 6" />
@@ -318,7 +190,6 @@ export function CareSuggestionsPage() {
             </NavLink>
           </section>
         </div>
-      </div>
       )}
 
       {/* Interactive Modals */}

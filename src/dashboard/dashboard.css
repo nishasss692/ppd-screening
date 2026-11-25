@@ -9,7 +9,7 @@
 
 .miora-app-shell {
   min-height: 100vh;
-  background: radial-gradient(circle at 88% 8%, #fcecef 0%, #fdf8f4 46%, #fcf6f2 100%);
+  background: radial-gradient(circle at 88% 8%, #fce6ee 0%, #fdf2f6 48%, #fcecf2 100%);
   color: var(--ink);
   font-family: var(--sans);
 }
@@ -21,7 +21,7 @@
   display: flex;
   min-height: 100vh;
   width: 100%;
-  background: radial-gradient(circle at 88% 8%, #fcecef 0%, #fdf8f4 46%, #fcf6f2 100%);
+  background: radial-gradient(circle at 88% 8%, #fce6ee 0%, #fdf2f6 48%, #fcecf2 100%);
   position: relative;
 }
 

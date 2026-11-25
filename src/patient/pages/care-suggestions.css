@@ -96,7 +96,7 @@
 /* Main Grid */
 .care-main-grid {
   display: grid;
-  grid-template-columns: 1.45fr 1fr;
+  grid-template-columns: 1fr;
   gap: 20px;
   align-items: start;
 }
@@ -552,4 +552,201 @@
     flex-direction: column;
     align-items: flex-start;
   }
+}
+
+/* Redesigned Finalized Insights & Care Visual Cards */
+.care-finalized-hero {
+  background: linear-gradient(135deg, #ffffff 0%, #fdf3f6 100%);
+  border: 1px solid #f2dce4;
+}
+
+.care-finalized-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.care-verified-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #ba1e53;
+}
+
+.care-risk-pill {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: #fde7ec;
+  color: #ba1e53;
+  border: 1px solid #f7cad6;
+  text-transform: capitalize;
+}
+
+.care-summary-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.care-summary-tile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #ffffff;
+  border: 1px solid #f2dce4;
+  box-shadow: 0 2px 10px rgba(182, 45, 91, 0.04);
+}
+
+.care-tile-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #fdeef2;
+  color: #ca2261;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.care-tile-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.care-tile-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #8a7880;
+}
+
+.care-tile-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #271218;
+  margin-top: 2px;
+}
+
+.care-guidance-callout,
+.care-review-callout {
+  background: #ffffff;
+  border: 1px solid #f0dfe2;
+  border-left: 4px solid #d93c75;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: grid;
+  gap: 6px;
+}
+
+.care-review-callout {
+  border-left-color: #ca2261;
+  background: #fff9fb;
+}
+
+.care-callout-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #ba1e53;
+}
+
+.care-callout-text {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #271218;
+  white-space: pre-line;
+}
+
+.care-practices-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.care-practice-card {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: linear-gradient(160deg, #ffffff 0%, #fdf5f8 100%);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.care-practice-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(182, 45, 91, 0.08);
+}
+
+.care-practice-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fde7ec;
+  color: #ca2261;
+}
+
+.care-practice-title {
+  margin: 0;
+  font-family: var(--patient-font-serif);
+  font-size: 16px;
+  font-weight: 600;
+  color: #271218;
+}
+
+.care-practice-desc {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #62555a;
+  flex: 1;
+}
+
+.care-practice-btn {
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
+@media (max-width: 900px) {
+  .care-summary-tiles,
+  .care-practices-grid {
+    grid-template-columns: 1fr;
+  }
+  .care-support-bottom-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.care-support-bottom-bar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 24px;
+}
+
+.care-support-bottom-btn {
+  width: auto;
+  flex-shrink: 0;
+  white-space: nowrap;
 }

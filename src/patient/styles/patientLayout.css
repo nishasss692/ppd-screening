@@ -34,7 +34,7 @@
   top: 0;
   z-index: 35;
   height: var(--patient-header-height);
-  background: rgba(253, 249, 247, 0.95);
+  background: rgba(253, 242, 246, 0.95);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--patient-blush-border);
@@ -428,6 +428,7 @@
     align-items: flex-start;
     padding: 20px;
   }
+
   .patient-hero-box-illu {
     display: none;
   }

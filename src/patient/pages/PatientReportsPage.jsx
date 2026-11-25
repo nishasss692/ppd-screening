@@ -163,9 +163,6 @@ export function PatientReportsPage() {
           <h1 className="miora-dash-title patient-page-heading reports-title">
             My Reports &amp; <em>Analytics</em>
           </h1>
-          <p className="miora-dash-subtitle patient-page-subheading reports-subtitle">
-            Track your screenings, clinical evaluations, and emotional well-being trajectory over time.
-          </p>
         </div>
 
         <div className="reports-hero-illu-wrap" aria-hidden="true">

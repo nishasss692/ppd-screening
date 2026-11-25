@@ -117,9 +117,6 @@ export function ConnectDoctorPage() {
           <h1 className="miora-dash-title patient-page-heading">
             Connect to a <em>Doctor</em>
           </h1>
-          <p className="miora-dash-subtitle patient-page-subheading">
-            Confidential telehealth consultations, clinical evaluations, and ongoing postpartum emotional guidance coordinated with Dr. Elena Rostova.
-          </p>
         </div>
         <div className="patient-hero-box-illu" aria-hidden="true">
           <img
