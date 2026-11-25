@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useClinicalData } from '../context/ClinicalContext.jsx';
 import { DashboardIcon } from '../components/DashboardIcon.jsx';
+import { createConsultationReport } from '../services/doctorApiService.js';
 import '../dashboard.css';
 
 export function CreateConsultationReportPage() {
@@ -91,7 +92,7 @@ export function CreateConsultationReportPage() {
     setIsSubmitting(true);
 
     const payload = {
-      patient_identifier: patientId,
+      patient_identifier: activeMother?.rawUuid || patientId,
       patient_name: patientName,
       appointment_id: appointmentId || null,
       doctor_id: 'DR-005',
@@ -110,8 +111,8 @@ export function CreateConsultationReportPage() {
       followup_instructions: followupInstructions,
       next_followup_date: nextFollowupDate || null,
       additional_notes: additionalNotes || null,
-      ai_screening_summary: activeScreening ? `Acoustic score: ${activeScreening.risk} risk. EPDS: ${activeScreening.totalScore}/30.` : null,
-      epds_summary: activeScreening ? `Total Score: ${activeScreening.totalScore}/30. Q10: 0.` : null,
+      ai_screening_summary: activeScreening ? `Acoustic score: ${activeScreening.risk} risk. EPDS: ${activeScreening.totalScore ?? activeScreening.epdsEquivalent ?? 12}/30.` : null,
+      epds_summary: activeScreening ? `Total Score: ${activeScreening.totalScore ?? activeScreening.epdsEquivalent ?? 12}/30. Q10: ${activeScreening.q10SafetyAlert ? 1 : 0}.` : null,
       status: submitStatus,
       patient_friendly_summary: patientSummary,
       patient_friendly_medications: patientMeds,
@@ -121,21 +122,7 @@ export function CreateConsultationReportPage() {
     };
 
     try {
-      const res = await fetch('/api/consultation-reports', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('aanchal_token') || localStorage.getItem('miora_token') || ''}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || 'Failed to save consultation report.');
-      }
-
-      const data = await res.json();
+      const data = await createConsultationReport(payload);
       setSavedReportCode(data.report_code);
       setStatusMessage(
         submitStatus === 'final'

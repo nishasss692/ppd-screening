@@ -140,6 +140,7 @@ export async function saveScreeningSession(
         answersOrPayload.question_timestamps || questionTimestamps || undefined,
       psychosocial_answers:
         answersOrPayload.psychosocial_answers || psychosocialAnswers || undefined,
+      multimodal_result: answersOrPayload.multimodal_result || undefined,
     };
   } else {
     const rawAnswers = Array.isArray(answersOrPayload) ? answersOrPayload : [];
@@ -318,6 +319,41 @@ export async function downloadTranscriptTxtBlob(screeningId) {
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
     throw new Error(err.detail || `HTTP ${response.status}: Failed to download transcript`);
+  }
+
+  return response.blob();
+}
+
+/**
+ * Fetch patient-friendly consultation reports written by doctors from GET /api/patients/me/consultation-reports.
+ */
+export async function fetchPatientConsultationReports() {
+  const url = `${getApiBase()}/api/patients/me/consultation-reports`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: getHeaders(),
+  });
+
+  if (!response.ok) {
+    return [];
+  }
+
+  return response.json();
+}
+
+/**
+ * Download patient-friendly doctor consultation report as a Blob from GET /api/patients/me/consultation-reports/{reportId}/download.
+ */
+export async function downloadPatientConsultationReportBlob(reportId) {
+  const url = `${getApiBase()}/api/patients/me/consultation-reports/${encodeURIComponent(reportId)}/download`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: getHeaders({ Accept: 'text/plain' }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${response.status}: Failed to download consultation report`);
   }
 
   return response.blob();

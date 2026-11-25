@@ -559,6 +559,16 @@ def submit_and_save_screening(
     if not mother:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mother record not found.")
 
+    return persist_epds_screening_for_mother(db=db, mother=mother, payload=payload)
+
+
+def persist_epds_screening_for_mother(
+    db: Session,
+    mother: Mother,
+    payload: ScreeningSubmissionSaveRequest,
+) -> PatientScreeningSummaryResponse:
+    """Shared persistence pipeline for patient-portal and in-clinic EPDS + multimodal screenings."""
+
     def _normalize_qid(qid: str) -> str:
         s = str(qid).strip().upper()
         if s.startswith("EPDS_Q"):
@@ -679,6 +689,30 @@ def submit_and_save_screening(
     if clinical_pred_dict is not None:
         multimodal_dict["clinical_prediction"] = clinical_pred_dict
 
+    mm_res = payload.multimodal_result or {}
+    if isinstance(mm_res, dict) and mm_res:
+        for k in (
+            "audio_score",
+            "video_score",
+            "text_score",
+            "clinical_score",
+            "fusion_score",
+            "fusion_method",
+            "disagreement_flag",
+            "disagreement_details",
+        ):
+            if k in mm_res and mm_res[k] is not None:
+                multimodal_dict[k] = mm_res[k]
+        if isinstance(mm_res.get("modality_status"), dict):
+            for mk, mv in mm_res["modality_status"].items():
+                mod_status[mk] = mv
+
+    computed_fusion_status = (
+        "completed"
+        if (isinstance(mm_res, dict) and mm_res.get("fusion_score") is not None) or payload.video_metadata
+        else "not_available"
+    )
+
     new_screening = Screening(
         mother_id=mother.id,
         instrument="EPDS",
@@ -688,7 +722,7 @@ def submit_and_save_screening(
         submitted_answers=submitted_answers_map,
         item_scores=item_scores_map,
         screening_status="completed",
-        fusion_status="completed" if payload.video_metadata else "not_available",
+        fusion_status=computed_fusion_status,
         modality_status=mod_status,
         model_metadata=model_meta,
         multimodal_scores=multimodal_dict,
@@ -1878,5 +1912,71 @@ def get_patient_consultation_report_detail(
         followup_instructions=report.patient_friendly_followup or report.followup_instructions,
         next_followup_date=report.next_followup_date,
         submitted_at=report.submitted_at.strftime("%d %b %Y") if report.submitted_at else None,
+    )
+
+
+@router.get(
+    "/me/consultation-reports/{report_id}/download",
+    summary="Download patient-friendly consultation report",
+)
+def download_patient_consultation_report(
+    report_id: str,
+    user: User = Depends(require_patient),
+    db: Session = Depends(get_db),
+):
+    """Stream a downloadable summary of an approved doctor consultation report."""
+    if not user.mother_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mother record not linked.")
+
+    try:
+        r_uuid = uuid.UUID(report_id)
+        report = db.get(ConsultationReport, r_uuid)
+    except ValueError:
+        report = db.scalar(select(ConsultationReport).where(ConsultationReport.report_code == report_id))
+
+    if not report:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Consultation report '{report_id}' not found.",
+        )
+
+    if report.mother_id != user.mother_id or report.status != "final" or not report.patient_approved:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: You are only authorized to download your own approved consultation reports.",
+        )
+
+    lines = [
+        "==================================================================",
+        "AANCHAL — DOCTOR CONSULTATION REPORT (PATIENT SUMMARY)",
+        "==================================================================",
+        f"Report Code:     {report.report_code}",
+        f"Patient Name:    {report.patient_name}",
+        f"Doctor:          {report.doctor_name} ({report.doctor_specialization or 'Specialist'})",
+        f"Hospital:        {report.hospital_name}",
+        f"Consult Date:    {report.consultation_date}",
+        "==================================================================",
+        "",
+        "CONSULTATION SUMMARY:",
+        report.patient_friendly_summary or report.clinical_assessment or "N/A",
+        "",
+        "MEDICATIONS & CARE INSTRUCTIONS:",
+        report.patient_friendly_medications or report.medications or "No medications prescribed.",
+        "",
+        "RECOMMENDATIONS:",
+        report.patient_friendly_recommendations or report.recommendations or "N/A",
+        "",
+        "FOLLOW-UP PLAN:",
+        report.patient_friendly_followup or report.followup_instructions or "N/A",
+        f"Next Follow-up Date: {report.next_followup_date or 'As scheduled'}",
+        "",
+        "--- End of Confidential Consultation Summary ---",
+    ]
+    content = "\n".join(lines).encode("utf-8")
+    filename = f"AANCHAL_Consultation_{report.report_code}.txt"
+    return Response(
+        content=content,
+        media_type="text/plain; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 

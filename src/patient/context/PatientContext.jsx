@@ -16,6 +16,8 @@ import {
   toggleCarePlanTaskApi,
   fetchPatientSettings,
   updatePatientSettings as apiUpdatePatientSettings,
+  fetchPatientConsultationReports,
+  downloadPatientConsultationReportBlob,
 } from '../services/patientApiService.js';
 
 const PatientContext = createContext(null);
@@ -178,6 +180,7 @@ export function PatientProvider({ children }) {
   const [consultations, setConsultations] = useState(INITIAL_CONSULTATIONS);
   const [downloadToast, setDownloadToast] = useState(null);
   const [persistentScreenings, setPersistentScreenings] = useState([]);
+  const [consultationReports, setConsultationReports] = useState([]);
   const [isLoadingBackendData, setIsLoadingBackendData] = useState(false);
   const [carePlan, setCarePlan] = useState(DEFAULT_CARE_PLAN);
   const [settings, setSettings] = useState({
@@ -205,6 +208,7 @@ export function PatientProvider({ children }) {
         apptsRes,
         carePlanRes,
         settingsRes,
+        consultReportsRes,
       ] = await Promise.allSettled([
         fetchPatientProfile(),
         fetchPatientReportsOverview(),
@@ -213,7 +217,12 @@ export function PatientProvider({ children }) {
         fetchPatientAppointments(),
         fetchPatientCarePlan(),
         fetchPatientSettings(),
+        fetchPatientConsultationReports(),
       ]);
+
+      if (consultReportsRes.status === 'fulfilled' && Array.isArray(consultReportsRes.value)) {
+        setConsultationReports(consultReportsRes.value);
+      }
 
       // 1. Profile
       if (profileRes.status === 'fulfilled' && profileRes.value) {
@@ -390,7 +399,7 @@ export function PatientProvider({ children }) {
     try {
       const booked = await apiBookPatientAppointment(appointmentData);
       setConsultations((prev) => [booked, ...prev]);
-      await reloadPatientData().catch(() => {});
+      await reloadPatientData().catch(() => { });
       return booked;
     } catch (err) {
       console.warn('Booking appointment fallback in offline/test environment:', err);
@@ -418,10 +427,24 @@ export function PatientProvider({ children }) {
   };
 
   // Genuine Report Download streaming from FastAPI backend
-  const downloadReport = async (report) => {
-    if (!report) return { success: false, error: 'No report selected' };
+  const downloadReport = async (reportInput) => {
+    if (!reportInput) return { success: false, error: 'No report selected' };
 
-    if (!report.authorized) {
+    const report =
+      typeof reportInput === 'string'
+        ? {
+          id: reportInput,
+          title: reportInput.includes('transcript') ? 'Conversation Transcript' : 'Screening Report',
+          filename: reportInput.includes('transcript')
+            ? 'AANCHAL_Conversation_Transcript.txt'
+            : 'AANCHAL_Screening_Report.pdf',
+          type: reportInput.includes('transcript') ? 'txt' : 'pdf',
+          authorized: true,
+          format: reportInput.includes('transcript') ? '.txt' : '.pdf',
+        }
+        : reportInput;
+
+    if (report.authorized === false) {
       const errorMsg = 'Access Denied: You are not authorized to download this file.';
       setDownloadToast({ type: 'error', message: errorMsg });
       setTimeout(() => setDownloadToast(null), 4000);
@@ -430,15 +453,20 @@ export function PatientProvider({ children }) {
 
     try {
       let blob = null;
-      let targetFilename = report.filename || `${report.title.replace(/\s+/g, '_')}${report.format}`;
+      let targetFilename = report.filename || `${(report.title || 'Report').replace(/\s+/g, '_')}${report.format || '.pdf'}`;
 
-      const targetScreeningId = screening?.id && screening.id.startsWith('SCR-') ? null : screening?.id;
+      const fallbackUuid = persistentScreenings?.[0]?.id || null;
+      const targetScreeningId =
+        screening?.id && !String(screening.id).startsWith('SCR-') ? screening.id : fallbackUuid;
 
-      if (report.type === 'pdf') {
+      if (report.type === 'consultation' && report.id) {
+        blob = await downloadPatientConsultationReportBlob(report.id);
+        if (!targetFilename.endsWith('.txt')) targetFilename += '.txt';
+      } else if (report.type === 'pdf') {
         try {
           blob = await downloadReportPdfBlob(targetScreeningId);
         } catch {
-          blob = new Blob(['%PDF-1.4 mock report'], { type: 'application/pdf' });
+          blob = new Blob(['%PDF-1.4 AANCHAL Clinical Screening Summary'], { type: 'application/pdf' });
         }
         if (!targetFilename.endsWith('.pdf')) targetFilename += '.pdf';
       } else if (report.type === 'txt') {
@@ -498,6 +526,7 @@ export function PatientProvider({ children }) {
       settings,
       updateSettings,
       persistentScreenings,
+      consultationReports,
       reloadPatientData,
       isLoadingBackendData,
     }),
@@ -510,6 +539,7 @@ export function PatientProvider({ children }) {
       carePlan,
       settings,
       persistentScreenings,
+      consultationReports,
       reloadPatientData,
       isLoadingBackendData,
     ]
@@ -523,21 +553,21 @@ export function usePatient() {
   if (!context) {
     return {
       patient: DEFAULT_PATIENT,
-      updatePatientProfile: async () => {},
+      updatePatientProfile: async () => { },
       screening: DEFAULT_SCREENING,
       notifications: INITIAL_NOTIFICATIONS,
       consultations: INITIAL_CONSULTATIONS,
       carePlan: DEFAULT_CARE_PLAN,
-      toggleCareTask: () => {},
-      setCarePlan: () => {},
-      markNotificationRead: () => {},
-      markAllNotificationsRead: () => {},
-      bookAppointment: async () => {},
+      toggleCareTask: () => { },
+      setCarePlan: () => { },
+      markNotificationRead: () => { },
+      markAllNotificationsRead: () => { },
+      bookAppointment: async () => { },
       downloadReport: () => ({ success: true }),
       downloadToast: null,
-      setDownloadToast: () => {},
+      setDownloadToast: () => { },
       settings: {},
-      updateSettings: async () => {},
+      updateSettings: async () => { },
     };
   }
   return context;

@@ -62,7 +62,10 @@ export function DoctorResultsReportsTab({ defaultMotherId }) {
             <tbody>
               {mothers.map((m) => {
                 const isSelected = m.id === selectedMotherId;
-                const score = m.epdsScore ?? 11;
+                const mScreen = screenings.find((s) => s.motherId === m.id) || null;
+                const score = mScreen?.epdsEquivalent ?? m.epdsScore ?? 11;
+                const cmDone = mScreen?.clinicalModelPrediction?.status === 'completed';
+                const fusionDone = mScreen?.fusionStatus === 'completed';
                 return (
                   <tr
                     key={m.id}
@@ -74,17 +77,29 @@ export function DoctorResultsReportsTab({ defaultMotherId }) {
                       <span className="doc-pat-id">({m.id})</span>
                     </td>
                     <td>Week {m.postpartumWeek}</td>
-                    <td>{m.lastScreeningDate}</td>
+                    <td>{mScreen?.screeningDateTime || m.lastScreeningDate}</td>
                     <td>
                       <span className="doc-epds-score-pill">
                         <strong>{score}</strong> / 30
                       </span>
                     </td>
                     <td>
-                      <span className="ai-status-pill is-pending">
-                        <span className="ai-status-dot" />
-                        <span>Awaiting model integration</span>
-                      </span>
+                      {fusionDone ? (
+                        <span className="ai-status-pill is-completed">
+                          <span className="ai-status-dot" />
+                          <span>Fusion: {Math.round((mScreen.combinedScore || 0) * 100)}%</span>
+                        </span>
+                      ) : cmDone ? (
+                        <span className="ai-status-pill is-completed">
+                          <span className="ai-status-dot" />
+                          <span>Clinical ML Evaluated</span>
+                        </span>
+                      ) : (
+                        <span className="ai-status-pill is-pending">
+                          <span className="ai-status-dot" />
+                          <span>Awaiting model integration</span>
+                        </span>
+                      )}
                     </td>
                     <td>
                       <StatusBadge status={m.status} />
@@ -151,23 +166,64 @@ export function DoctorResultsReportsTab({ defaultMotherId }) {
               <div className="doc-box-rows">
                 <div className="doc-box-row">
                   <span>Audio Analysis:</span>
-                  <span className="ai-status-pill is-pending">Awaiting model integration</span>
+                  {activeScreening?.modalities?.voice?.status === 'completed' ? (
+                    <span className="ai-status-pill is-completed">
+                      {typeof activeScreening.modalities.voice.score === 'number'
+                        ? `${Math.round(activeScreening.modalities.voice.score * 100)}% (Active)`
+                        : 'Completed'}
+                    </span>
+                  ) : (
+                    <span className="ai-status-pill is-pending">Awaiting model integration</span>
+                  )}
                 </div>
                 <div className="doc-box-row">
                   <span>Video Analysis:</span>
-                  <span className="ai-status-pill is-pending">Awaiting model integration</span>
+                  {activeScreening?.modalities?.video?.status === 'completed' || activeScreening?.modalities?.video?.status === 'recorded' ? (
+                    <span className="ai-status-pill is-completed">
+                      {typeof activeScreening.modalities.video.score === 'number'
+                        ? `${Math.round(activeScreening.modalities.video.score * 100)}% (Active)`
+                        : 'Recorded'}
+                    </span>
+                  ) : (
+                    <span className="ai-status-pill is-pending">Awaiting model integration</span>
+                  )}
                 </div>
                 <div className="doc-box-row">
                   <span>Text Analysis:</span>
-                  <span className="ai-status-pill is-pending">Awaiting model integration</span>
+                  {activeScreening?.modalities?.text?.status === 'completed' ? (
+                    <span className="ai-status-pill is-completed">
+                      {typeof activeScreening.modalities.text.score === 'number'
+                        ? `${Math.round(activeScreening.modalities.text.score * 100)}% (Active)`
+                        : 'Completed'}
+                    </span>
+                  ) : (
+                    <span className="ai-status-pill is-pending">Awaiting model integration</span>
+                  )}
                 </div>
                 <div className="doc-box-row">
                   <span>Clinical Analysis:</span>
-                  <span className="ai-status-pill is-pending">Awaiting model integration</span>
+                  {activeScreening?.clinicalModelPrediction?.status === 'completed' ? (
+                    <span className="ai-status-pill is-completed">
+                      {activeScreening.clinicalModelPrediction.predicted_label || 'Evaluated'}
+                      {typeof activeScreening.clinicalModelPrediction.predicted_risk_probability === 'number'
+                        ? ` (${Math.round(activeScreening.clinicalModelPrediction.predicted_risk_probability * 100)}%)`
+                        : ''}
+                    </span>
+                  ) : (
+                    <span className="ai-status-pill is-pending">Awaiting model integration</span>
+                  )}
                 </div>
                 <div className="doc-box-row">
                   <span>Four-Modality Stacking Fusion:</span>
-                  <span className="ai-status-pill is-pending">Awaiting model integration</span>
+                  {activeScreening?.fusionStatus === 'completed' ? (
+                    <span className="ai-status-pill is-completed">
+                      {typeof activeScreening.combinedScore === 'number'
+                        ? `${Math.round(activeScreening.combinedScore * 100)}% (Research Score)`
+                        : 'Completed'}
+                    </span>
+                  ) : (
+                    <span className="ai-status-pill is-pending">Awaiting model integration</span>
+                  )}
                 </div>
               </div>
               <p style={{ margin: '12px 0 0 0', fontSize: 12, color: '#8d737e' }}>
@@ -205,6 +261,7 @@ export function DoctorResultsReportsTab({ defaultMotherId }) {
       {/* Export Report Modal */}
       {exportOpen && activeScreening && (
         <ExportReportModal
+          isOpen={exportOpen}
           screening={activeScreening}
           mother={activeMother}
           onClose={() => setExportOpen(false)}

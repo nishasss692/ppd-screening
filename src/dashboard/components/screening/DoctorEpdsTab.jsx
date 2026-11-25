@@ -17,10 +17,44 @@ export function DoctorEpdsTab({ defaultMotherId }) {
     [mothers, selectedMotherId]
   );
 
-  // Generate deterministic canonical question scores and choices that sum exactly to mother.epdsScore
+  const activeScreening = useMemo(
+    () => screenings.find((s) => s.motherId === selectedMotherId) || null,
+    [screenings, selectedMotherId]
+  );
+
+  // Use real backend itemScores/submittedAnswers when present; otherwise deterministic breakdown
   const epdsDetails = useMemo(() => {
     if (!activeMother) return null;
-    const targetScore = activeMother.epdsScore ?? 11;
+
+    const realItems = activeScreening?.itemScores || {};
+    const realSubmitted = activeScreening?.submittedAnswers || {};
+    const hasRealItems = Object.keys(realItems).length >= 10 || Object.keys(realSubmitted).length >= 10;
+
+    if (hasRealItems) {
+      return questions.map((q) => {
+        const qid = q.id;
+        const sub = realSubmitted[qid] || {};
+        const assignedScore =
+          typeof realItems[qid] === 'number'
+            ? realItems[qid]
+            : typeof sub.score === 'number'
+              ? sub.score
+              : 0;
+        const matchingOption =
+          q.response_options.find((opt) => opt.score === assignedScore) || q.response_options[0];
+        return {
+          questionId: qid,
+          questionNumber: q.question_number,
+          questionText: q.question,
+          reverseScored: q.reverse_scored,
+          safetyCritical: q.safety_critical,
+          score: assignedScore,
+          selectedLabel: sub.raw_response || matchingOption.label,
+        };
+      });
+    }
+
+    const targetScore = activeScreening?.epdsEquivalent ?? activeMother.epdsScore ?? 11;
     const isHigh = targetScore >= 13;
 
     // Distribute scores across 10 questions deterministically
@@ -28,12 +62,12 @@ export function DoctorEpdsTab({ defaultMotherId }) {
     const itemScores = [];
 
     // Question 10 (self harm): give 1 point if high risk, else 0
-    const q10Score = isHigh ? 1 : 0;
-    remaining -= q10Score;
+    const q10Score = activeScreening?.q10SafetyAlert ? 1 : isHigh ? 1 : 0;
+    remaining = Math.max(0, remaining - q10Score);
 
     for (let i = 0; i < 9; i++) {
       const maxPossible = Math.min(3, remaining);
-      const assign = i === 8 ? Math.min(3, remaining) : Math.floor(Math.random() * 0.0001) + Math.min(maxPossible, Math.ceil(remaining / (9 - i)));
+      const assign = i === 8 ? Math.min(3, remaining) : Math.min(maxPossible, Math.ceil(remaining / (9 - i)));
       itemScores.push(assign);
       remaining -= assign;
     }
@@ -53,7 +87,7 @@ export function DoctorEpdsTab({ defaultMotherId }) {
         selectedLabel: matchingOption.label,
       };
     });
-  }, [activeMother, questions]);
+  }, [activeMother, activeScreening, questions]);
 
   return (
     <div className="doctor-epds-shell" aria-label="Clinician EPDS Overview">
@@ -167,8 +201,8 @@ export function DoctorEpdsTab({ defaultMotherId }) {
                   {(activeMother.epdsScore ?? 11) >= 13
                     ? 'Elevated Depressive Symptoms'
                     : (activeMother.epdsScore ?? 11) >= 10
-                    ? 'Mild Emotional Distress'
-                    : 'Low Risk Screening Result'}
+                      ? 'Mild Emotional Distress'
+                      : 'Low Risk Screening Result'}
                 </strong>
                 <small>Cox et al. 1987 validated threshold</small>
               </div>

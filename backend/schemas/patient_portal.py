@@ -167,6 +167,7 @@ class ScreeningSubmissionSaveRequest(BaseModel):
     video_metadata: Optional[Dict[str, Any]] = None
     question_timestamps: Optional[List[Dict[str, Any]]] = None
     psychosocial_answers: Optional[Dict[str, Any]] = None
+    multimodal_result: Optional[Dict[str, Any]] = None
     time_spent_seconds: Optional[int] = None
 
 

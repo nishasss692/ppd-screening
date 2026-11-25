@@ -41,7 +41,7 @@ export const CONVERSATIONAL_SCREENING_QUESTIONS = [
   },
 ];
 
-export function AiScreeningTab({ onContinueToEpds }) {
+export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
   const currentLanguage = typeof window !== 'undefined' ? (window.localStorage?.getItem('miora_lang') || 'en') : 'en';
 
   // Session lifecycle: 'consent_required' | 'chat_active' | 'completed'
@@ -506,7 +506,7 @@ export function AiScreeningTab({ onContinueToEpds }) {
       .join(' ');
 
     const currentUser = typeof window !== 'undefined' ? JSON.parse(window.localStorage?.getItem('miora_auth_user_v1') || '{}') : {};
-    const effectiveMotherId = currentUser?.motherId || currentUser?.id || `demo_mother_${Date.now()}`;
+    const effectiveMotherId = inClinicMotherId || currentUser?.motherId || currentUser?.id || `demo_mother_${Date.now()}`;
 
     // Submit to live backend multimodal screening endpoint
     let multimodalResult = null;

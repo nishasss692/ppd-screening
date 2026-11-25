@@ -2,10 +2,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import canonicalQuestionsJson from '../../../../data/questions.json';
 import { PatientIcon } from '../PatientIcons.jsx';
 import { saveScreeningSession } from '../../services/patientApiService.js';
+import { submitInClinicScreening } from '../../../dashboard/services/doctorApiService.js';
 
 const STORAGE_KEY = 'aanchal_epds_patient_session_v1';
 
-export function EpdsTab({ onCompleted }) {
+export function EpdsTab({ onCompleted, inClinicMotherUuid, onScreeningPersisted }) {
   const questions = useMemo(() => canonicalQuestionsJson.questions || [], []);
   const totalQuestions = questions.length; // 10
 
@@ -127,11 +128,18 @@ export function EpdsTab({ onCompleted }) {
       }
     } catch (e) {}
 
+    let storedMultimodalResult = null;
+    try {
+      const rawMm = localStorage.getItem('aanchal_multimodal_screening_result');
+      if (rawMm) storedMultimodalResult = JSON.parse(rawMm);
+    } catch (e) { }
+
     const payload = {
       total_score: totalScore,
       risk_classification: riskTier,
       q10_safety_alert: hasQ10Alert,
       psychosocial_answers: effectivePsychosocial,
+      multimodal_result: storedMultimodalResult || undefined,
       answers: answers.map((optIdx, i) => ({
         question_id: questions[i].id,
         question_number: questions[i].question_number,
@@ -145,11 +153,18 @@ export function EpdsTab({ onCompleted }) {
     };
 
     try {
-      // Call existing API contract
-      const apiResponse = await saveScreeningSession(payload).catch((err) => {
+      // Call in-clinic clinician endpoint when conducting screening inside Doctor Dashboard,
+      // otherwise call the authenticated patient portal endpoint
+      const persistPromise = inClinicMotherUuid
+        ? submitInClinicScreening(inClinicMotherUuid, payload)
+        : saveScreeningSession(payload);
+      const apiResponse = await persistPromise.catch((err) => {
         console.warn('Backend screening persistence note:', err.message);
         return null;
       });
+      if (apiResponse && onScreeningPersisted) {
+        onScreeningPersisted(apiResponse);
+      }
 
       // If backend returned clinical_model_prediction, store locally for immediate display
       let pred =

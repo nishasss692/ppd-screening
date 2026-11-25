@@ -16,6 +16,7 @@ import {
   createMotherRecord,
   persistClinicalReview,
   persistCarePlan,
+  fetchConsultationReports,
 } from '../services/doctorApiService.js';
 
 const ClinicalContext = createContext(null);
@@ -217,22 +218,27 @@ export function ClinicalProvider({ children }) {
     readStoredMap(REVIEW_DRAFTS_STORAGE_KEY)
   );
   const [backendMetrics, setBackendMetrics] = useState(null);
+  const [consultationReports, setConsultationReports] = useState([]);
   const [isLiveSynced, setIsLiveSynced] = useState(false);
   const [backendLoading, setBackendLoading] = useState(false);
 
   const syncFromBackend = useCallback(async () => {
     setBackendLoading(true);
     try {
-      const [mList, sList, dMetrics, sActivity, dAlerts] = await Promise.allSettled([
+      const [mList, sList, dMetrics, sActivity, dAlerts, cReports] = await Promise.allSettled([
         fetchMothers(),
         fetchScreenings(),
         fetchDashboardMetrics(),
         fetchScreeningActivity('4w'),
         fetchDashboardAlerts(),
+        fetchConsultationReports(),
       ]);
 
       const rawBackendMothers = mList.status === 'fulfilled' && Array.isArray(mList.value) ? mList.value : [];
       const rawBackendScreenings = sList.status === 'fulfilled' && Array.isArray(sList.value) ? sList.value : [];
+      if (cReports.status === 'fulfilled' && Array.isArray(cReports.value)) {
+        setConsultationReports(cReports.value);
+      }
 
       if (dMetrics.status === 'fulfilled' && dMetrics.value) {
         setBackendMetrics(dMetrics.value);
@@ -269,10 +275,13 @@ export function ClinicalProvider({ children }) {
 
       let currentMothersSnapshot = INITIAL_MOTHERS;
       if (rawBackendMothers.length > 0) {
-        const mappedBackendMothers = rawBackendMothers.map((bm) => {
+        const filteredBackendMothers = rawBackendMothers.filter(
+          (bm) => !bm.email || !bm.email.toLowerCase().startsWith('test_mother_')
+        );
+        const mappedBackendMothers = filteredBackendMothers.map((bm) => {
           const { initials, avatarInitials } = formatInitials(bm.name);
           const relatedScreening = rawBackendScreenings.find((s) => s.mother_id === bm.id);
-          const score = relatedScreening?.total_score ?? 15;
+          const score = relatedScreening?.total_score ?? 12;
           const riskRaw = relatedScreening?.risk_classification || (score >= 13 ? 'High' : score >= 10 ? 'Moderate' : 'Low');
           const capRisk = riskRaw.charAt(0).toUpperCase() + riskRaw.slice(1).toLowerCase();
 
@@ -285,82 +294,151 @@ export function ClinicalProvider({ children }) {
             id: friendlyId,
             rawUuid: bm.id,
             name: friendlyName,
-            initials: isAmara ? 'A. S.' : initials,
-            avatarInitials: isAmara ? 'AS' : avatarInitials,
+            initials: isAmara ? 'A. K.' : initials,
+            avatarInitials: isAmara ? 'AK' : avatarInitials,
             phone: bm.phone || '+91-98765-43210',
             email: bm.email || '',
             postpartumWeek: isAmara ? 4 : (bm.pregnancy_type === 'twins' ? 6 : 4),
-            lastScreeningDate: bm.created_at
-              ? new Date(bm.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-              : 'Today',
-            lastScreeningIso: bm.created_at || new Date().toISOString(),
+            lastScreeningDate: relatedScreening?.screening_date
+              ? new Date(relatedScreening.screening_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+              : bm.created_at
+                ? new Date(bm.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                : 'Today',
+            lastScreeningIso: relatedScreening?.screening_date || bm.created_at || new Date().toISOString(),
             status: capRisk === 'High' ? 'Review' : 'Completed',
             risk: capRisk,
             reasonForReview: bm.notes || 'Postpartum clinical screening',
             priority: capRisk === 'High',
-            discordanceFlag: isAmara ? true : false,
-            discordanceType: isAmara ? 'Cross-modal divergence' : null,
+            discordanceFlag: false,
+            discordanceType: null,
             epdsScore: score,
             lastScreeningTime: 'Recently',
-            voiceCueSummary: isAmara ? 'Reduced pitch range and longer pause duration during sleep questions.' : 'Screening data synchronized from PostgreSQL backend.',
-            textCueSummary: typeof bm.medical_history === 'string' ? bm.medical_history : 'Recorded in patient registry.',
-            carePlan: isAmara ? 'Priority perinatal psychiatry review within 48 hours.' : 'Pending clinician evaluation and follow-up.',
+            voiceCueSummary: 'Screening data synchronized from PostgreSQL backend.',
+            textCueSummary: (() => {
+              if (typeof bm.medical_history !== 'string') return 'Recorded in patient registry.';
+              try {
+                const parsed = JSON.parse(bm.medical_history);
+                return parsed.medical_history || parsed.notes || 'Recorded in patient registry.';
+              } catch {
+                return bm.medical_history;
+              }
+            })(),
+            carePlan: 'Pending clinician evaluation and follow-up.',
             isFromBackend: true,
           };
         });
 
-        setMothers((prev) => {
-          const deduped = deduplicateMothers([...mappedBackendMothers, ...prev]);
-          currentMothersSnapshot = deduped;
-          return deduped;
-        });
+        const deduped = deduplicateMothers(mappedBackendMothers);
+        currentMothersSnapshot = deduped;
+        setMothers(deduped);
+        if (deduped.length > 0) {
+          setSelectedMotherId((prevId) =>
+            deduped.some((m) => m.id === prevId) ? prevId : deduped[0].id
+          );
+        }
       }
 
       if (rawBackendScreenings.length > 0) {
+        const mappedMotherByUuid = new Map();
+        currentMothersSnapshot.forEach((m) => {
+          if (m.rawUuid) mappedMotherByUuid.set(String(m.rawUuid), m);
+          if (m.id) mappedMotherByUuid.set(String(m.id), m);
+        });
+
         const mappedScreenings = rawBackendScreenings.map((bs) => {
           const score = bs.total_score ?? 0;
           const riskRaw = bs.risk_classification || (score >= 13 ? 'High' : score >= 10 ? 'Moderate' : 'Low');
           const capRisk = riskRaw.charAt(0).toUpperCase() + riskRaw.slice(1).toLowerCase();
           const cap = bs.modality_status || { epds: 'completed' };
+          const mm = bs.multimodal_scores || {};
+          const cmPred = bs.clinical_model_prediction || mm.clinical_prediction || null;
+          const matchedMother = mappedMotherByUuid.get(String(bs.mother_id));
+          const resolvedMotherId = matchedMother?.id || bs.mother_id;
+          const resolvedMotherName = matchedMother?.name || 'Patient ' + String(bs.mother_id).slice(0, 8);
+          const resolvedInitials = matchedMother?.initials || 'P. M.';
+
+          const textScore = typeof mm.text_score === 'number' ? mm.text_score : null;
+          const audioScore = typeof mm.audio_score === 'number' ? mm.audio_score : null;
+          const videoScore = typeof mm.video_score === 'number' ? mm.video_score : null;
+          const clinicalScore =
+            typeof mm.clinical_score === 'number'
+              ? mm.clinical_score
+              : typeof cmPred?.predicted_risk_probability === 'number'
+                ? cmPred.predicted_risk_probability
+                : null;
+          const fusionScore = typeof mm.fusion_score === 'number' ? mm.fusion_score : null;
 
           return {
             id: bs.id,
-            motherId: bs.mother_id,
-            motherName: 'Patient ' + String(bs.mother_id).slice(0, 8),
-            motherInitials: 'P. M.',
-            postpartumWeek: 4,
+            motherId: resolvedMotherId,
+            rawMotherUuid: bs.mother_id,
+            motherName: resolvedMotherName,
+            motherInitials: resolvedInitials,
+            postpartumWeek: matchedMother?.postpartumWeek || 4,
             status: 'Completed',
             completedAgo: 'Recently',
             screeningDateTime: bs.screening_date ? new Date(bs.screening_date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Today',
             risk: capRisk,
-            modality: cap.video ? 'Multimodal (EPDS · Voice · Video)' : 'EPDS Clinical Questionnaire',
-            combinedScore: Number((score / 30).toFixed(2)),
+            modality: cap.video ? 'Multimodal (EPDS · Voice · Video · Clinical)' : 'EPDS + Clinical Questionnaire',
+            combinedScore: fusionScore !== null ? Number(fusionScore.toFixed(2)) : Number((score / 30).toFixed(2)),
             epdsEquivalent: score,
+            totalScore: score,
             q10SafetyAlert: Boolean(bs.q10_safety_alert),
-            discordanceScore: 0.14,
+            discordanceScore: typeof mm.disagreement_details?.max_divergence === 'number' ? mm.disagreement_details.max_divergence : 0.14,
             preliminaryScore: Number((score / 30).toFixed(2)),
             capturedModalities: {
-              text: true,
-              voice: Boolean(cap.voice || cap.audio),
-              video: Boolean(cap.video),
+              text: Boolean(cap.text === 'completed' || textScore !== null),
+              voice: Boolean(cap.voice === 'completed' || cap.audio === 'completed' || audioScore !== null),
+              video: Boolean(cap.video === 'completed' || cap.video === 'recorded' || videoScore !== null),
+              clinical: Boolean(cap.clinical === 'completed' || cmPred?.status === 'completed'),
             },
             modalities: {
-              text: { status: 'completed', score: Number((score / 30).toFixed(2)) },
-              voice: cap.voice ? { status: 'completed', score: 0.45 } : { status: 'unavailable', score: null },
-              video: cap.video ? { status: 'completed', score: 0.52 } : { status: 'unavailable', score: null },
+              text: cap.text === 'completed' || textScore !== null
+                ? { status: 'completed', score: textScore ?? Number((score / 30).toFixed(2)) }
+                : { status: cap.text || 'unavailable', score: null },
+              voice: cap.audio === 'completed' || cap.voice === 'completed' || audioScore !== null
+                ? { status: 'completed', score: audioScore ?? 0.45 }
+                : { status: cap.audio || cap.voice || 'unavailable', score: null },
+              video: cap.video === 'completed' || cap.video === 'recorded' || videoScore !== null
+                ? { status: cap.video === 'recorded' ? 'recorded' : 'completed', score: videoScore ?? 0.52 }
+                : { status: cap.video || 'unavailable', score: null },
+              clinical: cmPred?.status === 'completed' || cap.clinical === 'completed'
+                ? { status: 'completed', score: clinicalScore, label: cmPred?.predicted_label || cmPred?.risk_category }
+                : { status: cap.clinical || 'unavailable', score: null },
             },
+            submittedAnswers: bs.submitted_answers || {},
+            itemScores: bs.item_scores || {},
+            psychosocialAnswers: bs.psychosocial_answers || null,
+            clinicalFeaturesSnapshot: bs.clinical_features_snapshot || null,
+            clinicalModelPrediction: cmPred,
+            multimodalScores: mm,
+            modalityStatus: cap,
+            modelMetadata: bs.model_metadata || {},
+            fusionStatus: bs.fusion_status || 'not_available',
             summary: bs.notes || 'Recorded in PostgreSQL backend.',
             interpretation: [
               'Completed clinical screening session synchronized from patient database.',
               bs.q10_safety_alert ? 'CRITICAL: Item 10 self-harm indicator reported.' : 'EPDS 10-item instrument completed.',
+              cmPred?.status === 'completed'
+                ? `Clinical Numerical Model: ${cmPred.predicted_label || cmPred.risk_category} (${typeof clinicalScore === 'number' ? `${(clinicalScore * 100).toFixed(1)}%` : 'Evaluated'}).`
+                : 'Clinical Numerical Model awaiting Stage 1+2 inputs.',
             ],
             isFromBackend: true,
           };
         });
 
-        setScreenings((prev) => {
-          return deduplicateScreenings([...mappedScreenings, ...prev], currentMothersSnapshot);
-        });
+        // Keep only the latest screening per mother so no duplicate patient rows appear
+        const latestByMother = [];
+        const seenMotherKeys = new Set();
+        for (const ms of mappedScreenings) {
+          const key = String(ms.motherId || '').toLowerCase();
+          if (key && seenMotherKeys.has(key)) continue;
+          if (key) seenMotherKeys.add(key);
+          latestByMother.push(ms);
+        }
+        setScreenings(deduplicateScreenings(latestByMother, currentMothersSnapshot));
+      } else if (rawBackendMothers.length > 0) {
+        setScreenings([]);
       }
 
       const hasBackendSuccess = mList.status === 'fulfilled' || sList.status === 'fulfilled' || dMetrics.status === 'fulfilled';
@@ -1034,6 +1112,7 @@ export function ClinicalProvider({ children }) {
     isLiveSynced,
     backendLoading,
     backendMetrics,
+    consultationReports,
     refreshBackendData: syncFromBackend,
   };
 
