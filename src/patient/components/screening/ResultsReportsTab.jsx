@@ -267,7 +267,13 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
 
               {storedMultimodalResult.disagreement_flag && (
                 <div style={{ background: '#fffbeb', border: '1px solid #fef3c7', padding: '8px 12px', borderRadius: '6px', marginTop: '8px', fontSize: '12px', color: '#92400e' }}>
-                  <strong>⚠️ Algorithmic Modality Disagreement:</strong> {storedMultimodalResult.disagreement_details}
+                  <strong>⚠️ Algorithmic Modality Disagreement:</strong>{' '}
+                  {typeof storedMultimodalResult.disagreement_details === 'string'
+                    ? storedMultimodalResult.disagreement_details
+                    : storedMultimodalResult.disagreement_details?.note ||
+                      (storedMultimodalResult.disagreement_details?.max_divergence != null
+                        ? `Max cross-modal divergence: ${(storedMultimodalResult.disagreement_details.max_divergence * 100).toFixed(1)}%`
+                        : 'Cross-modal divergence detected across active modalities.')}
                 </div>
               )}
 
@@ -670,7 +676,7 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
 
         {downloadToast && (
           <div className="patient-notice-banner is-success" role="status" style={{ marginBottom: 16 }}>
-            {downloadToast}
+            {typeof downloadToast === 'string' ? downloadToast : downloadToast?.message}
           </div>
         )}
 
