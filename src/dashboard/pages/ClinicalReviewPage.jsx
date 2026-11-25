@@ -196,7 +196,9 @@ export function ClinicalReviewPage({ reviewSubmitter = submitClinicalReview }) {
 
     const payload = {
       motherId: activeMother.id,
+      motherUuid: activeMother.rawUuid || null,
       screeningId: activeScreening.id,
+      screeningUuid: activeScreening.rawUuid || null,
       aiAssessment: {
         risk: summary.aiRiskLevel,
         combinedScore: summary.combinedScore,
