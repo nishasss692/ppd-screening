@@ -34,10 +34,10 @@ describe('Miora Screen 06: Cross-Modal Discordance', () => {
   it('renders header, patient strip, Modality Comparison, Risk by Modality, Discordance Result, Key Observations, and Clinical Interpretation', () => {
     renderDiscordance();
 
-    expect(screen.getByRole('link', { name: 'Results' })).toHaveClass('is-active');
+    expect(screen.getByRole('link', { name: 'Discordance' })).toHaveClass('is-active');
     expect(screen.getByRole('link', { name: 'Screening' })).toBeInTheDocument();
     expect(screen.getByText('DISCORDANCE ANALYSIS')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: /Cross-Modal Discordance/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: /Cross-Modal Discordance/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Add Note/i })).toBeInTheDocument();
 
     // Patient Strip defaults to M-108

@@ -44,7 +44,7 @@ describe('Miora Screen 01: Dashboard', () => {
     expect(screen.getByRole('link', { name: 'Mothers & Cases' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Screening' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Results' })).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Discordance' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Discordance' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Insights & Care' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Clinician profile menu' })).toHaveTextContent('DR');
 

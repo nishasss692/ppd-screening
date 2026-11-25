@@ -9,35 +9,21 @@ import {
   RiskTrendCard,
 } from '../components/ResultsChartsAndVisuals.jsx';
 import {
-  ClinicalInterpretationCard,
-  DiscordanceResultCard,
-  KeyObservationsCard,
-  ModalityComparisonCard,
-  RiskByModalityCard,
-} from '../components/DiscordanceVisuals.jsx';
-import {
   ExportReportModal,
   ShareCaseModal,
 } from '../components/ResultsModals.jsx';
-import {
-  AddClinicalNoteModal,
-} from '../components/DiscordanceModals.jsx';
-import { analyzeCrossModalDiscordance } from '../utils/discordanceAnalysis.js';
 
 export function ResultsPage() {
   const {
     mothers,
     screenings,
     shareCaseHandoff,
-    clinicalNotes = [],
-    addClinicalNote,
   } = useClinicalData();
   const { motherId } = useParams();
   const navigate = useNavigate();
 
   const [exportOpen, setExportOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
-  const [noteOpen, setNoteOpen] = useState(false);
   const [actionFeedback, setActionFeedback] = useState('');
 
   const activeScreening = useMemo(() => {
@@ -55,32 +41,9 @@ export function ResultsPage() {
     return mothers.find((m) => m.id === activeScreening.motherId) || null;
   }, [mothers, activeScreening]);
 
-  const analysis = useMemo(
-    () => analyzeCrossModalDiscordance({ screening: activeScreening, mother: activeMother }),
-    [activeScreening, activeMother]
-  );
-
-  const sessionNotes = useMemo(() => {
-    if (!activeScreening || !clinicalNotes) return [];
-    return clinicalNotes.filter(
-      (n) => n.motherId === activeScreening.motherId && n.screeningId === activeScreening.id
-    );
-  }, [clinicalNotes, activeScreening]);
-
   const handleSelectSession = (nextMotherId) => {
     setActionFeedback('');
     navigate(`/results/${nextMotherId}`);
-  };
-
-  const handleSaveNote = (notePayload) => {
-    if (typeof addClinicalNote === 'function') {
-      const saved = addClinicalNote(notePayload);
-      if (saved) {
-        setActionFeedback(
-          `Contextual note saved for ${notePayload.motherId} (${notePayload.screeningId}).`
-        );
-      }
-    }
   };
 
   if (motherId && !activeScreening) {
@@ -381,61 +344,6 @@ export function ResultsPage() {
           </div>
         )}
 
-        {/* ── Discordance Analysis Section ── */}
-        {activeScreening && analysis && (
-          <section
-            className="miora-results-discordance-section"
-            aria-labelledby="discordance-section-heading"
-            style={{ marginTop: '32px' }}
-          >
-            <div className="miora-dash-header" style={{ marginBottom: '16px', padding: 0 }}>
-              <div className="miora-dash-header-copy">
-                <div className="miora-dash-eyebrow">
-                  <span>DISCORDANCE ANALYSIS</span>
-                </div>
-                <h2 id="discordance-section-heading" className="miora-dash-title" style={{ fontSize: '20px', margin: 0 }}>
-                  Cross-Modal Discordance Analysis
-                </h2>
-              </div>
-
-              <div className="miora-results-header-actions">
-                <button
-                  type="button"
-                  className="miora-btn-secondary"
-                  onClick={() => setNoteOpen(true)}
-                >
-                  <DashboardIcon name="fileText" size={15} />
-                  <span>Add Note</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Row A: Modality Comparison | Risk by Modality | Discordance Result */}
-            <div className="miora-results-row-3 miora-disc-row-top" style={{ marginBottom: '20px' }}>
-              <ModalityComparisonCard modalityRows={analysis.modalityRows} />
-              <RiskByModalityCard
-                modalityRows={analysis.modalityRows}
-                highestModalityKey={analysis.highestModality?.key || null}
-              />
-              <DiscordanceResultCard
-                discordance={analysis.discordance}
-                overallRisk={analysis.overallRisk}
-              />
-            </div>
-
-            {/* Row B: Key Observations | Clinical Interpretation */}
-            <div className="miora-results-row-2 miora-disc-row-bottom">
-              <KeyObservationsCard observations={analysis.observations} />
-              <ClinicalInterpretationCard
-                interpretation={analysis.interpretation}
-                limitations={analysis.limitations}
-                sessionNotes={sessionNotes}
-                onOpenAddNote={() => setNoteOpen(true)}
-              />
-            </div>
-          </section>
-        )}
-
         {actionFeedback && (
           <div className="miora-live-feedback-row miora-results-feedback" style={{ marginTop: '16px' }}>
             <div className="miora-draft-pill" role="status">
@@ -458,13 +366,6 @@ export function ResultsPage() {
         onClose={() => setShareOpen(false)}
         screening={activeScreening}
         onShare={shareCaseHandoff}
-      />
-
-      <AddClinicalNoteModal
-        isOpen={noteOpen}
-        onClose={() => setNoteOpen(false)}
-        screening={activeScreening}
-        onSaveNote={handleSaveNote}
       />
     </div>
   );

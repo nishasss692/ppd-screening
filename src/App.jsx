@@ -40,11 +40,6 @@ import { InsightsCarePage } from './dashboard/pages/InsightsCarePage.jsx';
 import { ClinicalReviewPage } from './dashboard/pages/ClinicalReviewPage.jsx';
 import { CreateConsultationReportPage } from './dashboard/pages/CreateConsultationReportPage.jsx';
 
-function DiscordanceRedirect() {
-  const { motherId } = useParams();
-  return <Navigate to={motherId ? `/results/${motherId}` : '/results'} replace />;
-}
-
 export function App() {
   return (
     <ClinicalProvider>
@@ -149,8 +144,8 @@ export function App() {
               <Route path="/upload-analyze" element={<UploadAnalyzePage />} />
               <Route path="/results" element={<ResultsPage />} />
               <Route path="/results/:motherId" element={<ResultsPage />} />
-              <Route path="/discordance" element={<Navigate to="/results" replace />} />
-              <Route path="/discordance/:motherId" element={<DiscordanceRedirect />} />
+              <Route path="/discordance" element={<DiscordancePage />} />
+              <Route path="/discordance/:motherId" element={<DiscordancePage />} />
               <Route path="/clinical-review" element={<ClinicalReviewPage />} />
               <Route path="/clinical-review/:motherId" element={<ClinicalReviewPage />} />
               <Route path="/create-consultation-report" element={<CreateConsultationReportPage />} />
