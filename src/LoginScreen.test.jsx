@@ -19,6 +19,7 @@ describe('Separate Authentication Screens (Login & Create Account)', () => {
           <Route path="/login" element={<LoginScreen />} />
           <Route path="/create-account" element={<CreateAccountScreen />} />
           <Route path="/dashboard" element={<div>Doctor Dashboard</div>} />
+          <Route path="/doctor/dashboard" element={<div>Doctor Mothers &amp; Cases</div>} />
           <Route path="/mothers" element={<div>Doctor Mothers &amp; Cases</div>} />
           <Route path="/patient/dashboard" element={<div>Patient Dashboard</div>} />
           <Route path="/hospital/dashboard" element={<div>Hospital Dashboard</div>} />
@@ -61,7 +62,7 @@ describe('Separate Authentication Screens (Login & Create Account)', () => {
     expect(hospitalRadio).toHaveAttribute('aria-checked', 'false');
     expect(screen.getByText('Try Demo:')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Patient \(Amara\)/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Doctor \(Dr. Elena\)/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Doctor \(Dr. Priya Mehta\)/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Patient's Family \(Raj\)/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Hospital \(Apollo\)/i })).toBeInTheDocument();
 
@@ -112,7 +113,7 @@ describe('Separate Authentication Screens (Login & Create Account)', () => {
   it('populates demo credentials and supports role switching on Login screen', () => {
     renderComponent(['/login']);
 
-    const doctorDemoBtn = screen.getByRole('button', { name: /Doctor \(Dr. Elena\)/i });
+    const doctorDemoBtn = screen.getByRole('button', { name: /Doctor \(Dr. Priya Mehta\)/i });
     fireEvent.click(doctorDemoBtn);
 
     const doctorRadio = screen.getByRole('radio', { name: 'Doctor' });
@@ -219,7 +220,7 @@ describe('Separate Authentication Screens (Login & Create Account)', () => {
   it('successfully signs in demo doctor and redirects to clinician dashboard', async () => {
     renderComponent(['/login']);
 
-    fireEvent.click(screen.getByRole('button', { name: /Doctor \(Dr. Elena\)/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Doctor \(Dr. Priya Mehta\)/i }));
     fireEvent.click(screen.getByRole('button', { name: /^Sign In$/i }));
 
     await waitFor(

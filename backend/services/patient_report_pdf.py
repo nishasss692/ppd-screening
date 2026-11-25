@@ -26,6 +26,9 @@ def generate_patient_screening_pdf(
     item_scores: Dict[str, int],
     questions: Optional[List[Dict[str, Any]]] = None,
     notes: Optional[str] = None,
+    multimodal_scores: Optional[Dict[str, Any]] = None,
+    clinical_prediction: Optional[Dict[str, Any]] = None,
+    discordance_flag: bool = False,
 ) -> bytes:
     """Generate a clinical PDF report for an EPDS screening session and return bytes."""
     buffer = io.BytesIO()
@@ -36,6 +39,9 @@ def generate_patient_screening_pdf(
         leftMargin=36,
         topMargin=36,
         bottomMargin=36,
+        title="AANCHAL Maternal Emotional Intelligence Screening Report",
+        author="AANCHAL Clinical System",
+        pageCompression=0,
     )
 
     styles = getSampleStyleSheet()
@@ -98,7 +104,7 @@ def generate_patient_screening_pdf(
     story = []
 
     # 1. Header
-    story.append(Paragraph("MIORA · Maternal Emotional Intelligence", title_style))
+    story.append(Paragraph("AANCHAL · Maternal Emotional Intelligence", title_style))
     story.append(Paragraph("Clinical Screening Report · Edinburgh Postnatal Depression Scale (EPDS)", subtitle_style))
     story.append(HRFlowable(width="100%", thickness=1.5, color=brand_color, spaceAfter=14))
 
@@ -176,6 +182,52 @@ def generate_patient_screening_pdf(
     )
     story.append(summary_table)
     story.append(Spacer(1, 14))
+
+    # 3b. AI Multimodal & Combined Risk Assessment (when available)
+    mm = multimodal_scores if isinstance(multimodal_scores, dict) else {}
+    cp = clinical_prediction if isinstance(clinical_prediction, dict) else {}
+    if mm or cp or discordance_flag:
+        story.append(Paragraph("AI Multimodal & Combined Risk Assessment", heading2_style))
+        mm_rows = []
+        text_score = mm.get("text_risk") or mm.get("text") or mm.get("text_score")
+        voice_score = mm.get("voice_risk") or mm.get("audio_risk") or mm.get("voice") or mm.get("audio")
+        video_score = mm.get("video_risk") or mm.get("video")
+        combined_prob = cp.get("predicted_risk_probability") or mm.get("combined_risk") or mm.get("fusion_score")
+        combined_tier = cp.get("predicted_risk_label") or cp.get("risk_level") or risk_label
+        disc_score = mm.get("discordance_score")
+        disc_level = mm.get("discordance_level") or ("Notable Difference" if discordance_flag else "Aligned")
+
+        if text_score is not None:
+            mm_rows.append([Paragraph("<b>Narrative / Text Risk:</b>", body_style), Paragraph(f"{float(text_score):.2f}" if isinstance(text_score, (int, float)) else str(text_score), body_style)])
+        if voice_score is not None:
+            mm_rows.append([Paragraph("<b>Voice / Acoustic Risk:</b>", body_style), Paragraph(f"{float(voice_score):.2f}" if isinstance(voice_score, (int, float)) else str(voice_score), body_style)])
+        if video_score is not None:
+            mm_rows.append([Paragraph("<b>Facial / Video Risk:</b>", body_style), Paragraph(f"{float(video_score):.2f}" if isinstance(video_score, (int, float)) else str(video_score), body_style)])
+        if combined_prob is not None:
+            pct = f"{float(combined_prob) * 100:.1f}%" if isinstance(combined_prob, (int, float)) and float(combined_prob) <= 1.0 else f"{combined_prob}"
+            mm_rows.append([Paragraph("<b>Combined Risk Assessment:</b>", body_style), Paragraph(f"{combined_tier} ({pct})", bold_style)])
+        else:
+            mm_rows.append([Paragraph("<b>Combined Risk Assessment:</b>", body_style), Paragraph(f"{risk_label} Risk", bold_style)])
+
+        disc_text = f"{disc_level}" + (f" (Score: {float(disc_score):.2f})" if isinstance(disc_score, (int, float)) else "")
+        mm_rows.append([Paragraph("<b>Modality Discordance:</b>", body_style), Paragraph(disc_text, body_style)])
+
+        mm_table = Table(mm_rows, colWidths=[2.1 * inch, 4.9 * inch])
+        mm_table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#f8fafc")),
+                    ("BOX", (0, 0), (-1, -1), 0.75, colors.HexColor("#e2e8f0")),
+                    ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#e2e8f0")),
+                    ("TOPPADDING", (0, 0), (-1, -1), 5),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+                ]
+            )
+        )
+        story.append(mm_table)
+        story.append(Spacer(1, 14))
 
     # 4. Item Breakdown
     story.append(Paragraph("Item Response Breakdown", heading2_style))

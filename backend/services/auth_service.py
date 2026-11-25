@@ -246,7 +246,7 @@ def get_user_hospital_profile(user: User) -> Dict[str, str]:
 
 def seed_default_users(db: Session) -> None:
     """Seed demo accounts (doctor, patient, and patient's family) if they do not already exist."""
-    # 1. Seed demo doctor
+    # 1. Seed demo doctor (Dr. Priya Mehta)
     doctor_email = "doctor@miora.health"
     stmt = select(User).where(User.email == doctor_email)
     existing_doc = db.scalar(stmt)
@@ -254,12 +254,15 @@ def seed_default_users(db: Session) -> None:
         doc_user = User(
             email=doctor_email,
             hashed_password=hash_password("password123"),
-            full_name="Dr. Elena Rostova",
+            full_name="Dr. Priya Mehta",
             role="doctor",
             is_active=True,
         )
         db.add(doc_user)
-        logger.info("Seeded default doctor account: %s", doctor_email)
+        logger.info("Seeded default doctor account: %s (Dr. Priya Mehta)", doctor_email)
+    elif existing_doc.full_name != "Dr. Priya Mehta":
+        existing_doc.full_name = "Dr. Priya Mehta"
+        db.commit()
 
     # 2. Seed demo patient & linked Mother
     patient_email = "patient@miora.health"
@@ -390,9 +393,9 @@ def seed_default_users(db: Session) -> None:
                 patient_name="Amara",
                 patient_identifier="M-108",
                 appointment_id=None,
-                doctor_id="DR-005",
-                doctor_name="Dr. Elena Rostova",
-                doctor_specialization="Perinatal Psychiatry Lead",
+                doctor_id="DR-001",
+                doctor_name="Dr. Priya Mehta",
+                doctor_specialization="Perinatal Psychiatry",
                 hospital_id="HOSP-001",
                 hospital_name="Apollo Women's Hospital",
                 department="Perinatal Mental Health",
@@ -409,7 +412,7 @@ def seed_default_users(db: Session) -> None:
                 ai_screening_summary="AI multimodal acoustic analysis indicated mild prosodic flatness; EPDS equivalent score was 14/30.",
                 epds_summary="EPDS Total Score: 14/30 (Moderate distress). Item 10: 0 (No self-harm).",
                 status="final",
-                patient_friendly_summary="During your consultation on 20 Nov 2026, Dr. Elena Rostova reviewed your emotional wellbeing and discussed your sleep challenges and low mood. We agreed on a gentle, supportive plan focused on getting more continuous rest and daily relaxation.",
+                patient_friendly_summary="During your consultation on 20 Nov 2026, Dr. Priya Mehta reviewed your emotional wellbeing and discussed your sleep challenges and low mood. We agreed on a gentle, supportive plan focused on getting more continuous rest and daily relaxation.",
                 patient_friendly_medications="Continue your regular daily vitamins. Magnesium glycinate (200mg) before bed can help relax your body for sleep.",
                 patient_friendly_recommendations="Practice your 4-7-8 breathing exercises daily. Ask your partner or family to help take over one nighttime feed so you can get at least 5 hours of unbroken sleep.",
                 patient_friendly_followup="Your next check-in is scheduled for 11 Dec 2026 at 11:00 AM. If you feel overwhelmed before then, please message us or reach out anytime.",
@@ -418,6 +421,13 @@ def seed_default_users(db: Session) -> None:
             )
             db.add(sample_report)
             logger.info("Seeded initial consultation report REP-2026-001")
+    elif existing_rep.patient_name == "Amara" and existing_rep.doctor_name == "Dr. Elena Rostova":
+        existing_rep.doctor_id = "DR-001"
+        existing_rep.doctor_name = "Dr. Priya Mehta"
+        if existing_rep.patient_friendly_summary and "Dr. Elena Rostova" in existing_rep.patient_friendly_summary:
+            existing_rep.patient_friendly_summary = existing_rep.patient_friendly_summary.replace(
+                "Dr. Elena Rostova", "Dr. Priya Mehta"
+            )
 
     db.commit()
 

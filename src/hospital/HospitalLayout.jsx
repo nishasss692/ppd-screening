@@ -1,11 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { clearHospitalSession, getHospitalToken, getHospitalUser } from './hospitalService.js';
+import {
+  clearHospitalSession,
+  fetchHospitalNotifications,
+  getHospitalToken,
+  getHospitalUser,
+  markAllHospitalNotificationsRead,
+  markHospitalNotificationRead,
+} from './hospitalService.js';
 import './hospital.css';
 
 export function HospitalLayout() {
   const navigate = useNavigate();
   const [hospitalUser, setHospitalUser] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifs, setShowNotifs] = useState(false);
+
+  const loadNotifications = useCallback(async () => {
+    try {
+      const list = await fetchHospitalNotifications();
+      if (Array.isArray(list)) setNotifications(list);
+    } catch {
+      // ignore polling errors
+    }
+  }, []);
 
   useEffect(() => {
     const token = getHospitalToken();
@@ -14,8 +32,15 @@ export function HospitalLayout() {
       navigate('/hospital-login', { replace: true });
     } else {
       setHospitalUser(user);
+      loadNotifications();
     }
-  }, [navigate]);
+  }, [navigate, loadNotifications]);
+
+  useEffect(() => {
+    if (!hospitalUser) return undefined;
+    const interval = setInterval(loadNotifications, 10000);
+    return () => clearInterval(interval);
+  }, [hospitalUser, loadNotifications]);
 
   const handleLogout = () => {
     clearHospitalSession();
@@ -117,7 +142,119 @@ export function HospitalLayout() {
       <div className="hosp-main-area">
         <header className="hosp-top-header">
           <h1 className="hosp-top-header-title">Clinical Care Coordination</h1>
-          <div className="hosp-top-header-right">
+          <div className="hosp-top-header-right" style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
+            {/* Hospital Notification Bell */}
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                aria-label="Hospital notifications"
+                onClick={() => setShowNotifs((p) => !p)}
+                style={{
+                  position: 'relative',
+                  background: '#ffffff',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 8,
+                  padding: '6px 10px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  color: '#0f3d3e',
+                  fontWeight: 600,
+                  fontSize: 13,
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+                {notifications.filter((n) => !n.isRead).length > 0 && (
+                  <span style={{ background: '#dc2626', color: '#fff', borderRadius: 999, padding: '1px 6px', fontSize: 11, fontWeight: 700 }}>
+                    {notifications.filter((n) => !n.isRead).length}
+                  </span>
+                )}
+              </button>
+
+              {showNotifs && (
+                <div
+                  role="dialog"
+                  aria-label="Hospital notifications"
+                  style={{
+                    position: 'absolute',
+                    right: 0,
+                    top: '115%',
+                    width: 340,
+                    maxHeight: 380,
+                    overflowY: 'auto',
+                    background: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: 12,
+                    boxShadow: '0 12px 30px rgba(0,0,0,0.14)',
+                    zIndex: 50,
+                    padding: 12,
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 8, borderBottom: '1px solid #f1f5f9', marginBottom: 8 }}>
+                    <strong style={{ fontSize: 13.5, color: '#0f3d3e' }}>Hospital Notifications</strong>
+                    {notifications.some((n) => !n.isRead) && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+                          await markAllHospitalNotificationsRead();
+                        }}
+                        style={{ background: 'none', border: 'none', color: '#0f766e', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                      >
+                        Mark all read
+                      </button>
+                    )}
+                  </div>
+                  {notifications.length === 0 ? (
+                    <div style={{ padding: 16, textAlign: 'center', color: '#64748b', fontSize: 13 }}>
+                      No notifications yet.
+                    </div>
+                  ) : (
+                    notifications.map((n) => (
+                      <button
+                        key={n.id}
+                        type="button"
+                        onClick={async () => {
+                          setNotifications((prev) => prev.map((item) => (item.id === n.id ? { ...item, isRead: true } : item)));
+                          await markHospitalNotificationRead(n.id);
+                          setShowNotifs(false);
+                          if (n.type === 'consultation_completed') {
+                            navigate('/hospital/reports');
+                          } else if (n.relatedAppointmentId) {
+                            navigate(`/hospital/appointments/${n.relatedAppointmentId}`);
+                          } else {
+                            navigate('/hospital/appointments');
+                          }
+                        }}
+                        style={{
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '10px',
+                          borderRadius: 8,
+                          border: 'none',
+                          background: !n.isRead ? '#f0fdfa' : 'transparent',
+                          cursor: 'pointer',
+                          marginBottom: 4,
+                        }}
+                      >
+                        <div style={{ fontSize: 13, fontWeight: !n.isRead ? 700 : 500, color: '#1e293b' }}>
+                          {n.message}
+                        </div>
+                        <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 3 }}>
+                          {n.metadata?.date ? `${n.metadata.date} · ${n.metadata.time || ''} · ` : ''}
+                          {n.date}
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+
             <span className="hosp-org-pill">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 21h18" /><path d="M5 21V7l7-4 7 4v14" />

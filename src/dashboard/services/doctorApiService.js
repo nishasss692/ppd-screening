@@ -69,6 +69,19 @@ export async function fetchDashboardAlerts() {
 }
 
 /**
+ * Fetch clinician-assigned appointments from GET /api/dashboard/appointments.
+ * Filtered by backend RBAC strictly to the logged-in doctor.
+ */
+export async function fetchClinicianAppointments() {
+  const url = `${getApiBase()}/api/dashboard/appointments`;
+  const res = await fetch(url, { headers: getHeaders() });
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}: Failed to fetch clinician appointments`);
+  }
+  return res.json();
+}
+
+/**
  * Fetch registered mothers directory from GET /api/mothers.
  */
 export async function fetchMothers(skip = 0, limit = 100) {
@@ -219,11 +232,63 @@ export async function fetchConsultationReports(motherId = null) {
  */
 export async function downloadClinicianScreeningPdfBlob(screeningId) {
   const url = `${getApiBase()}/api/screenings/${screeningId}/report.pdf`;
-  const res = await fetch(url, { method: 'GET', headers: getHeaders() });
+  const res = await fetch(url, { method: 'GET', headers: getHeaders({ Accept: 'application/pdf' }) });
   if (!res.ok) {
-    throw new Error(`HTTP ${res.status}: Failed to download screening PDF`);
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${res.status}: Failed to download screening PDF`);
   }
-  return res.blob();
+  const blob = await res.blob();
+  if (!blob || blob.size < 100) {
+    throw new Error('Server returned an empty or invalid PDF file.');
+  }
+  return blob;
+}
+
+/**
+ * Fetch persistent notifications for the logged-in doctor from GET /api/notifications.
+ */
+export async function fetchDoctorNotifications() {
+  const url = `${getApiBase()}/api/notifications`;
+  const res = await fetch(url, { headers: getHeaders() });
+  if (!res.ok) {
+    return [];
+  }
+  return res.json();
+}
+
+/**
+ * Mark a doctor notification as read via PUT /api/notifications/{id}/read.
+ */
+export async function markDoctorNotificationReadApi(notificationId) {
+  const url = `${getApiBase()}/api/notifications/${encodeURIComponent(notificationId)}/read`;
+  const res = await fetch(url, { method: 'PUT', headers: getHeaders() });
+  return res.ok ? res.json() : null;
+}
+
+/**
+ * Mark all doctor notifications as read via PUT /api/notifications/read-all.
+ */
+export async function markAllDoctorNotificationsReadApi() {
+  const url = `${getApiBase()}/api/notifications/read-all`;
+  const res = await fetch(url, { method: 'PUT', headers: getHeaders() });
+  return res.ok ? res.json() : null;
+}
+
+/**
+ * Save doctor's clinical assessment, diagnosis, and care plan for an appointment.
+ */
+export async function saveAppointmentClinicalAssessment(appointmentId, payload) {
+  const url = `${getApiBase()}/api/dashboard/appointments/${encodeURIComponent(appointmentId)}/assessment`;
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${res.status}: Failed to save clinical assessment`);
+  }
+  return res.json();
 }
 
 /**

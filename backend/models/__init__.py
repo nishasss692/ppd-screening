@@ -20,6 +20,7 @@ from backend.models.community import (
     ModerationAction,
 )
 from backend.models.mother import Mother
+from backend.models.notification import Notification
 from backend.models.screening import Screening
 from backend.models.user import User
 from backend.models.moments import (
@@ -36,6 +37,7 @@ from backend.models.moments import (
 
 __all__ = [
     "Mother",
+    "Notification",
     "Screening",
     "ClinicalReview",
     "ConsultationReport",

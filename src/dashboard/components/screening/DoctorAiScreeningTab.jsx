@@ -1,14 +1,22 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useClinicalData } from '../../context/ClinicalContext.jsx';
 import { DashboardIcon } from '../DashboardIcon.jsx';
 import { RiskBadge, StatusBadge } from '../Badges.jsx';
+import { downloadClinicianScreeningPdfBlob } from '../../services/doctorApiService.js';
 
 export function DoctorAiScreeningTab({ defaultMotherId }) {
   const { mothers, screenings } = useClinicalData();
 
   const [selectedMotherId, setSelectedMotherId] = useState(
-    defaultMotherId || (mothers.find((m) => m.id === 'M-108') ? 'M-108' : mothers[0]?.id || 'M-104')
+    defaultMotherId || (mothers.find((m) => m.id === 'M-104') ? 'M-104' : mothers[0]?.id || 'M-104')
   );
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+
+  useEffect(() => {
+    if (defaultMotherId) {
+      setSelectedMotherId(defaultMotherId);
+    }
+  }, [defaultMotherId]);
 
   const activeMother = useMemo(
     () => mothers.find((m) => m.id === selectedMotherId) || mothers[0] || null,
@@ -19,6 +27,28 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
     () => screenings.find((s) => s.motherId === selectedMotherId) || null,
     [screenings, selectedMotherId]
   );
+
+  const handleDownloadPdf = async () => {
+    const targetId = activeScreening?.rawUuid || activeScreening?.id;
+    if (!targetId) return;
+    setDownloadingPdf(true);
+    try {
+      const blob = await downloadClinicianScreeningPdfBlob(targetId);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const firstName = String(activeMother?.name || 'Patient').split(/\s+/)[0].replace(/[^a-zA-Z0-9_-]/g, '');
+      link.href = url;
+      link.download = `AANCHAL_Screening_Report_${firstName || 'Patient'}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Download screening PDF failed:', err);
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
 
   return (
     <div className="doctor-ai-screening-shell" aria-label="Clinician AI Screening Overview">
@@ -171,9 +201,27 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {activeScreening && (
+                <button
+                  type="button"
+                  className="miora-cta-secondary"
+                  disabled={downloadingPdf}
+                  onClick={handleDownloadPdf}
+                  style={{ fontSize: '12.5px', padding: '6px 12px' }}
+                >
+                  <DashboardIcon name="fileText" size={14} />
+                  <span>{downloadingPdf ? 'Downloading...' : 'Download Screening Report (PDF)'}</span>
+                </button>
+              )}
               <StatusBadge status={activeMother.status} />
             </div>
           </div>
+
+          {!activeScreening && (
+            <div style={{ padding: '24px 16px', textAlign: 'center', color: '#66535c', background: '#fcf9fa', borderRadius: '10px', border: '1px dashed #e2cdd5', marginBottom: '16px' }}>
+              Screening has not yet been completed by this patient.
+            </div>
+          )}
 
           {/* Deterministic Crisis Alert Banner */}
           {Boolean(
@@ -251,12 +299,18 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                     <em>7-Feature Acoustic Logistic Regression</em>
                   </div>
                   <div className="doc-feature-item">
-                    <span>Pitch Variability (F0 SD):</span>
-                    <em>{activeScreening?.modalities?.voice?.status === 'completed' ? 'Extracted' : 'Awaiting model integration'}</em>
+                    <span>Acoustic Features:</span>
+                    <em>
+                      {activeScreening?.modalities?.voice?.details?.features_processed
+                        ? `${activeScreening.modalities.voice.details.features_processed} DSP Biomarkers Extracted`
+                        : activeScreening?.modalities?.voice?.status === 'completed'
+                          ? '7 Physiological Features Extracted'
+                          : activeScreening?.modalities?.voice?.error || 'Not run'}
+                    </em>
                   </div>
                   <div className="doc-feature-item">
-                    <span>Vocal Biomarker Provenance:</span>
-                    <em>Acoustic DSP Feature Extraction</em>
+                    <span>Assessment Timestamp:</span>
+                    <em>{activeScreening?.processedAt || activeScreening?.screeningDateTime || '—'}</em>
                   </div>
                 </div>
                 {activeMother.voiceCueSummary && (
@@ -309,12 +363,18 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                     <em>220-Feature Summary Dynamics Classifier</em>
                   </div>
                   <div className="doc-feature-item">
-                    <span>Visual Dynamics Provenance:</span>
-                    <em>Facial Action Units &amp; Gaze Statistics</em>
+                    <span>Visual Dynamics Features:</span>
+                    <em>
+                      {activeScreening?.modalities?.video?.details?.features_processed
+                        ? `${activeScreening.modalities.video.details.features_processed} Facial & Gaze Features`
+                        : activeScreening?.modalities?.video?.status === 'completed'
+                          ? '220 Action Unit Statistics'
+                          : activeScreening?.modalities?.video?.error || 'Not run'}
+                    </em>
                   </div>
                   <div className="doc-feature-item">
-                    <span>Benchmark Environment:</span>
-                    <em>Offline Research Benchmark</em>
+                    <span>Assessment Timestamp:</span>
+                    <em>{activeScreening?.processedAt || activeScreening?.screeningDateTime || '—'}</em>
                   </div>
                 </div>
                 <div className="doc-clinical-note-box">
@@ -365,12 +425,18 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                     <em>TF-IDF + Calibrated Logistic Regression</em>
                   </div>
                   <div className="doc-feature-item">
-                    <span>Dataset Provenance:</span>
-                    <em>Synthetic Narrative Self-Reports</em>
+                    <span>Linguistic Features:</span>
+                    <em>
+                      {activeScreening?.modalities?.text?.details?.character_count
+                        ? `${activeScreening.modalities.text.details.character_count} characters analyzed`
+                        : activeScreening?.modalities?.text?.status === 'completed'
+                          ? 'TF-IDF Affective N-grams'
+                          : activeScreening?.modalities?.text?.error || 'Not run'}
+                    </em>
                   </div>
                   <div className="doc-feature-item">
-                    <span>Linguistic Distress Markers:</span>
-                    <em>{activeScreening?.modalities?.text?.status === 'completed' ? 'Analyzed' : 'Awaiting model integration'}</em>
+                    <span>Assessment Timestamp:</span>
+                    <em>{activeScreening?.processedAt || activeScreening?.screeningDateTime || '—'}</em>
                   </div>
                 </div>
                 {activeMother.textCueSummary && (
@@ -432,7 +498,7 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                   </div>
                 </div>
                 <div className="doc-clinical-note-box">
-                  <strong>Clinical Profile:</strong> Standardized survey covariates evaluated against trained Random Forest baseline.
+                  <strong>Clinical Profile (Separate from Multimodal Fusion):</strong> Evaluates 46 obstetric &amp; psychosocial survey covariates ({activeScreening?.modalities?.clinical?.label || 'Baseline Random Forest'}).
                 </div>
               </div>
             </div>
@@ -468,30 +534,43 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                 </p>
                 <div className="doc-feature-list">
                   <div className="doc-feature-item">
-                    <span>Combined Classification:</span>
+                    <span>Fusion Method:</span>
+                    <em>{activeScreening?.fusionMethod || 'Learned Stacking Meta-Classifier'}</em>
+                  </div>
+                  <div className="doc-feature-item">
+                    <span>Overall Risk Tier:</span>
                     <em>
                       {typeof activeScreening?.combinedScore === 'number'
-                        ? activeScreening.risk || 'Calculated'
-                        : 'Awaiting model integration'}
+                        ? `${activeScreening.risk || 'Calculated'} (${(activeScreening.combinedScore * 100).toFixed(1)}%)`
+                        : 'Awaiting multimodal inference'}
                     </em>
                   </div>
                   <div className="doc-feature-item">
-                    <span>Confidence Score:</span>
+                    <span>Modalities Included:</span>
                     <em>
-                      {typeof activeScreening?.combinedScore === 'number'
-                        ? `${(activeScreening.combinedScore * 100).toFixed(0)}%`
-                        : 'Awaiting model integration'}
+                      {[
+                        activeScreening?.modalities?.text?.status === 'completed' ? 'Text' : null,
+                        activeScreening?.modalities?.voice?.status === 'completed' ? 'Audio' : null,
+                        activeScreening?.modalities?.video?.status === 'completed' ? 'Video' : null,
+                        activeScreening?.modalities?.clinical?.status === 'completed' ? 'Clinical' : null,
+                      ]
+                        .filter(Boolean)
+                        .join(', ') || 'None yet'}
                     </em>
                   </div>
                   <div className="doc-feature-item">
                     <span>Cross-Modal Concordance:</span>
                     <em>
-                      {activeScreening?.discordanceDetected !== undefined
+                      {typeof activeScreening?.discordanceScore === 'number'
                         ? activeScreening.discordanceDetected
-                          ? 'Divergence Detected (|Δ| ≥ 0.25)'
-                          : 'High Cross-Modal Concordance'
-                        : 'Awaiting model integration'}
+                          ? `Divergence Detected (Δ = ${activeScreening.discordanceScore.toFixed(2)})`
+                          : `Aligned (Δ = ${activeScreening.discordanceScore.toFixed(2)})`
+                        : 'Awaiting multimodal inference'}
                     </em>
+                  </div>
+                  <div className="doc-feature-item">
+                    <span>Assessment Timestamp:</span>
+                    <em>{activeScreening?.processedAt || activeScreening?.screeningDateTime || '—'}</em>
                   </div>
                 </div>
               </div>

@@ -10,7 +10,11 @@ import json
 from typing import Any, Dict, List, Optional, Union
 import uuid
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from sqlalchemy.orm import Session
 
+from backend.database.connection import get_db
+from backend.models.mother import Mother
+from backend.models.screening import Screening
 from backend.models.user import User
 from backend.schemas.screening import (
     ScreeningAnalysisResponse,
@@ -185,9 +189,10 @@ async def analyze_multimodal_screening(
         description="Optional JSON string of EPDS answers for standalone Question 10 safety alert check",
     ),
     current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
     service: ThreeModalityInferenceService = Depends(lambda: three_modality_service),
 ) -> ThreeModalityAnalyzeResponse:
-    """Execute authenticated Stage 1 Three-Modality inference and return research results."""
+    """Execute authenticated Stage 1 Three-Modality inference and persist results to PostgreSQL."""
     # 1. Resolve participant ID & enforce Authorization
     requested_id = motherId if motherId is not None else mother_id
 
@@ -198,7 +203,8 @@ async def analyze_multimodal_screening(
                 detail="Patient account is not linked to an enrolled mother profile.",
             )
         patient_mother_id = str(current_user.mother_id)
-        if requested_id and requested_id.strip() != patient_mother_id:
+        expected_p_code = f"P-{patient_mother_id[:8].upper()}"
+        if requested_id and requested_id.strip() not in (patient_mother_id, expected_p_code, str(current_user.id)):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Authorization denied: Patients may only submit screenings for their own profile.",
@@ -355,12 +361,77 @@ async def analyze_multimodal_screening(
         except Exception:
             pass
 
-    # 5. Formulate Response (Transient screening ID; zero fake database persistence)
-    transient_screening_id = str(uuid.uuid4())
+    # 5. Persist multimodal screening results to database when mother exists
     processed_timestamp = datetime.now(timezone.utc).isoformat()
+    persisted_screening_id = str(uuid.uuid4())
+
+    try:
+        m_uuid = uuid.UUID(effective_mother_id)
+        mother_obj = db.get(Mother, m_uuid)
+        if mother_obj:
+            f_score = inference_result.get("fusion_score")
+            if isinstance(f_score, (int, float)):
+                mm_risk = "high" if f_score >= 0.65 else "moderate" if f_score >= 0.35 else "low"
+            else:
+                mm_risk = "moderate"
+
+            mm_payload = {
+                "audio_score": inference_result.get("audio_score"),
+                "video_score": inference_result.get("video_score"),
+                "text_score": inference_result.get("text_score"),
+                "clinical_score": inference_result.get("clinical_score"),
+                "fusion_score": f_score,
+                "fusion_method": inference_result.get("fusion_method"),
+                "disagreement_flag": inference_result.get("disagreement_flag"),
+                "disagreement_details": inference_result.get("disagreement_details"),
+                "modalities": inference_result.get("modalities"),
+                "modality_status": inference_result.get("modality_status"),
+                "processed_at": processed_timestamp,
+            }
+            clin_mod = inference_result.get("modalities", {}).get("clinical")
+            new_mm_screening = Screening(
+                mother_id=mother_obj.id,
+                instrument="MULTIMODAL",
+                total_score=0,
+                risk_classification=mm_risk,
+                q10_safety_alert=bool(q10_safety_alert and q10_safety_alert.get("triggered")),
+                submitted_answers={},
+                item_scores={},
+                screening_status="completed",
+                fusion_status=inference_result.get("fusion_status") or "completed",
+                modality_status=inference_result.get("modality_status") or {},
+                model_metadata={
+                    "model_version": inference_result.get("model_version"),
+                    "narrative_excerpt": resolved_text[:400] if resolved_text else None,
+                    "character_count": len(resolved_text) if resolved_text else 0,
+                    "audio_features_count": len(resolved_audio) if resolved_audio else 0,
+                    "video_features_count": len(resolved_video) if resolved_video else 0,
+                    "processed_at": processed_timestamp,
+                },
+                multimodal_scores=mm_payload,
+                clinical_features_snapshot=resolved_clinical,
+                clinical_model_prediction=(
+                    {
+                        "predicted_risk_probability": clin_mod.get("score"),
+                        "predicted_class": clin_mod.get("predicted_class"),
+                        "status": clin_mod.get("status"),
+                        "model_utilized": clin_mod.get("model_version") or "random_forest",
+                        "predicted_label": "HIGH_RISK" if (clin_mod.get("score") or 0) >= 0.5 else "MODERATE_RISK",
+                    }
+                    if isinstance(clin_mod, dict) and clin_mod.get("status") == "completed"
+                    else None
+                ),
+                notes="AI Multimodal Screening completed via Patient Portal.",
+            )
+            db.add(new_mm_screening)
+            db.commit()
+            db.refresh(new_mm_screening)
+            persisted_screening_id = str(new_mm_screening.id)
+    except Exception:
+        db.rollback()
 
     return ThreeModalityAnalyzeResponse(
-        screening_id=transient_screening_id,
+        screening_id=persisted_screening_id,
         mother_id=effective_mother_id,
         status=inference_result["status"],
         clinical_score=inference_result.get("clinical_score"),

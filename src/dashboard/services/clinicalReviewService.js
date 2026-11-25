@@ -80,7 +80,7 @@ export async function submitClinicalReview({
       mother_id: resolvedMotherUuid,
       ...(resolvedScreeningUuid ? { screening_id: resolvedScreeningUuid } : {}),
       clinician_id: 'DOC-101',
-      clinician_name: 'Dr. Elena Rostova',
+      clinician_name: (typeof window !== 'undefined' && window.localStorage?.getItem('miora_auth_user_v1') ? JSON.parse(window.localStorage.getItem('miora_auth_user_v1'))?.fullName : null) || 'Dr. Priya Mehta',
       review_status: reviewStatus,
       final_risk_classification: (payload.clinicianAssessment?.risk || 'moderate').toLowerCase(),
       clinical_notes: notesParts.join('\n') || 'Confirmed through clinician assessment.',

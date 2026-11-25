@@ -605,9 +605,10 @@ def persist_epds_screening_for_mother(
         .limit(1)
     )
     latest = db.scalar(recent_stmt)
-    if latest:
-        delta = datetime.now(timezone.utc) - latest.created_at
-        if delta.total_seconds() < 5 and latest.total_score == scored.total_score:
+    if latest and latest.created_at:
+        created_dt = latest.created_at if latest.created_at.tzinfo else latest.created_at.replace(tzinfo=timezone.utc)
+        delta = datetime.now(timezone.utc) - created_dt
+        if delta.total_seconds() < 5 and latest.total_score == scored.total_score and latest.instrument != "MULTIMODAL":
             logger.info("Debouncing repeated submission for mother_id=%s", mother.id)
             return PatientScreeningSummaryResponse.model_validate(latest)
 
@@ -690,6 +691,29 @@ def persist_epds_screening_for_mother(
         multimodal_dict["clinical_prediction"] = clinical_pred_dict
 
     mm_res = payload.multimodal_result or {}
+    existing_mm_screening: Optional[Screening] = None
+
+    # Check if a MULTIMODAL screening row was already persisted in this session
+    if isinstance(mm_res, dict) and mm_res.get("screening_id"):
+        try:
+            cand = db.get(Screening, uuid.UUID(str(mm_res["screening_id"])))
+            if cand and cand.mother_id == mother.id and cand.instrument == "MULTIMODAL":
+                existing_mm_screening = cand
+        except Exception:
+            pass
+
+    if not existing_mm_screening and not mm_res:
+        # Check for a recent MULTIMODAL-only screening for this mother to merge
+        recent_mm = db.scalar(
+            select(Screening)
+            .where(Screening.mother_id == mother.id, Screening.instrument == "MULTIMODAL")
+            .order_by(desc(Screening.screening_date))
+            .limit(1)
+        )
+        if recent_mm and recent_mm.multimodal_scores:
+            mm_res = dict(recent_mm.multimodal_scores)
+            existing_mm_screening = recent_mm
+
     if isinstance(mm_res, dict) and mm_res:
         for k in (
             "audio_score",
@@ -700,6 +724,8 @@ def persist_epds_screening_for_mother(
             "fusion_method",
             "disagreement_flag",
             "disagreement_details",
+            "modalities",
+            "processed_at",
         ):
             if k in mm_res and mm_res[k] is not None:
                 multimodal_dict[k] = mm_res[k]
@@ -713,26 +739,45 @@ def persist_epds_screening_for_mother(
         else "not_available"
     )
 
-    new_screening = Screening(
-        mother_id=mother.id,
-        instrument="EPDS",
-        total_score=scored.total_score,
-        risk_classification=risk_class,
-        q10_safety_alert=scored.safety_alert.triggered,
-        submitted_answers=submitted_answers_map,
-        item_scores=item_scores_map,
-        screening_status="completed",
-        fusion_status=computed_fusion_status,
-        modality_status=mod_status,
-        model_metadata=model_meta,
-        multimodal_scores=multimodal_dict,
-        psychosocial_answers=payload.psychosocial_answers,
-        clinical_features_snapshot=features_snapshot,
-        clinical_model_prediction=clinical_pred_dict,
-        notes=payload.notes or f"Completed EPDS via Patient Assistant. Score: {scored.total_score}/30",
-    )
-
-    db.add(new_screening)
+    if existing_mm_screening is not None:
+        existing_mm_screening.instrument = "EPDS+MULTIMODAL"
+        existing_mm_screening.total_score = scored.total_score
+        existing_mm_screening.risk_classification = risk_class
+        existing_mm_screening.q10_safety_alert = scored.safety_alert.triggered
+        existing_mm_screening.submitted_answers = submitted_answers_map
+        existing_mm_screening.item_scores = item_scores_map
+        existing_mm_screening.screening_status = "completed"
+        existing_mm_screening.fusion_status = computed_fusion_status
+        existing_mm_screening.modality_status = {**(existing_mm_screening.modality_status or {}), **mod_status}
+        existing_mm_screening.model_metadata = {**(existing_mm_screening.model_metadata or {}), **model_meta}
+        existing_mm_screening.multimodal_scores = {**(existing_mm_screening.multimodal_scores or {}), **multimodal_dict}
+        existing_mm_screening.psychosocial_answers = payload.psychosocial_answers
+        if features_snapshot:
+            existing_mm_screening.clinical_features_snapshot = features_snapshot
+        if clinical_pred_dict:
+            existing_mm_screening.clinical_model_prediction = clinical_pred_dict
+        existing_mm_screening.notes = payload.notes or f"Completed AI Multimodal + EPDS Screening. EPDS Score: {scored.total_score}/30"
+        new_screening = existing_mm_screening
+    else:
+        new_screening = Screening(
+            mother_id=mother.id,
+            instrument="EPDS",
+            total_score=scored.total_score,
+            risk_classification=risk_class,
+            q10_safety_alert=scored.safety_alert.triggered,
+            submitted_answers=submitted_answers_map,
+            item_scores=item_scores_map,
+            screening_status="completed",
+            fusion_status=computed_fusion_status,
+            modality_status=mod_status,
+            model_metadata=model_meta,
+            multimodal_scores=multimodal_dict,
+            psychosocial_answers=payload.psychosocial_answers,
+            clinical_features_snapshot=features_snapshot,
+            clinical_model_prediction=clinical_pred_dict,
+            notes=payload.notes or f"Completed EPDS via Patient Assistant. Score: {scored.total_score}/30",
+        )
+        db.add(new_screening)
 
     # Generate persistent in-app notification for the newly generated report
     meta = _get_mother_portal_meta(mother)
@@ -1106,9 +1151,13 @@ def download_screening_report_pdf(
         item_scores=screening.item_scores or {},
         questions=questions,
         notes=screening.notes,
+        multimodal_scores=screening.multimodal_scores,
+        clinical_prediction=screening.clinical_model_prediction,
+        discordance_flag=bool(getattr(screening, "discordance_flag", False)),
     )
 
-    filename = f"Miora_Screening_Report_{screening.screening_date.strftime('%d%b%Y')}.pdf"
+    safe_first = (patient_name.split()[0] if patient_name else "Patient").strip(".,")
+    filename = f"AANCHAL_Screening_Report_{safe_first}.pdf"
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
@@ -1139,7 +1188,7 @@ def download_screening_transcript_txt(
 
     lines = [
         "==================================================================",
-        "MIORA MATERNAL SCREENING SESSION TRANSCRIPT",
+        "AANCHAL MATERNAL SCREENING SESSION TRANSCRIPT",
         "==================================================================",
         f"Patient Name:    {patient_name}",
         f"Patient ID:      P-{str(user.mother_id)[:8].upper()}",
@@ -1148,7 +1197,7 @@ def download_screening_transcript_txt(
         f"Q10 Safety Flag: {'TRIGGERED (Self-harm ideation reported)' if screening.q10_safety_alert else 'Negative'}",
         "==================================================================",
         "",
-        "[AI Screening Companion]: Hello, welcome to MIORA. Let's begin your 10-item emotional wellbeing assessment.",
+        "[AI Screening Companion]: Hello, welcome to AANCHAL. Let's begin your 10-item emotional wellbeing assessment.",
         "",
     ]
 
@@ -1178,7 +1227,7 @@ def download_screening_transcript_txt(
     lines.append("--- End of Confidential Screening Transcript ---")
 
     transcript_content = "\n".join(lines).encode("utf-8")
-    filename = f"Miora_Conversation_Transcript_{screening.screening_date.strftime('%d%b%Y')}.txt"
+    filename = f"AANCHAL_Conversation_Transcript_{screening.screening_date.strftime('%d%b%Y')}.txt"
 
     return Response(
         content=transcript_content,
@@ -1294,7 +1343,7 @@ def get_patient_appointments(
         results.append(
             AppointmentResponse(
                 id=str(cp.id),
-                doctorName=meta_dict.get("assigned_doctor_name") or meta_dict.get("doctor_name") or cp.assigned_clinician_id or "Dr. Elena Rostova",
+                doctorName=meta_dict.get("assigned_doctor_name") or meta_dict.get("doctor_name") or cp.assigned_clinician_id or "Assigned Specialist",
                 role=meta_dict.get("doctor_role") or "Perinatal Psychiatry Lead",
                 date=meta_dict.get("confirmed_date") or meta_dict.get("requested_date") or date_str,
                 time=meta_dict.get("confirmed_time") or meta_dict.get("requested_time") or "11:00 AM",
@@ -1321,7 +1370,7 @@ def get_patient_appointments(
             results.append(
                 AppointmentResponse(
                     id=a.get("id", f"c-{uuid.uuid4().hex[:6]}"),
-                    doctorName=a.get("doctorName", "Dr. Elena Rostova"),
+                    doctorName=a.get("doctorName", "Assigned Specialist"),
                     role=a.get("role", "Perinatal Psychiatry Lead"),
                     date=a.get("date", "25 Nov 2026"),
                     time=a.get("time", "11:00 AM"),
@@ -1340,14 +1389,16 @@ def get_patient_appointments(
         results = [
             AppointmentResponse(
                 id="c-initial-101",
-                doctorName="Dr. Elena Rostova",
-                role="Perinatal Psychiatry Lead",
+                doctorName="Dr. Priya Mehta",
+                role="Perinatal Psychiatry",
                 date="20 Nov 2026",
                 time="11:00 AM",
                 status="Confirmed",
                 type="Telehealth Video",
-                clinic="Miora Maternal Care Unit",
+                clinic="Apollo Women's Hospital",
                 summary="Initial post-registration baseline assessment with perinatal mental health specialist.",
+                hospitalId="HOSP-001",
+                hospitalName="Apollo Women's Hospital",
             )
         ]
 
@@ -1414,6 +1465,47 @@ def book_patient_appointment(
         notes=json.dumps(notes_payload),
     )
     db.add(new_care_plan)
+    db.flush()
+
+    # 1b. Create persistent notifications for Doctor and Hospital (deduplicated)
+    from backend.services.notification_service import create_notification_dedup
+    formatted_date = appt_date.strftime("%d %b %Y") if appt_date else payload.date
+    target_doctor_id = payload.doctor_id or "DR-001"
+
+    create_notification_dedup(
+        db,
+        recipient_id=target_doctor_id,
+        recipient_role="doctor",
+        notification_type="consultation_booked",
+        title="New Consultation Booked",
+        message=f"New consultation booked. {mother.name} has scheduled an appointment with you.",
+        related_appointment_id=str(new_care_plan.id),
+        metadata={
+            "patientName": mother.name,
+            "patientId": f"P-{str(mother.id)[:8].upper()}",
+            "date": formatted_date,
+            "time": payload.time,
+            "hospitalName": target_hospital,
+            "appointmentId": str(new_care_plan.id),
+        },
+    )
+    create_notification_dedup(
+        db,
+        recipient_id=target_hospital_id,
+        recipient_role="hospital",
+        notification_type="consultation_booked",
+        title="New Patient Consultation",
+        message=f"New patient consultation booked with {payload.doctor_name}. Patient: {mother.name}.",
+        related_appointment_id=str(new_care_plan.id),
+        metadata={
+            "patientName": mother.name,
+            "doctorName": payload.doctor_name,
+            "date": formatted_date,
+            "time": payload.time,
+            "status": "Pending Confirmation",
+            "appointmentId": str(new_care_plan.id),
+        },
+    )
 
     # 2. Add notification for consultation booking
     meta = _get_mother_portal_meta(mother)

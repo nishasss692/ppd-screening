@@ -4,10 +4,10 @@
  */
 
 export const CLINICIAN_PROFILE = {
-  name: 'Dr. Elena Rostova',
-  initials: 'DR',
+  name: 'Dr. Priya Mehta',
+  initials: 'PM',
   role: 'Lead Perinatal Psychiatrist',
-  clinic: 'AANCHAL Maternal Care Center',
+  clinic: "Apollo Women's Hospital",
 };
 
 export const KPI_TRENDS = {
