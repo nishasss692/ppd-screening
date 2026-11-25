@@ -519,16 +519,22 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
       formData.append('consent_confirmed', 'true');
       formData.append('text_content', combinedNarrative);
 
-      // Attach real clinical survey features only if stored for this mother (no fabricated defaults)
-      let clinicalFeatures = null;
+      // Merge real clinical profile (37 features) + psychosocial answers (9 features) if available
+      const mergedClinical = {};
+      try {
+        const storedProfile = localStorage.getItem('aanchal_clinical_profile_features');
+        if (storedProfile) Object.assign(mergedClinical, JSON.parse(storedProfile));
+      } catch (e) { }
+      try {
+        const storedPsychosocial = localStorage.getItem('aanchal_psychosocial_answers');
+        if (storedPsychosocial) Object.assign(mergedClinical, JSON.parse(storedPsychosocial));
+      } catch (e) { }
       try {
         const storedClinical = localStorage.getItem('aanchal_clinical_features');
-        if (storedClinical) {
-          clinicalFeatures = JSON.parse(storedClinical);
-        }
+        if (storedClinical) Object.assign(mergedClinical, JSON.parse(storedClinical));
       } catch (e) { }
-      if (clinicalFeatures && typeof clinicalFeatures === 'object') {
-        formData.append('clinical_features', JSON.stringify(clinicalFeatures));
+      if (Object.keys(mergedClinical).length > 0) {
+        formData.append('clinical_features', JSON.stringify(mergedClinical));
       }
 
       multimodalResult = await submitMultimodalScreening(formData).catch((err) => {

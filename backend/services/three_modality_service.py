@@ -493,13 +493,14 @@ class ThreeModalityInferenceService:
                     error=getattr(clinical_service, "_load_error", "Clinical service model artifact unavailable."),
                 )
 
-            # Ensure all 46 expected features are present in the dictionary (filled with baseline defaults if omitted)
+            # Ensure all 46 expected features are present; preserve missingness via np.nan so the
+            # trained SimpleImputer(strategy="median", add_indicator=True) handles missing numericals accurately.
             complete_features = dict(features)
             for feat in NUMERICAL_FEATURES:
-                if feat not in complete_features or complete_features[feat] is None:
-                    complete_features[feat] = 28 if feat == "Age" else 1
+                if feat not in complete_features or complete_features[feat] is None or complete_features[feat] == "":
+                    complete_features[feat] = np.nan
             for feat in CATEGORICAL_FEATURES:
-                if feat not in complete_features or complete_features[feat] is None:
+                if feat not in complete_features or complete_features[feat] is None or complete_features[feat] == "":
                     complete_features[feat] = "Missing"
 
             pred = clinical_service.predict(mother_id=mother_id or "screening_eval", features=complete_features)

@@ -66,10 +66,13 @@ export function ClinicalProfilePage() {
       try {
         const res = await fetchClinicalProfile();
         if (mounted && res && res.clinical_profile) {
-          setFormData((prev) => ({
-            ...prev,
-            ...res.clinical_profile,
-          }));
+          setFormData((prev) => {
+            const merged = { ...prev, ...res.clinical_profile };
+            try {
+              localStorage.setItem('aanchal_clinical_profile_features', JSON.stringify(merged));
+            } catch (e) { }
+            return merged;
+          });
         }
       } catch (err) {
         // Fall back gracefully to initial defaults if offline/unconfigured
@@ -99,6 +102,9 @@ export function ClinicalProfilePage() {
         clinical_profile: formData,
         profile_completed: true,
       });
+      try {
+        localStorage.setItem('aanchal_clinical_profile_features', JSON.stringify(formData));
+      } catch (e) { }
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 4000);
     } catch (err) {

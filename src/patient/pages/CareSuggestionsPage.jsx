@@ -164,31 +164,6 @@ export function CareSuggestionsPage() {
               </section>
             )}
           </div>
-
-          {/* Bottom Full-Width: Doctor Connection */}
-          <section
-            className="patient-card care-support-card care-support-bottom-bar"
-            aria-label="Clinical Support"
-          >
-            <div className="support-header-row" style={{ marginBottom: 0 }}>
-              <div className="support-icon-wrap" aria-hidden="true">
-                <PatientIcon name="connect-doctor" size={18} />
-              </div>
-              <div className="support-text-wrap">
-                <h2 className="support-title">Need Clinical Support?</h2>
-                <p className="support-desc">
-                  Connect directly with Dr. Elena Rostova for personalized psychiatric evaluations and guided care adjustments.
-                </p>
-              </div>
-            </div>
-
-            <NavLink to="/patient/connect-doctor" className="patient-btn-primary support-action-btn care-support-bottom-btn">
-              <span>Connect to a Doctor</span>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </NavLink>
-          </section>
         </div>
       )}
 
