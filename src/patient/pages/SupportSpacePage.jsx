@@ -735,13 +735,19 @@ export function SupportSpacePage({ initialTab = 'community' }) {
                   <div className="moment-card-header">
                     <div className="moment-author-info">
                       <div className="moment-avatar">
-                        {post.author_avatar ? (
-                          <img src={post.author_avatar} alt="" />
+                        {post.author_avatar && /^(https?:\/\/|data:|\/)/i.test(post.author_avatar) ? (
+                          <img
+                            src={post.author_avatar}
+                            alt=""
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
                         ) : (
                           <span>
                             {post.is_anonymous
                               ? 'A'
-                              : (post.display_author || 'M').charAt(0).toUpperCase()}
+                              : (post.author_avatar || (post.display_author || 'M').charAt(0).toUpperCase())}
                           </span>
                         )}
                       </div>
@@ -859,7 +865,14 @@ export function SupportSpacePage({ initialTab = 'community' }) {
                         {post.media_type === 'video' ? (
                           <video src={post.media_url} controls preload="metadata" />
                         ) : (
-                          <img src={post.media_url} alt="Shared moment" loading="lazy" />
+                          <img
+                            src={post.media_url}
+                            alt="Shared moment"
+                            loading="lazy"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
                         )}
                       </div>
                     )}

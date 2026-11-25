@@ -8,9 +8,13 @@
   --cream: #fdf8f4;
   --line: #ead9d9;
   --shell: min(92vw, 1160px);
-  --serif: var(--sans, 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
-  --sans: 'DM Sans', Arial, sans-serif;
+  --sans: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+h1, h2, h3 {
+  font-family: var(--serif);
 }
 
 * { box-sizing: border-box; }
@@ -23,7 +27,7 @@ body {
   margin: 0;
   max-width: 100%;
   overflow-x: hidden;
-  background: var(--cream);
+  background: radial-gradient(circle at 88% 8%, #fcecef 0%, #fdf8f4 46%, #fcf6f2 100%);
   color: var(--ink);
   font-family: var(--sans);
   -webkit-font-smoothing: antialiased;

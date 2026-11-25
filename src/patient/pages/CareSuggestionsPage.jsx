@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { usePatient } from '../context/PatientContext.jsx';
 import { PatientIcon } from '../components/PatientIcons.jsx';
@@ -13,11 +13,11 @@ export function CareSuggestionsPage() {
     toggleCareTask,
   } = usePatient();
 
-  const [activeTab, setActiveTab] = useState('care-plan');
-
   // Modals for interactive actions
   const [activeModal, setActiveModal] = useState(null); // 'breathing' | 'sleep' | 'journaling'
   const [journalEntry, setJournalEntry] = useState('');
+
+  const isDoctorFinalized = Boolean(carePlan?.clinicianPlan || carePlan?.clinicianReview);
 
   // Tasks from patient context
   const tasks = carePlan?.tasks || [
@@ -38,15 +38,6 @@ export function CareSuggestionsPage() {
   const circumference = 2 * Math.PI * radius;
   const progressRatio = totalTasks > 0 ? completedCount / totalTasks : 0;
   const strokeDashoffset = circumference - progressRatio * circumference;
-
-  // Tabs configuration
-  const tabs = [
-    { id: 'care-plan', label: 'My Care Plan', icon: 'feather-leaf' },
-    { id: 'self-care', label: 'Self-Care', icon: 'lotus' },
-    { id: 'mood-support', label: 'Mood Support', icon: 'smile-face' },
-    { id: 'lifestyle', label: 'Lifestyle', icon: 'apple' },
-    { id: 'resources', label: 'Resources', icon: 'book-open' },
-  ];
 
   const handleStartBreathing = () => {
     setActiveModal('breathing');
@@ -117,143 +108,129 @@ export function CareSuggestionsPage() {
         </div>
       </div>
 
-      {/* Categories Tabs Navigation */}
-      <nav className="care-tabs-nav" aria-label="Care Suggestion Categories">
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              className={`care-tab-btn ${isActive ? 'is-active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <span className="care-tab-icon">
-                <PatientIcon name={tab.icon} size={15} />
-              </span>
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </nav>
-
-      {/* Main Two-Column Content Grid */}
+      {/* Main Content: Only visible once the doctor finalizes care plan or clinical review */}
+      {!isDoctorFinalized ? (
+        <section
+          className="patient-card care-plan-card"
+          aria-label="Pending Clinician Finalization"
+          style={{ flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '40px 24px', gap: '10px' }}
+        >
+          <div className="plan-badge-icon" aria-hidden="true">
+            <PatientIcon name="stethoscope" size={22} />
+          </div>
+          <h2 className="plan-title" style={{ margin: 0 }}>
+            Pending Clinician Finalization
+          </h2>
+          <p className="plan-desc" style={{ maxWidth: '540px', margin: 0 }}>
+            Your personalized insights and care suggestions will appear here once your doctor finalizes your care plan.
+          </p>
+        </section>
+      ) : (
       <div className="care-main-grid">
         {/* Left Column: Plan & Daily Suggestions */}
         <div className="care-main-left">
-          {/* Personalised Care Plan Hero Card */}
-          <section className="patient-card care-plan-card" aria-label="Personalised Care Plan Overview">
-            <div className="plan-info-left">
-              <div className="plan-badge-icon" aria-hidden="true">
-                <PatientIcon name="clipboard" size={20} />
-              </div>
-              <div className="plan-text-content">
-                <h2 className="plan-title">Your 4-Week Postpartum Recovery Plan</h2>
-                <p className="plan-desc">
-                  Calibrated to your screening indicators ({riskDisplay}), focused on nervous system grounding, emotional nourishment, and sleep restoration.
-                </p>
-              </div>
-            </div>
-
-            <div className="plan-info-right">
-              <div className="plan-meta-box">
-                <span className="plan-meta-label">Plan Duration</span>
-                <span className="plan-meta-value">{carePlan?.duration || '4 Weeks'}</span>
-              </div>
-
-              <div className="plan-meta-box">
-                <span className="plan-meta-label">Focus Areas</span>
-                <span className="plan-meta-value">
-                  {(carePlan?.focusAreas || ['Rest', 'Grounding', 'Nourishment', 'Support']).join(' • ')}
-                </span>
-              </div>
-            </div>
-          </section>
-
-          {/* Today's Care Suggestions Cards Section */}
-          <section className="care-suggestions-section" aria-label="Today's Care Suggestions">
-            <div className="suggestions-header-row">
-              <h2 className="suggestions-section-title">Today's Restorative Practices</h2>
-              <div className="day-progress-badge">
-                <PatientIcon name="calendar" size={13} />
-                <span>Day {carePlan?.currentDay || 3} of {carePlan?.totalDays || 28}</span>
-              </div>
-            </div>
-
-            <div className="suggestions-cards-grid">
-              {/* Card 1: Breathing Exercise */}
-              <article className="patient-card suggestion-card">
-                <div className="suggestion-img-wrap">
-                  <img
-                    src="/assets/care-breathing.png"
-                    alt="Breathing Exercise"
-                    className="suggestion-img"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                    }}
-                  />
+          {/* Clinician-Finalized Insights & Care Plan (synced from Doctor Dashboard) */}
+          {(carePlan?.clinicianPlan || carePlan?.clinicianReview) && (
+            <section
+              className="patient-card care-plan-card"
+              aria-label="Doctor Finalized Insights and Care Plan"
+              style={{ flexDirection: 'column', alignItems: 'stretch', gap: '14px' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div className="plan-badge-icon" aria-hidden="true">
+                    <PatientIcon name="stethoscope" size={20} />
+                  </div>
+                  <div>
+                    <h2 className="plan-title" style={{ margin: 0 }}>
+                      Doctor-Finalized Insights &amp; Care Plan
+                    </h2>
+                    <p className="plan-desc" style={{ margin: '2px 0 0' }}>
+                      Updated directly from your clinician&apos;s review and care planning session.
+                    </p>
+                  </div>
                 </div>
-                <h3 className="suggestion-card-title">4-7-8 Breathing</h3>
-                <p className="suggestion-card-desc">A 5-minute parasympathetic exercise to calm maternal anxiety.</p>
-                <button
-                  type="button"
-                  className="patient-btn-primary suggestion-action-btn"
-                  onClick={handleStartBreathing}
-                >
-                  <PatientIcon name="play-circle" size={14} />
-                  <span>Start (5 min)</span>
-                </button>
-              </article>
-
-              {/* Card 2: Better Sleep */}
-              <article className="patient-card suggestion-card">
-                <div className="suggestion-img-wrap">
-                  <img
-                    src="/assets/care-sleep.png"
-                    alt="Better Sleep"
-                    className="suggestion-img"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
+                {carePlan?.clinicianReview?.final_risk_classification && (
+                  <span
+                    style={{
+                      padding: '4px 12px',
+                      borderRadius: '999px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      background: '#fde7ec',
+                      color: '#ba1e53',
+                      textTransform: 'capitalize',
                     }}
-                  />
-                </div>
-                <h3 className="suggestion-card-title">Sleep Restoration</h3>
-                <p className="suggestion-card-desc">Evidence-based steps to consolidate postpartum sleep cycles.</p>
-                <button
-                  type="button"
-                  className="patient-btn-secondary suggestion-action-btn"
-                  onClick={() => setActiveModal('sleep')}
-                >
-                  <span>View Sleep Tips</span>
-                  <PatientIcon name="arrow-right" size={12} />
-                </button>
-              </article>
+                  >
+                    Clinical Assessment: {carePlan.clinicianReview.final_risk_classification} Risk
+                  </span>
+                )}
+              </div>
 
-              {/* Card 3: Mood Journaling */}
-              <article className="patient-card suggestion-card">
-                <div className="suggestion-img-wrap">
-                  <img
-                    src="/assets/care-journaling.png"
-                    alt="Mood Journaling"
-                    className="suggestion-img"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                    }}
-                  />
-                </div>
-                <h3 className="suggestion-card-title">Daily Reflection</h3>
-                <p className="suggestion-card-desc">Safe emotional release and non-judgmental prompt journaling.</p>
-                <button
-                  type="button"
-                  className="patient-btn-secondary suggestion-action-btn"
-                  onClick={() => setActiveModal('journaling')}
+              {carePlan?.clinicianPlan && (
+                <div
+                  style={{
+                    background: '#fff9fa',
+                    border: '1px solid #f0dfe2',
+                    borderRadius: '12px',
+                    padding: '12px 14px',
+                    display: 'grid',
+                    gap: '6px',
+                  }}
                 >
-                  <span>Start Journaling</span>
-                  <PatientIcon name="arrow-right" size={12} />
-                </button>
-              </article>
-            </div>
-          </section>
+                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', fontSize: '12.5px', color: '#6b585f' }}>
+                    <span>
+                      <strong>Care Focus:</strong>{' '}
+                      <span style={{ textTransform: 'capitalize' }}>
+                        {(carePlan.clinicianPlan.intervention_type || 'counseling').replace('_', ' ')}
+                      </span>
+                    </span>
+                    <span>
+                      <strong>Priority:</strong>{' '}
+                      <span style={{ textTransform: 'capitalize' }}>
+                        {carePlan.clinicianPlan.priority || 'routine'}
+                      </span>
+                    </span>
+                    {carePlan.clinicianPlan.scheduled_followup_date && (
+                      <span>
+                        <strong>Next Follow-up:</strong> {carePlan.clinicianPlan.scheduled_followup_date}
+                      </span>
+                    )}
+                  </div>
+                  {carePlan.clinicianPlan.notes && (
+                    <p style={{ margin: 0, fontSize: '13.5px', lineHeight: 1.55, color: '#271218', whiteSpace: 'pre-line' }}>
+                      {carePlan.clinicianPlan.notes}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {carePlan?.clinicianReview && (
+                <div
+                  style={{
+                    background: '#fdfaf9',
+                    border: '1px solid #f0dfe2',
+                    borderRadius: '12px',
+                    padding: '12px 14px',
+                    display: 'grid',
+                    gap: '4px',
+                  }}
+                >
+                  <div style={{ fontSize: '12.5px', color: '#6b585f' }}>
+                    <strong>Reviewed by:</strong> {carePlan.clinicianReview.clinician_name}
+                    {carePlan.clinicianReview.reviewed_at && (
+                      <> · {new Date(carePlan.clinicianReview.reviewed_at).toLocaleDateString()}</>
+                    )}
+                  </div>
+                  {carePlan.clinicianReview.clinical_notes && (
+                    <p style={{ margin: 0, fontSize: '13.5px', lineHeight: 1.55, color: '#271218', whiteSpace: 'pre-line' }}>
+                      {carePlan.clinicianReview.clinical_notes}
+                    </p>
+                  )}
+                </div>
+              )}
+            </section>
+          )}
         </div>
 
         {/* Right Column: Progress Tracker & Doctor Connection */}
@@ -342,6 +319,7 @@ export function CareSuggestionsPage() {
           </section>
         </div>
       </div>
+      )}
 
       {/* Interactive Modals */}
       {/* 1. Breathing Exercise Modal */}

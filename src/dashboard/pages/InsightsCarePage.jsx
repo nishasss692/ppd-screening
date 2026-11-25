@@ -367,13 +367,6 @@ export function InsightsCarePage() {
               <strong>{lastScreeningDate}</strong>
             </div>
           </div>
-
-          <div className="miora-results-status-wrap">
-            <span className="miora-results-status-pill is-completed">
-              <DashboardIcon name="checkCircle" size={15} strokeWidth={1.8} />
-              <span>{plan.finalized ? 'Care Plan Finalized' : 'Care Plan Ready'}</span>
-            </span>
-          </div>
         </section>
 
         {/* Row 1: Key Insights | Care Recommendations | Follow-up Plan */}

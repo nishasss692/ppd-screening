@@ -25,13 +25,21 @@ export const PATIENT_SIDEBAR_ITEMS = [
       '/patient/screening/results',
       '/patient/medical-history',
       '/medical-history',
-      '/patient/reports',
-      '/reports',
-      '/patient/my-reports',
-      '/my-reports',
     ],
     label: 'Screening',
     icon: 'clipboard-check',
+  },
+  {
+    to: '/patient/reports',
+    matchPaths: ['/patient/reports', '/reports', '/patient/my-reports', '/my-reports'],
+    label: 'Reports',
+    icon: 'reports',
+  },
+  {
+    to: '/patient/care-suggestions',
+    matchPaths: ['/patient/care-suggestions', '/care-suggestions', '/patient/suggestions'],
+    label: 'Insights & Care',
+    icon: 'insights',
   },
   {
     to: '/patient/ai-assistant',
@@ -60,7 +68,12 @@ export const PATIENT_SIDEBAR_ITEMS = [
   },
 ];
 
-export function PatientSidebar({ mobileOpen = false, onCloseMobile }) {
+export function PatientSidebar({
+  mobileOpen = false,
+  onCloseMobile,
+  collapsed = false,
+  onToggleCollapse,
+}) {
   const location = useLocation();
   const { patient } = usePatient();
   const authUser = getCurrentUser();
@@ -90,6 +103,17 @@ export function PatientSidebar({ mobileOpen = false, onCloseMobile }) {
             <BrandWordmark />
           </Link>
           <span className="dash-sidebar-portal-tag patient-portal-tag">Patient</span>
+          {onToggleCollapse && !mobileOpen && (
+            <button
+              type="button"
+              className="dash-sidebar-collapse-btn"
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              onClick={onToggleCollapse}
+            >
+              <DashboardIcon name={collapsed ? 'chevronRight' : 'chevronLeft'} size={15} />
+            </button>
+          )}
           {mobileOpen && (
             <button
               type="button"
@@ -113,6 +137,7 @@ export function PatientSidebar({ mobileOpen = false, onCloseMobile }) {
                 <li key={item.to} className="dash-sidebar-item">
                   <NavLink
                     to={item.to}
+                    title={collapsed ? item.label : undefined}
                     className={({ isActive }) =>
                       `dash-sidebar-link ${isActive || extraActive ? 'is-active' : ''}`
                     }
@@ -121,8 +146,10 @@ export function PatientSidebar({ mobileOpen = false, onCloseMobile }) {
                     <span className="dash-sidebar-icon" aria-hidden="true">
                       {item.icon === 'home' && <PatientIcon name="home" size={18} />}
                       {item.icon === 'clipboard-check' && <PatientIcon name="clipboard-check" size={18} />}
-                      {item.icon === 'sparkle' && <DashboardIcon name="messageCircle" size={18} />}
-                      {item.icon === 'heart' && <DashboardIcon name="heart" size={18} />}
+                      {item.icon === 'reports' && <PatientIcon name="reports" size={18} />}
+                      {item.icon === 'insights' && <PatientIcon name="insights" size={18} />}
+                      {item.icon === 'sparkle' && <PatientIcon name="ai-assistant" size={18} />}
+                      {item.icon === 'heart' && <PatientIcon name="heart" size={18} />}
                       {item.icon === 'user' && <PatientIcon name="user" size={18} />}
                     </span>
                     <span className="dash-sidebar-label">{item.label}</span>

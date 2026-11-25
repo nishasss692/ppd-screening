@@ -55,21 +55,11 @@ describe('Miora Screen 08: Clinical Review & Assessment', () => {
     expect(screen.getByText('N. R.')).toBeInTheDocument();
     expect(screen.getByText('Week 2')).toBeInTheDocument();
     expect(screen.getByText('Apr 16, 2026')).toBeInTheDocument();
-    expect(screen.getByText('Under Clinical Review')).toBeInTheDocument();
+    expect(screen.queryByText('Under Clinical Review')).not.toBeInTheDocument();
 
-    // Row 1A: AI Screening Summary
-    expect(screen.getByRole('heading', { name: 'AI Screening Summary' })).toBeInTheDocument();
-    expect(screen.getByText('Screening session recorded & analyzed')).toBeInTheDocument();
-    expect(screen.getByText('Documented in Maternal Screening Results')).toBeInTheDocument();
-    expect(screen.getByText('View Primary Results')).toBeInTheDocument();
-
-    // Row 1B: Key Evidence
-    expect(screen.getByRole('heading', { name: 'Key Evidence' })).toBeInTheDocument();
-    expect(screen.getByText('Voice:')).toBeInTheDocument();
-    expect(screen.getByText('Facial:')).toBeInTheDocument();
-    expect(screen.getByText('Text:')).toBeInTheDocument();
-
-    // Row 1C: Clinical Assessment
+    // Row 1: Full-width Clinical Assessment
+    expect(screen.queryByRole('heading', { name: 'AI Screening Summary' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Key Evidence' })).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Clinical Assessment' })).toBeInTheDocument();
     expect(
       screen.getByPlaceholderText(/Record your clinical impression, key observations and context/i)
@@ -160,7 +150,6 @@ describe('Miora Screen 08: Clinical Review & Assessment', () => {
     await waitFor(() => {
       expect(screen.getByRole('status')).toHaveTextContent(/Clinical review finalized for M-108/i);
     });
-    expect(screen.getByText('Clinical Review Finalized')).toBeInTheDocument();
     expect(screen.getByText('Moderate Risk')).toBeInTheDocument();
   });
 
@@ -203,6 +192,6 @@ describe('Miora Screen 08: Clinical Review & Assessment', () => {
     fireEvent.change(screen.getByLabelText('Select mother for clinical review'), {
       target: { value: 'M-112' },
     });
-    expect(screen.getAllByText('Unavailable').length).toBeGreaterThanOrEqual(3);
+    expect(screen.getAllByText('Unavailable').length).toBeGreaterThanOrEqual(1);
   });
 });

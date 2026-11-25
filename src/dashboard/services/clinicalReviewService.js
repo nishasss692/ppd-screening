@@ -39,10 +39,69 @@ export async function submitClinicalReview({
   }
 
   try {
+    const isUuid = (val) =>
+      typeof val === 'string' &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
+    const resolvedMotherUuid = isUuid(payload.motherUuid)
+      ? payload.motherUuid
+      : isUuid(payload.motherId)
+        ? payload.motherId
+        : null;
+
+    if (!resolvedMotherUuid) {
+      return {
+        ok: true,
+        persistenceMode: 'local',
+        record: payload,
+        message: 'Saved in local clinical workspace (no backend UUID for demo record).',
+      };
+    }
+
+    const resolvedScreeningUuid = isUuid(payload.screeningUuid)
+      ? payload.screeningUuid
+      : isUuid(payload.screeningId)
+        ? payload.screeningId
+        : undefined;
+
+    const decision = payload.clinicianAssessment?.decision;
+    const reviewStatus = decision === 'disagree' ? 'overridden' : 'confirmed';
+    const notesParts = [
+      payload.clinicianAssessment?.reviewNotes,
+      payload.clinicianAssessment?.decisionReason
+        ? `Decision rationale: ${payload.clinicianAssessment.decisionReason}`
+        : null,
+      payload.followUpPlan
+        ? `Follow-up: ${payload.followUpPlan.nextScreening} | ${payload.followUpPlan.careAction} | ${payload.followUpPlan.additionalSupport}`
+        : null,
+    ].filter(Boolean);
+
+    const backendPayload = {
+      mother_id: resolvedMotherUuid,
+      ...(resolvedScreeningUuid ? { screening_id: resolvedScreeningUuid } : {}),
+      clinician_id: 'DOC-101',
+      clinician_name: 'Dr. Elena Rostova',
+      review_status: reviewStatus,
+      final_risk_classification: (payload.clinicianAssessment?.risk || 'moderate').toLowerCase(),
+      clinical_notes: notesParts.join('\n') || 'Confirmed through clinician assessment.',
+      required_immediate_escalation:
+        (payload.clinicianAssessment?.risk || '').toLowerCase() === 'high' ||
+        /urgent|immediate|crisis/i.test(payload.followUpPlan?.careAction || ''),
+    };
+
+    const headers = { 'Content-Type': 'application/json' };
+    try {
+      const token =
+        typeof localStorage !== 'undefined' ? localStorage.getItem('aanchal_auth_token') : null;
+      if (token) headers.Authorization = `Bearer ${token}`;
+    } catch {
+      // ignore storage errors
+    }
+
     const response = await fetchImpl(`${apiBase.replace(/\/$/, '')}/api/clinical-reviews`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      headers,
+      body: JSON.stringify(backendPayload),
     });
 
     if (!response.ok) {

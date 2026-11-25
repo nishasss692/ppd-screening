@@ -8,12 +8,18 @@ import { CLINICIAN_PROFILE } from '../data/mockClinicalData.js';
 export const NAV_ITEMS = [
   { label: 'Mothers & Cases', to: '/mothers', icon: 'users' },
   { label: 'Screening', to: '/live-screening', matchPaths: ['/live-screening', '/upload-analyze'], icon: 'video' },
-  { label: 'Results', to: '/results', matchPaths: ['/results', '/discordance'], icon: 'fileText' },
+  { label: 'Results', to: '/results', icon: 'fileText' },
+  { label: 'Discordance', to: '/discordance', icon: 'layers' },
   { label: 'Insights & Care', to: '/insights', icon: 'barChart' },
   { label: 'Clinical Review', to: '/clinical-review', matchPaths: ['/clinical-review', '/create-consultation-report', '/consultation-report'], icon: 'clipboardCheck' },
 ];
 
-export function DashboardSidebar({ mobileOpen = false, onCloseMobile }) {
+export function DashboardSidebar({
+  mobileOpen = false,
+  onCloseMobile,
+  collapsed = false,
+  onToggleCollapse,
+}) {
   const location = useLocation();
   const authUser = getCurrentUser();
 
@@ -54,6 +60,17 @@ export function DashboardSidebar({ mobileOpen = false, onCloseMobile }) {
             <BrandWordmark />
           </Link>
           <span className="dash-sidebar-portal-tag">Clinical</span>
+          {onToggleCollapse && !mobileOpen && (
+            <button
+              type="button"
+              className="dash-sidebar-collapse-btn"
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              onClick={onToggleCollapse}
+            >
+              <DashboardIcon name={collapsed ? 'chevronRight' : 'chevronLeft'} size={15} />
+            </button>
+          )}
           {mobileOpen && (
             <button
               type="button"
@@ -77,6 +94,7 @@ export function DashboardSidebar({ mobileOpen = false, onCloseMobile }) {
                 <li key={item.to} className="dash-sidebar-item">
                   <NavLink
                     to={item.to}
+                    title={collapsed ? item.label : undefined}
                     className={({ isActive }) =>
                       `dash-sidebar-link ${isActive || extraActive ? 'is-active' : ''}`
                     }

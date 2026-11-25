@@ -305,10 +305,18 @@ export function LoginScreen() {
               <div className="login-brand-divider" aria-hidden="true" />
             </div>
 
-            {/* Main Heading — Moderate Size, Clean Sans-Serif */}
+            {/* Main Heading — Playfair Display Serif */}
             <h1 className="login-heading">
               Compassionate Support for Your Postpartum Journey
             </h1>
+
+            <div className="login-illustration-wrap">
+              <img
+                src="/assets/login-illustration-smooth.png"
+                alt="Mother holding her newborn baby"
+                className="login-illustration-img"
+              />
+            </div>
           </div>
         </section>
 

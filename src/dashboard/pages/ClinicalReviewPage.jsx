@@ -196,7 +196,9 @@ export function ClinicalReviewPage({ reviewSubmitter = submitClinicalReview }) {
 
     const payload = {
       motherId: activeMother.id,
+      motherUuid: activeMother.rawUuid || null,
       screeningId: activeScreening.id,
+      screeningUuid: activeScreening.rawUuid || null,
       aiAssessment: {
         risk: summary.aiRiskLevel,
         combinedScore: summary.combinedScore,
@@ -445,17 +447,6 @@ export function ClinicalReviewPage({ reviewSubmitter = submitClinicalReview }) {
                 <strong>{summary?.screeningDateShort || activeMother.lastScreeningDate}</strong>
               </div>
             </div>
-
-            <div className="miora-results-status-wrap">
-              <span className="miora-results-status-pill is-completed">
-                <DashboardIcon name="checkCircle" size={15} strokeWidth={1.8} />
-                <span>
-                  {isReviewedForCurrentSession
-                    ? 'Clinical Review Finalized'
-                    : 'Under Clinical Review'}
-                </span>
-              </span>
-            </div>
           </section>
         )}
 
@@ -479,11 +470,9 @@ export function ClinicalReviewPage({ reviewSubmitter = submitClinicalReview }) {
           </section>
         )}
 
-        {/* Row 1: AI Screening Reference | Key Evidence | Clinical Assessment */}
+        {/* Row 1: Full-Width Clinical Assessment Box */}
         {summary && (
-          <div className="miora-review-row-3">
-            <AIScreeningSummaryCard summary={summary} motherId={activeMother?.id} />
-            <KeyEvidenceCard evidenceItems={summary.evidenceItems} />
+          <div className="miora-review-row-1" style={{ marginBottom: '18px' }}>
             <ClinicalAssessmentCard
               reviewNotes={formState.reviewNotes}
               clinicianRisk={formState.clinicianRisk}

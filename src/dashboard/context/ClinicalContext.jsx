@@ -892,12 +892,25 @@ export function ClinicalProvider({ children }) {
     const resolvedMotherUuid = isUuid(motherId) ? motherId : targetMother?.rawUuid;
 
     if (resolvedMotherUuid) {
+      const milestoneLines = (plan.milestones || [])
+        .map((m) => `- [${m.timeframe || 'Follow-up'}] ${m.title}: ${m.description || ''}`)
+        .join('\n');
+      const recLines = (plan.includedRecommendations || []).join(', ');
+      const combinedNotes = [
+        summaryText,
+        plan.notes ? `Clinician Notes: ${plan.notes}` : null,
+        recLines ? `Recommendations: ${recLines}` : null,
+        milestoneLines ? `Care Milestones:\n${milestoneLines}` : null,
+      ]
+        .filter(Boolean)
+        .join('\n\n');
+
       persistCarePlan(resolvedMotherUuid, {
-        priority_level: 'routine',
-        milestones: plan.milestones,
-        included_recommendations: plan.includedRecommendations,
-        notes: plan.notes || summaryText,
-        is_finalized: true,
+        priority: 'routine',
+        intervention_type: 'counseling',
+        assigned_clinician_id: 'DOC-101',
+        status: 'active',
+        notes: combinedNotes,
       }).catch((err) => {
         console.warn('Backend care plan persistence sync:', err);
       });
@@ -1055,17 +1068,20 @@ export function ClinicalProvider({ children }) {
     const resolvedMotherUuid = isUuid(motherId) ? motherId : targetMother?.rawUuid;
     const resolvedScreeningUuid = isUuid(screeningId) ? screeningId : undefined;
 
-    if (resolvedMotherUuid) {
+    if (resolvedMotherUuid && persistenceMode !== 'remote') {
       persistClinicalReview({
         mother_id: resolvedMotherUuid,
-        screening_id: resolvedScreeningUuid,
+        ...(resolvedScreeningUuid ? { screening_id: resolvedScreeningUuid } : {}),
         clinician_id: 'DOC-101',
         clinician_name: 'Dr. Elena Rostova',
-        review_status: 'confirmed',
+        review_status: clinicianAssessment?.decision === 'disagree' ? 'overridden' : 'confirmed',
         final_risk_classification: clinicianAssessment?.risk?.toLowerCase() || 'moderate',
-        decision: clinicianAssessment?.decision || 'confirmed',
-        decision_reason: clinicianAssessment?.decisionReason || 'Clinical review sign-off',
-        review_notes: clinicianAssessment?.reviewNotes || 'Confirmed through clinician assessment.',
+        clinical_notes:
+          clinicianAssessment?.reviewNotes ||
+          clinicianAssessment?.decisionReason ||
+          'Confirmed through clinician assessment.',
+        required_immediate_escalation:
+          (clinicianAssessment?.risk || '').toLowerCase() === 'high',
       }).catch((err) => {
         console.warn('Backend clinical review persistence sync:', err);
       });
