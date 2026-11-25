@@ -127,11 +127,18 @@ export function EpdsTab({ onCompleted }) {
       }
     } catch (e) {}
 
+    let storedMultimodalResult = null;
+    try {
+      const rawMm = localStorage.getItem('aanchal_multimodal_screening_result');
+      if (rawMm) storedMultimodalResult = JSON.parse(rawMm);
+    } catch (e) { }
+
     const payload = {
       total_score: totalScore,
       risk_classification: riskTier,
       q10_safety_alert: hasQ10Alert,
       psychosocial_answers: effectivePsychosocial,
+      multimodal_result: storedMultimodalResult || undefined,
       answers: answers.map((optIdx, i) => ({
         question_id: questions[i].id,
         question_number: questions[i].question_number,

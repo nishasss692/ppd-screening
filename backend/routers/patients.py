@@ -679,6 +679,30 @@ def submit_and_save_screening(
     if clinical_pred_dict is not None:
         multimodal_dict["clinical_prediction"] = clinical_pred_dict
 
+    mm_res = payload.multimodal_result or {}
+    if isinstance(mm_res, dict) and mm_res:
+        for k in (
+            "audio_score",
+            "video_score",
+            "text_score",
+            "clinical_score",
+            "fusion_score",
+            "fusion_method",
+            "disagreement_flag",
+            "disagreement_details",
+        ):
+            if k in mm_res and mm_res[k] is not None:
+                multimodal_dict[k] = mm_res[k]
+        if isinstance(mm_res.get("modality_status"), dict):
+            for mk, mv in mm_res["modality_status"].items():
+                mod_status[mk] = mv
+
+    computed_fusion_status = (
+        "completed"
+        if (isinstance(mm_res, dict) and mm_res.get("fusion_score") is not None) or payload.video_metadata
+        else "not_available"
+    )
+
     new_screening = Screening(
         mother_id=mother.id,
         instrument="EPDS",
@@ -688,7 +712,7 @@ def submit_and_save_screening(
         submitted_answers=submitted_answers_map,
         item_scores=item_scores_map,
         screening_status="completed",
-        fusion_status="completed" if payload.video_metadata else "not_available",
+        fusion_status=computed_fusion_status,
         modality_status=mod_status,
         model_metadata=model_meta,
         multimodal_scores=multimodal_dict,

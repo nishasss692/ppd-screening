@@ -140,6 +140,7 @@ export async function saveScreeningSession(
         answersOrPayload.question_timestamps || questionTimestamps || undefined,
       psychosocial_answers:
         answersOrPayload.psychosocial_answers || psychosocialAnswers || undefined,
+      multimodal_result: answersOrPayload.multimodal_result || undefined,
     };
   } else {
     const rawAnswers = Array.isArray(answersOrPayload) ? answersOrPayload : [];

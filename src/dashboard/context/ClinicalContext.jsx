@@ -314,7 +314,15 @@ export function ClinicalProvider({ children }) {
             epdsScore: score,
             lastScreeningTime: 'Recently',
             voiceCueSummary: 'Screening data synchronized from PostgreSQL backend.',
-            textCueSummary: typeof bm.medical_history === 'string' ? bm.medical_history : 'Recorded in patient registry.',
+            textCueSummary: (() => {
+              if (typeof bm.medical_history !== 'string') return 'Recorded in patient registry.';
+              try {
+                const parsed = JSON.parse(bm.medical_history);
+                return parsed.medical_history || parsed.notes || 'Recorded in patient registry.';
+              } catch {
+                return bm.medical_history;
+              }
+            })(),
             carePlan: 'Pending clinician evaluation and follow-up.',
             isFromBackend: true,
           };
