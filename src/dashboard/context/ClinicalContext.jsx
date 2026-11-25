@@ -275,10 +275,13 @@ export function ClinicalProvider({ children }) {
 
       let currentMothersSnapshot = INITIAL_MOTHERS;
       if (rawBackendMothers.length > 0) {
-        const mappedBackendMothers = rawBackendMothers.map((bm) => {
+        const filteredBackendMothers = rawBackendMothers.filter(
+          (bm) => !bm.email || !bm.email.toLowerCase().startsWith('test_mother_')
+        );
+        const mappedBackendMothers = filteredBackendMothers.map((bm) => {
           const { initials, avatarInitials } = formatInitials(bm.name);
           const relatedScreening = rawBackendScreenings.find((s) => s.mother_id === bm.id);
-          const score = relatedScreening?.total_score ?? 15;
+          const score = relatedScreening?.total_score ?? 12;
           const riskRaw = relatedScreening?.risk_classification || (score >= 13 ? 'High' : score >= 10 ? 'Moderate' : 'Low');
           const capRisk = riskRaw.charAt(0).toUpperCase() + riskRaw.slice(1).toLowerCase();
 
@@ -291,35 +294,40 @@ export function ClinicalProvider({ children }) {
             id: friendlyId,
             rawUuid: bm.id,
             name: friendlyName,
-            initials: isAmara ? 'A. S.' : initials,
-            avatarInitials: isAmara ? 'AS' : avatarInitials,
+            initials: isAmara ? 'A. K.' : initials,
+            avatarInitials: isAmara ? 'AK' : avatarInitials,
             phone: bm.phone || '+91-98765-43210',
             email: bm.email || '',
             postpartumWeek: isAmara ? 4 : (bm.pregnancy_type === 'twins' ? 6 : 4),
-            lastScreeningDate: bm.created_at
-              ? new Date(bm.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-              : 'Today',
-            lastScreeningIso: bm.created_at || new Date().toISOString(),
+            lastScreeningDate: relatedScreening?.screening_date
+              ? new Date(relatedScreening.screening_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+              : bm.created_at
+                ? new Date(bm.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                : 'Today',
+            lastScreeningIso: relatedScreening?.screening_date || bm.created_at || new Date().toISOString(),
             status: capRisk === 'High' ? 'Review' : 'Completed',
             risk: capRisk,
             reasonForReview: bm.notes || 'Postpartum clinical screening',
             priority: capRisk === 'High',
-            discordanceFlag: isAmara ? true : false,
-            discordanceType: isAmara ? 'Cross-modal divergence' : null,
+            discordanceFlag: false,
+            discordanceType: null,
             epdsScore: score,
             lastScreeningTime: 'Recently',
-            voiceCueSummary: isAmara ? 'Reduced pitch range and longer pause duration during sleep questions.' : 'Screening data synchronized from PostgreSQL backend.',
+            voiceCueSummary: 'Screening data synchronized from PostgreSQL backend.',
             textCueSummary: typeof bm.medical_history === 'string' ? bm.medical_history : 'Recorded in patient registry.',
-            carePlan: isAmara ? 'Priority perinatal psychiatry review within 48 hours.' : 'Pending clinician evaluation and follow-up.',
+            carePlan: 'Pending clinician evaluation and follow-up.',
             isFromBackend: true,
           };
         });
 
-        setMothers((prev) => {
-          const deduped = deduplicateMothers([...mappedBackendMothers, ...prev]);
-          currentMothersSnapshot = deduped;
-          return deduped;
-        });
+        const deduped = deduplicateMothers(mappedBackendMothers);
+        currentMothersSnapshot = deduped;
+        setMothers(deduped);
+        if (deduped.length > 0) {
+          setSelectedMotherId((prevId) =>
+            deduped.some((m) => m.id === prevId) ? prevId : deduped[0].id
+          );
+        }
       }
 
       if (rawBackendScreenings.length > 0) {
@@ -411,9 +419,18 @@ export function ClinicalProvider({ children }) {
           };
         });
 
-        setScreenings((prev) => {
-          return deduplicateScreenings([...mappedScreenings, ...prev], currentMothersSnapshot);
-        });
+        // Keep only the latest screening per mother so no duplicate patient rows appear
+        const latestByMother = [];
+        const seenMotherKeys = new Set();
+        for (const ms of mappedScreenings) {
+          const key = String(ms.motherId || '').toLowerCase();
+          if (key && seenMotherKeys.has(key)) continue;
+          if (key) seenMotherKeys.add(key);
+          latestByMother.push(ms);
+        }
+        setScreenings(deduplicateScreenings(latestByMother, currentMothersSnapshot));
+      } else if (rawBackendMothers.length > 0) {
+        setScreenings([]);
       }
 
       const hasBackendSuccess = mList.status === 'fulfilled' || sList.status === 'fulfilled' || dMetrics.status === 'fulfilled';
