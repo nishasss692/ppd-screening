@@ -1,11 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import {
-  CLINICAL_ALERTS,
-  INITIAL_MOTHERS,
-  INITIAL_SCREENINGS,
   KPI_TRENDS,
   RISK_COLORS,
-  SCREENING_WEEKLY_RECORDS,
 } from '../data/mockClinicalData.js';
 import {
   fetchDashboardMetrics,
@@ -291,16 +287,16 @@ export function deduplicateNotifications(list) {
 }
 
 export function ClinicalProvider({ children }) {
-  const [mothers, setMothers] = useState(() => deduplicateMothers(INITIAL_MOTHERS));
-  const [screenings, setScreenings] = useState(() => deduplicateScreenings(INITIAL_SCREENINGS, INITIAL_MOTHERS));
-  const [weeklyRecords, setWeeklyRecords] = useState(SCREENING_WEEKLY_RECORDS);
-  const [alerts, setAlerts] = useState(CLINICAL_ALERTS);
+  const [mothers, setMothers] = useState([]);
+  const [screenings, setScreenings] = useState([]);
+  const [weeklyRecords, setWeeklyRecords] = useState([]);
+  const [alerts, setAlerts] = useState([]);
   const [isAddMotherOpen, setIsAddMotherOpen] = useState(false);
   const [screeningDrafts, setScreeningDrafts] = useState(() => readStoredMap(DRAFT_STORAGE_KEY));
   const [uploadDrafts, setUploadDrafts] = useState(() => readStoredMap(UPLOAD_DRAFT_STORAGE_KEY));
   const [carePlans, setCarePlans] = useState(() => readStoredMap(CARE_PLAN_STORAGE_KEY));
   const [caseShares, setCaseShares] = useState([]);
-  const [selectedMotherId, setSelectedMotherId] = useState('M-108');
+  const [selectedMotherId, setSelectedMotherId] = useState('');
   const [clinicalNotes, setClinicalNotes] = useState(() =>
     readStoredList(CLINICAL_NOTES_STORAGE_KEY)
   );
@@ -347,17 +343,17 @@ export function ClinicalProvider({ children }) {
         setBackendMetrics(dMetrics.value);
       }
 
-      if (sActivity.status === 'fulfilled' && sActivity.value?.data && sActivity.value.data.length > 0) {
+      if (sActivity.status === 'fulfilled' && sActivity.value?.data) {
         const mappedActivity = sActivity.value.data.map((item, idx) => ({
           week: `Week ${idx + 1}`,
           period: `${item.period_start} - ${item.period_end}`,
-          screenings: item.screening_count || (idx === 3 ? 12 : 8),
-          flagged: Math.round((item.screening_count || 8) * 0.35),
+          screenings: item.screening_count || 0,
+          flagged: item.flagged_count || 0,
         }));
         setWeeklyRecords(mappedActivity);
       }
 
-      if (dAlerts.status === 'fulfilled' && Array.isArray(dAlerts.value?.alerts) && dAlerts.value.alerts.length > 0) {
+      if (dAlerts.status === 'fulfilled' && Array.isArray(dAlerts.value?.alerts)) {
         const mappedAlerts = dAlerts.value.alerts.map((a) => {
           const isCritical = a.alert_type === 'EPDS_Q10_SAFETY' || a.severity === 'critical';
           return {
@@ -380,7 +376,7 @@ export function ClinicalProvider({ children }) {
         setAlerts(deduplicateAlerts(mappedAlerts));
       }
 
-      let currentMothersSnapshot = INITIAL_MOTHERS;
+      let currentMothersSnapshot = [];
       if (rawBackendMothers.length > 0) {
         const filteredBackendMothers = rawBackendMothers.filter(
           (bm) => !bm.email || !bm.email.toLowerCase().startsWith('test_mother_')
@@ -594,8 +590,11 @@ export function ClinicalProvider({ children }) {
           latestByMother.push(ms);
         }
         setScreenings(deduplicateScreenings(latestByMother, currentMothersSnapshot));
-      } else if (rawBackendMothers.length > 0) {
+      } else {
         setScreenings([]);
+      }
+      if (rawBackendMothers.length === 0) {
+        setMothers([]);
       }
 
       const hasBackendSuccess = mList.status === 'fulfilled' || sList.status === 'fulfilled' || dMetrics.status === 'fulfilled';
@@ -641,33 +640,22 @@ export function ClinicalProvider({ children }) {
   }, [syncFromBackend]);
 
   const metrics = useMemo(() => {
-    const addedScreenings = screenings.filter(
-      (s) => !INITIAL_SCREENINGS.some((init) => init.id === s.id)
-    );
-    const addedCompleted = addedScreenings.filter((s) => s.status === 'Completed').length;
+    const completedScreenings = screenings.filter((s) => s.status === 'Completed');
 
     const registeredMothers = mothers.length;
     const activeCases = mothers.filter((m) => m.status !== 'Pending').length;
-    const screeningsCompleted = 247 + addedCompleted;
+    const screeningsCompleted = completedScreenings.length;
     const casesForReview = mothers.filter(
       (m) => m.status === 'Review' || m.status === 'Follow-up'
     ).length;
     const highRiskCases = mothers.filter((m) => m.risk === 'High').length;
     const potentialDiscordance = mothers.filter((m) => m.discordanceFlag).length;
 
-    // Risk distribution counts (exact initial baseline: 143, 49, 35, 20 = 247)
-    const extraLow = addedCompleted ? addedScreenings.filter((s) => s.risk === 'Low').length : 0;
-    const extraMod = addedCompleted ? addedScreenings.filter((s) => s.risk === 'Moderate').length : 0;
-    const extraHigh = addedCompleted ? addedScreenings.filter((s) => s.risk === 'High').length : 0;
-    const extraReview = addedCompleted
-      ? addedScreenings.filter((s) => s.risk === 'Requires Review').length
-      : 0;
-
     const rawCounts = [
-      { key: 'Low Risk', count: 143 + extraLow, color: RISK_COLORS['Low Risk'] },
-      { key: 'Moderate Risk', count: 49 + extraMod, color: RISK_COLORS['Moderate Risk'] },
-      { key: 'High Risk', count: 35 + extraHigh, color: RISK_COLORS['High Risk'] },
-      { key: 'Requires Review', count: 20 + extraReview, color: RISK_COLORS['Requires Review'] },
+      { key: 'Low Risk', count: completedScreenings.filter((s) => s.risk === 'Low').length, color: RISK_COLORS['Low Risk'] },
+      { key: 'Moderate Risk', count: completedScreenings.filter((s) => s.risk === 'Moderate').length, color: RISK_COLORS['Moderate Risk'] },
+      { key: 'High Risk', count: completedScreenings.filter((s) => s.risk === 'High').length, color: RISK_COLORS['High Risk'] },
+      { key: 'Requires Review', count: completedScreenings.filter((s) => s.risk === 'Requires Review').length, color: RISK_COLORS['Requires Review'] },
     ];
 
     const totalDistribution = rawCounts.reduce((acc, item) => acc + item.count, 0);
@@ -703,8 +691,7 @@ export function ClinicalProvider({ children }) {
   }, [mothers]);
 
   const addMother = ({ name, postpartumWeek, reasonForReview, risk = 'Low' }) => {
-    const addedCount = mothers.length - INITIAL_MOTHERS.length;
-    const nextNum = 118 + addedCount;
+    const nextNum = 101 + mothers.length;
     const newId = `M-${nextNum}`;
     const { initials, avatarInitials } = formatInitials(name);
     const nowIso = new Date().toISOString();
@@ -715,7 +702,7 @@ export function ClinicalProvider({ children }) {
       initials,
       avatarInitials,
       postpartumWeek: Number(postpartumWeek) || 1,
-      lastScreeningDate: 'Apr 25, 2026',
+      lastScreeningDate: 'Not screened',
       lastScreeningIso: nowIso,
       status: risk === 'High' ? 'Review' : 'Pending',
       risk,
@@ -784,7 +771,7 @@ export function ClinicalProvider({ children }) {
     const nowTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
     const score = preliminaryScore ?? Number(((Number(epdsEquivalent) || 6) / 20).toFixed(2));
     const newScreening = {
-      id: `SCR-${248 + (screenings.length - INITIAL_SCREENINGS.length)}`,
+      id: `SCR-${Date.now() % 100000}`,
       motherId,
       motherName: mother?.name || motherId,
       motherInitials: mother?.initials || 'N. M.',
