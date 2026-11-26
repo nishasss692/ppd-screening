@@ -81,6 +81,7 @@ function BookingForm({ doctor, hospital, patient, onConfirmed }) {
 
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedSlot, setSelectedSlot] = useState('');
+  const [consultationMode, setConsultationMode] = useState(doctor.consultationTypes[0] || 'In-person');
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationError, setValidationError] = useState('');
@@ -116,7 +117,7 @@ function BookingForm({ doctor, hospital, patient, onConfirmed }) {
       phone: patient?.phone || '+91-98765-43210',
       date: selectedDate,
       time: selectedSlot,
-      type: doctor.consultationTypes[0] || 'In-person',
+      type: consultationMode || doctor.consultationTypes[0] || 'In-person',
       clinic: hospital?.name || 'AANCHAL Partner Hospital',
       reason: reason || null,
     };
@@ -209,7 +210,10 @@ function BookingForm({ doctor, hospital, patient, onConfirmed }) {
               className="appt-form-input"
               min={todayISO()}
               value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
+              onChange={(e) => {
+                setSelectedDate(e.target.value);
+                if (validationError) setValidationError('');
+              }}
               required
               aria-required="true"
             />
@@ -223,7 +227,8 @@ function BookingForm({ doctor, hospital, patient, onConfirmed }) {
             <select
               id="appt-type"
               className="appt-form-select"
-              defaultValue={doctor.consultationTypes[0]}
+              value={consultationMode}
+              onChange={(e) => setConsultationMode(e.target.value)}
             >
               {doctor.consultationTypes.map((t) => (
                 <option key={t} value={t}>{t}</option>
@@ -248,7 +253,10 @@ function BookingForm({ doctor, hospital, patient, onConfirmed }) {
                   role="radio"
                   aria-checked={selectedSlot === slot}
                   className={`appt-timeslot-btn${selectedSlot === slot ? ' is-selected' : ''}`}
-                  onClick={() => setSelectedSlot(slot)}
+                  onClick={() => {
+                    setSelectedSlot(slot);
+                    if (validationError) setValidationError('');
+                  }}
                 >
                   {Ico.clock}
                   {slot}
@@ -315,6 +323,13 @@ function BookingForm({ doctor, hospital, patient, onConfirmed }) {
           </div>
         </div>
       </section>
+
+      {/* Inline validation error right above actions */}
+      {validationError && (
+        <div className="patient-notice-banner is-error" role="alert" style={{ marginTop: 16 }}>
+          {validationError}
+        </div>
+      )}
 
       {/* Actions */}
       <div className="appt-actions-row" style={{ marginTop: 20 }}>
