@@ -208,6 +208,130 @@ def get_clinician_assigned_appointments(
 
 
 @router.put(
+    "/appointments/{appointment_id}/status",
+    status_code=status.HTTP_200_OK,
+    summary="Update appointment status by doctor (confirm, reschedule, or cancel)",
+)
+def update_doctor_appointment_status(
+    appointment_id: str,
+    payload: Dict[str, Any],
+    user: User = Depends(require_doctor),
+    db: Session = Depends(get_db),
+) -> Dict[str, Any]:
+    """Allow clinician to update appointment status: confirm, propose_time/reschedule, or cancel."""
+    import uuid as _uuid
+    from datetime import datetime, timezone
+    from backend.services.notification_service import create_notification_dedup
+
+    try:
+        cp_uuid = _uuid.UUID(appointment_id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid appointment ID.")
+
+    cp = db.get(CarePlan, cp_uuid)
+    if not cp:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Appointment not found.")
+
+    meta: Dict[str, Any] = {}
+    if cp.notes and cp.notes.strip().startswith("{"):
+        try:
+            meta = json.loads(cp.notes)
+        except Exception:
+            meta = {}
+
+    action = (payload.get("action") or "confirm").lower()
+    doctor_notes = (payload.get("notes") or "").strip()
+    doctor_name = user.full_name or "Dr. Priya Mehta"
+    mother = db.get(Mother, cp.mother_id)
+    patient_name = meta.get("patient_name") or (mother.name if mother else "Patient")
+    hospital_id = meta.get("hospital_id") or "HOSP-001"
+
+    if action in ("confirm", "accept"):
+        new_status = "confirmed"
+        confirmed_date = payload.get("confirmedDate") or meta.get("requested_date")
+        confirmed_time = payload.get("confirmedTime") or meta.get("requested_time")
+        meta["status"] = "confirmed"
+        meta["confirmed_date"] = confirmed_date
+        meta["confirmed_time"] = confirmed_time
+        meta["doctor_notes"] = doctor_notes
+        cp.status = "confirmed"
+        notif_title = "Appointment Confirmed by Doctor"
+        notif_msg = f"{doctor_name} has confirmed your consultation for {confirmed_date} at {confirmed_time}."
+    elif action in ("propose_time", "reschedule"):
+        new_status = "rescheduled"
+        proposed_date = payload.get("proposedDate") or payload.get("date")
+        proposed_time = payload.get("proposedTime") or payload.get("time")
+        meta["status"] = "rescheduled"
+        meta["proposed_date"] = proposed_date
+        meta["proposed_time"] = proposed_time
+        meta["doctor_notes"] = doctor_notes
+        cp.status = "rescheduled"
+        notif_title = "Doctor Proposed New Consultation Time"
+        notif_msg = f"{doctor_name} proposed a new appointment time: {proposed_date} at {proposed_time}."
+    elif action in ("cancel", "reject"):
+        new_status = "cancelled"
+        meta["status"] = "cancelled"
+        meta["doctor_notes"] = doctor_notes
+        cp.status = "cancelled"
+        notif_title = "Appointment Cancelled by Doctor"
+        notif_msg = f"Your consultation with {doctor_name} was cancelled. Reason: {doctor_notes or 'Schedule conflict'}."
+    else:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Unsupported action '{action}'.")
+
+    meta["last_updated_by"] = doctor_name
+    meta["last_updated_at"] = datetime.now(timezone.utc).isoformat()
+    cp.notes = json.dumps(meta)
+
+    # Sync into mother.notes metadata
+    if mother:
+        from backend.routers.patients import _get_mother_portal_meta
+        m_meta = _get_mother_portal_meta(mother)
+        m_appts = m_meta.get("appointments", [])
+        for a in m_appts:
+            if a.get("id") == str(cp.id):
+                a["status"] = new_status.title()
+                if "confirmed_date" in meta:
+                    a["date"] = meta["confirmed_date"]
+                    a["time"] = meta["confirmed_time"]
+                if "proposed_date" in meta:
+                    a["proposedDate"] = meta["proposed_date"]
+                    a["proposedTime"] = meta["proposed_time"]
+        m_meta["appointments"] = m_appts
+        mother.notes = json.dumps(m_meta)
+
+    # Notify patient & hospital
+    create_notification_dedup(
+        db,
+        recipient_id=str(cp.mother_id),
+        recipient_role="patient",
+        notification_type=f"appointment_{new_status}",
+        title=notif_title,
+        message=notif_msg,
+        related_appointment_id=str(cp.id),
+        metadata={"doctorName": doctor_name, "status": new_status, "appointmentId": str(cp.id)},
+    )
+    create_notification_dedup(
+        db,
+        recipient_id=hospital_id,
+        recipient_role="hospital",
+        notification_type=f"appointment_{new_status}",
+        title=f"Doctor Updated Appointment ({new_status.title()})",
+        message=f"{doctor_name} updated appointment status for {patient_name} to {new_status.title()}.",
+        related_appointment_id=str(cp.id),
+        metadata={"doctorName": doctor_name, "patientName": patient_name, "status": new_status},
+    )
+
+    db.commit()
+    db.refresh(cp)
+    return {
+        "status": "success",
+        "appointmentId": str(cp.id),
+        "newStatus": new_status.title(),
+        "notes": doctor_notes,
+    }
+
+
+@router.put(
     "/appointments/{appointment_id}/assessment",
     status_code=status.HTTP_200_OK,
     summary="Save doctor's clinical assessment, diagnosis, and care plan for an appointment",

@@ -660,4 +660,22 @@ export async function fetchDoctors(filters = {}) {
   return response.json();
 }
 
+/**
+ * Cancel a patient's booked appointment.
+ * PUT /api/patients/me/appointments/{appointment_id}/cancel
+ */
+export async function cancelPatientAppointment(appointmentId) {
+  const url = `${getApiBase()}/api/patients/me/appointments/${encodeURIComponent(appointmentId)}/cancel`;
+  const response = await fetch(url, {
+    method: 'PUT',
+    headers: getHeaders(),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${response.status}: Failed to cancel appointment`);
+  }
+  return response.json();
+}
+
+
 

@@ -78,17 +78,27 @@ export function InsightsCarePage() {
 
   const activeScreening = useMemo(() => {
     if (motherId) {
-      return (
-        screenings.find((s) => s.motherId.toLowerCase() === motherId.toLowerCase()) ||
-        null
+      const match = screenings.find(
+        (s) =>
+          (s.motherId && s.motherId.toLowerCase() === motherId.toLowerCase()) ||
+          (s.rawMotherUuid && s.rawMotherUuid.toLowerCase() === motherId.toLowerCase()) ||
+          (s.motherName && s.motherName.toLowerCase() === motherId.toLowerCase())
       );
+      if (match) return match;
     }
     return screenings.find((s) => s.motherId === 'M-108') || screenings[0] || null;
   }, [screenings, motherId]);
 
   const activeMother = useMemo(() => {
     const targetId = motherId || activeScreening?.motherId || 'M-108';
-    return mothers.find((m) => m.id.toLowerCase() === targetId.toLowerCase()) || mothers[0];
+    return (
+      mothers.find(
+        (m) =>
+          (m.id && m.id.toLowerCase() === targetId.toLowerCase()) ||
+          (m.rawUuid && m.rawUuid.toLowerCase() === targetId.toLowerCase()) ||
+          (m.name && m.name.toLowerCase() === targetId.toLowerCase())
+      ) || mothers[0]
+    );
   }, [mothers, motherId, activeScreening]);
 
   const plan = getCarePlan(activeMother.id);

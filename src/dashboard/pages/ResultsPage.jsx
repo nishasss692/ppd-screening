@@ -28,18 +28,36 @@ export function ResultsPage() {
 
   const activeScreening = useMemo(() => {
     if (motherId) {
-      return (
-        screenings.find((s) => s.motherId.toLowerCase() === motherId.toLowerCase()) ||
-        null
+      const match = screenings.find(
+        (s) =>
+          (s.motherId && s.motherId.toLowerCase() === motherId.toLowerCase()) ||
+          (s.rawMotherUuid && s.rawMotherUuid.toLowerCase() === motherId.toLowerCase()) ||
+          (s.motherName && s.motherName.toLowerCase() === motherId.toLowerCase())
       );
+      if (match) return match;
     }
     return screenings.find((s) => s.motherId === 'M-108') || screenings[0] || null;
   }, [screenings, motherId]);
 
   const activeMother = useMemo(() => {
+    if (motherId) {
+      const directMatch = mothers.find(
+        (m) =>
+          (m.id && m.id.toLowerCase() === motherId.toLowerCase()) ||
+          (m.rawUuid && m.rawUuid.toLowerCase() === motherId.toLowerCase()) ||
+          (m.name && m.name.toLowerCase() === motherId.toLowerCase())
+      );
+      if (directMatch) return directMatch;
+    }
     if (!activeScreening) return null;
-    return mothers.find((m) => m.id === activeScreening.motherId) || null;
-  }, [mothers, activeScreening]);
+    return (
+      mothers.find(
+        (m) =>
+          m.id === activeScreening.motherId ||
+          (m.rawUuid && activeScreening.rawMotherUuid && m.rawUuid === activeScreening.rawMotherUuid)
+      ) || null
+    );
+  }, [mothers, activeScreening, motherId]);
 
   const handleSelectSession = (nextMotherId) => {
     setActionFeedback('');

@@ -83,12 +83,25 @@ export function ScreeningResultsPage() {
 
     if (screening?.isPending) return null;
 
-    // Prefer live PostgreSQL-synced screening score when available
-    if (screening?.id && !String(screening.id).startsWith('SCR-') && screening?.riskScore != null) {
+    // Prioritize actual submitted EPDS assessment
+    try {
+      const epdsRaw = localStorage.getItem('aanchal_submitted_epds_assessment');
+      if (epdsRaw) {
+        const epds = JSON.parse(epdsRaw);
+        if (epds?.totalScore !== undefined && epds?.totalScore !== null) {
+          return Math.round((Number(epds.totalScore) / 30) * 100);
+        }
+      }
+    } catch (e) { }
+
+    // Live PostgreSQL-synced screening total score or risk score
+    if (screening?.totalScore != null) {
+      return Math.round((Number(screening.totalScore) / 30) * 100);
+    }
+    if (screening?.riskScore != null) {
       return Number(screening.riskScore);
     }
 
-    // Check localStorage for saved screening results (multimodal fusion first)
     try {
       const mmRaw = localStorage.getItem('aanchal_multimodal_screening_result');
       if (mmRaw) {
@@ -110,24 +123,6 @@ export function ScreeningResultsPage() {
         }
       }
     } catch (e) { }
-
-    try {
-      const epdsRaw = localStorage.getItem('aanchal_submitted_epds_assessment');
-      if (epdsRaw) {
-        const epds = JSON.parse(epdsRaw);
-        if (epds?.totalScore !== undefined && epds?.totalScore !== null) {
-          return Math.round((Number(epds.totalScore) / 30) * 100);
-        }
-      }
-    } catch (e) { }
-
-    if (screening?.riskScore != null) {
-      return Number(screening.riskScore);
-    }
-
-    if (screening?.totalScore != null) {
-      return Math.round((Number(screening.totalScore) / 30) * 100);
-    }
 
     return null;
   }, [searchParams, screening]);

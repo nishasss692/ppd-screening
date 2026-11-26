@@ -7,6 +7,7 @@ import { getCurrentUser } from '../../auth/authService.js';
 import {
   downloadClinicianScreeningPdfBlob,
   saveAppointmentClinicalAssessment,
+  updateDoctorAppointmentStatus,
 } from '../services/doctorApiService.js';
 
 export function DoctorAppointmentsPage() {
@@ -139,6 +140,34 @@ export function DoctorAppointmentsPage() {
       }
     } catch (err) {
       setAssessmentMsg(err.message || 'Failed to save clinical assessment.');
+    } finally {
+      setSavingAssessment(false);
+    }
+  };
+
+  const handleUpdateStatus = async (action) => {
+    if (!selectedAppt) return;
+    setSavingAssessment(true);
+    setAssessmentMsg('');
+    try {
+      const res = await updateDoctorAppointmentStatus(selectedAppt.id, {
+        action,
+        notes: carePlanText || 'Updated by attending clinician',
+      });
+      setAssessmentMsg(`Appointment successfully marked as ${res.newStatus}.`);
+      setSelectedAppt((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: res.newStatus || (action === 'confirm' ? 'Confirmed' : action === 'cancel' ? 'Cancelled' : 'Rescheduled'),
+            }
+          : null
+      );
+      if (refreshBackendData) {
+        refreshBackendData();
+      }
+    } catch (err) {
+      setAssessmentMsg(err.message || `Failed to ${action} appointment.`);
     } finally {
       setSavingAssessment(false);
     }
@@ -697,15 +726,39 @@ export function DoctorAppointmentsPage() {
                       Status: <strong>{selectedAppt.status}</strong>
                     </span>
                   )}
-                  <button
-                    type="submit"
-                    className="miora-cta-primary"
-                    disabled={savingAssessment}
-                    style={{ padding: '0.55rem 1.15rem', fontSize: '0.86rem' }}
-                  >
-                    <DashboardIcon name="clipboardCheck" size={14} />
-                    <span>{savingAssessment ? 'Saving Assessment...' : 'Save Assessment & Complete Consultation'}</span>
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    {selectedAppt.status?.toLowerCase() === 'pending' && (
+                      <>
+                        <button
+                          type="button"
+                          className="miora-cta-secondary"
+                          onClick={() => handleUpdateStatus('confirm')}
+                          disabled={savingAssessment}
+                          style={{ padding: '0.5rem 0.9rem', fontSize: '0.84rem', borderColor: '#166534', color: '#166534' }}
+                        >
+                          Confirm Appointment
+                        </button>
+                        <button
+                          type="button"
+                          className="miora-cta-secondary"
+                          onClick={() => handleUpdateStatus('cancel')}
+                          disabled={savingAssessment}
+                          style={{ padding: '0.5rem 0.9rem', fontSize: '0.84rem', borderColor: '#991b1b', color: '#991b1b' }}
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    )}
+                    <button
+                      type="submit"
+                      className="miora-cta-primary"
+                      disabled={savingAssessment}
+                      style={{ padding: '0.55rem 1.15rem', fontSize: '0.86rem' }}
+                    >
+                      <DashboardIcon name="clipboardCheck" size={14} />
+                      <span>{savingAssessment ? 'Saving Assessment...' : 'Save Assessment & Complete Consultation'}</span>
+                    </button>
+                  </div>
                 </div>
               </form>
 
@@ -728,7 +781,8 @@ export function DoctorAppointmentsPage() {
                   type="button"
                   className="miora-cta-primary"
                   onClick={() => {
-                    navigate(`/results`);
+                    const targetId = selectedAppt.motherId || selectedAppt.patientId || 'M-108';
+                    navigate(`/results/${encodeURIComponent(targetId)}`);
                   }}
                 >
                   <span>Open Full Results View</span>

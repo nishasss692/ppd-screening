@@ -15,12 +15,25 @@ export function CreateConsultationReportPage() {
   const queryAppointmentId = searchParams.get('appointmentId') || '';
 
   const activeMother = useMemo(() => {
-    return mothers.find((m) => m.id.toLowerCase() === queryMotherId.toLowerCase()) || mothers[0] || null;
+    return (
+      mothers.find(
+        (m) =>
+          (m.id && m.id.toLowerCase() === queryMotherId.toLowerCase()) ||
+          (m.rawUuid && m.rawUuid.toLowerCase() === queryMotherId.toLowerCase()) ||
+          (m.name && m.name.toLowerCase() === queryMotherId.toLowerCase())
+      ) || mothers[0] || null
+    );
   }, [mothers, queryMotherId]);
 
   const activeScreening = useMemo(() => {
     if (!activeMother) return null;
-    return screenings.find((s) => s.motherId === activeMother.id) || null;
+    return (
+      screenings.find(
+        (s) =>
+          s.motherId === activeMother.id ||
+          (s.rawMotherUuid && activeMother.rawUuid && s.rawMotherUuid === activeMother.rawUuid)
+      ) || null
+    );
   }, [screenings, activeMother]);
 
   // Form State
