@@ -940,7 +940,7 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
                 ) : (
                   <div className="ai-status-pill is-pending" style={{ marginTop: 6 }}>
                     <span className="ai-status-dot" />
-                    <span>Awaiting model integration</span>
+                    <span>Standby (ready on session start)</span>
                   </div>
                 )}
               </div>
@@ -964,7 +964,7 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
                 ) : (
                   <div className="ai-status-pill is-pending" style={{ marginTop: 6 }}>
                     <span className="ai-status-dot" />
-                    <span>Awaiting model integration</span>
+                    <span>Standby (ready on session start)</span>
                   </div>
                 )}
               </div>
@@ -988,7 +988,7 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
                 ) : (
                   <div className="ai-status-pill is-pending" style={{ marginTop: 6 }}>
                     <span className="ai-status-dot" />
-                    <span>Awaiting model integration</span>
+                    <span>Standby (ready on session start)</span>
                   </div>
                 )}
               </div>
@@ -1007,7 +1007,7 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
                 ) : (
                   <div className="ai-status-pill is-pending" style={{ marginTop: 6 }}>
                     <span className="ai-status-dot" />
-                    <span>Awaiting model integration</span>
+                    <span>Standby (ready on session start)</span>
                   </div>
                 )}
               </div>

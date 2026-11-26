@@ -123,7 +123,7 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                           {typeof textMod.score === 'number' ? `${Math.round(textMod.score * 100)}%` : 'Completed'}
                         </span>
                       ) : (
-                        <span className="ai-status-pill is-pending">Pending <span className="sr-only">Awaiting model integration</span></span>
+                        <span className="ai-status-pill is-pending">{mScreen ? 'Not run' : 'Pending'}</span>
                       )}
                     </td>
                     <td>
@@ -132,7 +132,7 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                           {typeof voiceMod.score === 'number' ? `${Math.round(voiceMod.score * 100)}%` : 'Completed'}
                         </span>
                       ) : (
-                        <span className="ai-status-pill is-pending">Pending <span className="sr-only">Awaiting model integration</span></span>
+                        <span className="ai-status-pill is-pending">{mScreen ? 'Not run' : 'Pending'}</span>
                       )}
                     </td>
                     <td>
@@ -141,7 +141,7 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                           {typeof videoMod.score === 'number' ? `${Math.round(videoMod.score * 100)}%` : 'Recorded'}
                         </span>
                       ) : (
-                        <span className="ai-status-pill is-pending">Pending <span className="sr-only">Awaiting model integration</span></span>
+                        <span className="ai-status-pill is-pending">{mScreen ? 'Not run' : 'Pending'}</span>
                       )}
                     </td>
                     <td>
@@ -150,7 +150,7 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                           {clinPred.predicted_label || 'Evaluated'}
                         </span>
                       ) : (
-                        <span className="ai-status-pill is-pending">Pending <span className="sr-only">Awaiting model integration</span></span>
+                        <span className="ai-status-pill is-pending">{mScreen ? 'Not run' : 'Pending'}</span>
                       )}
                     </td>
                     <td>
@@ -159,7 +159,7 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                           {typeof mScreen.combinedScore === 'number' ? `${Math.round(mScreen.combinedScore * 100)}%` : 'Evaluated'}
                         </span>
                       ) : (
-                        <span className="ai-status-pill is-pending">Awaiting integration</span>
+                        <span className="ai-status-pill is-pending">{mScreen ? 'Partial / Pending' : 'Pending screening'}</span>
                       )}
                     </td>
                     <td>
@@ -281,7 +281,7 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                 ) : (
                   <div className="ai-status-pill is-pending" style={{ marginBottom: 10 }}>
                     <span className="ai-status-dot" />
-                    <span>Awaiting model integration</span>
+                    <span>{activeScreening ? 'Not captured in session' : 'Pending screening'}</span>
                   </div>
                 )}
                 <div className="doc-feature-list">
@@ -291,7 +291,7 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                       {activeScreening?.modalities?.voice?.status === 'completed' &&
                         typeof activeScreening?.modalities?.voice?.score === 'number'
                         ? `Acoustic Probability ${activeScreening.modalities.voice.score.toFixed(2)}`
-                        : 'Awaiting model integration'}
+                        : activeScreening ? 'Not run (no audio captured)' : 'Pending screening'}
                     </em>
                   </div>
                   <div className="doc-feature-item">
@@ -345,7 +345,13 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                 ) : (
                   <div className="ai-status-pill is-pending" style={{ marginBottom: 10 }}>
                     <span className="ai-status-dot" />
-                    <span>Awaiting model integration</span>
+                    <span>
+                      {activeScreening?.modalities?.video?.status === 'recorded'
+                        ? 'Video recorded (no score)'
+                        : activeScreening
+                          ? 'Not captured in session'
+                          : 'Pending screening'}
+                    </span>
                   </div>
                 )}
                 <div className="doc-feature-list">
@@ -355,7 +361,7 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                       {activeScreening?.modalities?.video?.status === 'completed' &&
                         typeof activeScreening?.modalities?.video?.score === 'number'
                         ? `Visual Probability ${activeScreening.modalities.video.score.toFixed(2)}`
-                        : 'Awaiting model integration'}
+                        : activeScreening ? 'Not run (no video captured)' : 'Pending screening'}
                     </em>
                   </div>
                   <div className="doc-feature-item">
@@ -407,7 +413,7 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                 ) : (
                   <div className="ai-status-pill is-pending" style={{ marginBottom: 10 }}>
                     <span className="ai-status-dot" />
-                    <span>Awaiting model integration</span>
+                    <span>{activeScreening ? 'Not captured in session' : 'Pending screening'}</span>
                   </div>
                 )}
                 <div className="doc-feature-list">
@@ -417,7 +423,7 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                       {activeScreening?.modalities?.text?.status === 'completed' &&
                         typeof activeScreening?.modalities?.text?.score === 'number'
                         ? `Text Risk Probability ${activeScreening.modalities.text.score.toFixed(2)}`
-                        : 'Awaiting model integration'}
+                        : activeScreening ? 'Not run (no text captured)' : 'Pending screening'}
                     </em>
                   </div>
                   <div className="doc-feature-item">
@@ -471,7 +477,7 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                 ) : (
                   <div className="ai-status-pill is-pending" style={{ marginBottom: 10 }}>
                     <span className="ai-status-dot" />
-                    <span>Awaiting model integration</span>
+                    <span>{activeScreening ? 'Not evaluated in session' : 'Pending screening'}</span>
                   </div>
                 )}
                 <div className="doc-feature-list">
@@ -481,7 +487,7 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                       {activeScreening?.modalities?.clinical?.status === 'completed' &&
                         typeof activeScreening?.modalities?.clinical?.score === 'number'
                         ? `Clinical Probability ${activeScreening.modalities.clinical.score.toFixed(2)}`
-                        : 'Awaiting model integration'}
+                        : activeScreening ? 'Not run (survey not submitted)' : 'Pending screening'}
                     </em>
                   </div>
                   <div className="doc-feature-item">
@@ -526,7 +532,7 @@ export function DoctorAiScreeningTab({ defaultMotherId }) {
                 ) : (
                   <div className="ai-status-pill is-pending" style={{ marginBottom: 10 }}>
                     <span className="ai-status-dot" />
-                    <span>Awaiting model integration</span>
+                    <span>{activeScreening ? 'Partial modalities only' : 'Pending screening'}</span>
                   </div>
                 )}
                 <p style={{ fontSize: 13, color: '#66535c', lineHeight: 1.5, margin: '0 0 12px 0' }}>
