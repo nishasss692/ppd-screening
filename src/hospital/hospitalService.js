@@ -6,6 +6,19 @@
 const HOSPITAL_TOKEN_KEY = 'aanchal_hospital_token';
 const HOSPITAL_USER_KEY = 'aanchal_hospital_user';
 
+function getHospitalApiBase() {
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_MIORA_API_URL) {
+    return import.meta.env.VITE_MIORA_API_URL.replace(/\/$/, '');
+  }
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    const h = window.location.hostname;
+    if (h === 'localhost' || h === '127.0.0.1') {
+      return window.location.origin;
+    }
+  }
+  return '';
+}
+
 export function getHospitalToken() {
   return localStorage.getItem(HOSPITAL_TOKEN_KEY) || '';
 }
@@ -40,7 +53,7 @@ function getHospitalHeaders() {
 
 export async function loginHospital(emailOrId, password) {
   try {
-    const res = await fetch('/api/hospital/login', {
+    const res = await fetch(`${getHospitalApiBase()}/api/hospital/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email_or_id: emailOrId, password }),
@@ -78,7 +91,7 @@ export async function loginHospital(emailOrId, password) {
 }
 
 export async function fetchHospitalDashboard() {
-  const res = await fetch('/api/hospital/dashboard', {
+  const res = await fetch(`${getHospitalApiBase()}/api/hospital/dashboard`, {
     headers: getHospitalHeaders(),
   });
   if (!res.ok) {
@@ -89,9 +102,10 @@ export async function fetchHospitalDashboard() {
 }
 
 export async function fetchHospitalAppointments(statusFilter = 'all') {
+  const base = getHospitalApiBase();
   const url = statusFilter && statusFilter !== 'all'
-    ? `/api/hospital/appointments?status_filter=${encodeURIComponent(statusFilter)}`
-    : '/api/hospital/appointments';
+    ? `${base}/api/hospital/appointments?status_filter=${encodeURIComponent(statusFilter)}`
+    : `${base}/api/hospital/appointments`;
   const res = await fetch(url, {
     headers: getHospitalHeaders(),
   });
@@ -103,7 +117,7 @@ export async function fetchHospitalAppointments(statusFilter = 'all') {
 }
 
 export async function fetchHospitalAppointmentDetail(appointmentId) {
-  const res = await fetch(`/api/hospital/appointments/${appointmentId}`, {
+  const res = await fetch(`${getHospitalApiBase()}/api/hospital/appointments/${appointmentId}`, {
     headers: getHospitalHeaders(),
   });
   if (!res.ok) {
@@ -114,7 +128,7 @@ export async function fetchHospitalAppointmentDetail(appointmentId) {
 }
 
 export async function updateAppointmentStatus(appointmentId, { action, proposedDate, proposedTime, notes }) {
-  const res = await fetch(`/api/hospital/appointments/${appointmentId}/status`, {
+  const res = await fetch(`${getHospitalApiBase()}/api/hospital/appointments/${appointmentId}/status`, {
     method: 'PUT',
     headers: getHospitalHeaders(),
     body: JSON.stringify({
@@ -132,7 +146,7 @@ export async function updateAppointmentStatus(appointmentId, { action, proposedD
 }
 
 export async function assignDoctorToAppointment(appointmentId, doctorId, doctorName) {
-  const res = await fetch(`/api/hospital/appointments/${appointmentId}/assign`, {
+  const res = await fetch(`${getHospitalApiBase()}/api/hospital/appointments/${appointmentId}/assign`, {
     method: 'PUT',
     headers: getHospitalHeaders(),
     body: JSON.stringify({
@@ -148,7 +162,7 @@ export async function assignDoctorToAppointment(appointmentId, doctorId, doctorN
 }
 
 export async function fetchHospitalDoctors() {
-  const res = await fetch('/api/hospital/doctors', {
+  const res = await fetch(`${getHospitalApiBase()}/api/hospital/doctors`, {
     headers: getHospitalHeaders(),
   });
   if (!res.ok) {
@@ -166,7 +180,8 @@ export async function fetchHospitalReports(params = {}) {
   if (params.date) query.set('date_filter', params.date);
 
   const qs = query.toString();
-  const url = qs ? `/api/hospital/reports?${qs}` : '/api/hospital/reports';
+  const base = getHospitalApiBase();
+  const url = qs ? `${base}/api/hospital/reports?${qs}` : `${base}/api/hospital/reports`;
 
   try {
     const res = await fetch(url, { headers: getHospitalHeaders() });
@@ -198,7 +213,7 @@ export async function fetchHospitalReports(params = {}) {
 
 export async function fetchHospitalReportDetail(reportId) {
   try {
-    const res = await fetch(`/api/hospital/reports/${reportId}`, {
+    const res = await fetch(`${getHospitalApiBase()}/api/hospital/reports/${reportId}`, {
       headers: getHospitalHeaders(),
     });
     if (!res.ok) {
@@ -250,7 +265,7 @@ export async function fetchHospitalReportDetail(reportId) {
 }
 
 export async function fetchHospitalNotifications() {
-  const res = await fetch('/api/notifications', {
+  const res = await fetch(`${getHospitalApiBase()}/api/notifications`, {
     headers: getHospitalHeaders(),
   });
   if (!res.ok) return [];
@@ -258,7 +273,7 @@ export async function fetchHospitalNotifications() {
 }
 
 export async function markHospitalNotificationRead(notificationId) {
-  const res = await fetch(`/api/notifications/${encodeURIComponent(notificationId)}/read`, {
+  const res = await fetch(`${getHospitalApiBase()}/api/notifications/${encodeURIComponent(notificationId)}/read`, {
     method: 'PUT',
     headers: getHospitalHeaders(),
   });
@@ -266,7 +281,7 @@ export async function markHospitalNotificationRead(notificationId) {
 }
 
 export async function markAllHospitalNotificationsRead() {
-  const res = await fetch('/api/notifications/read-all', {
+  const res = await fetch(`${getHospitalApiBase()}/api/notifications/read-all`, {
     method: 'PUT',
     headers: getHospitalHeaders(),
   });
@@ -275,7 +290,7 @@ export async function markAllHospitalNotificationsRead() {
 
 export async function downloadHospitalScreeningPdfBlob(screeningId) {
   const token = getHospitalToken();
-  const res = await fetch(`/api/hospital/screenings/${encodeURIComponent(screeningId)}/report.pdf`, {
+  const res = await fetch(`${getHospitalApiBase()}/api/hospital/screenings/${encodeURIComponent(screeningId)}/report.pdf`, {
     method: 'GET',
     headers: {
       Accept: 'application/pdf',
