@@ -17,6 +17,7 @@ SCIENTIFIC INTEGRITY & METHODOLOGICAL NOTICE:
 from dataclasses import dataclass
 import logging
 from pathlib import Path
+import re
 import threading
 from typing import Any, Dict, List, Optional, Tuple, Union
 import joblib
@@ -308,6 +309,33 @@ class ThreeModalityInferenceService:
             )
 
         try:
+            # Guard against gibberish / keyboard-mash / non-word inputs so they do not
+            # silently evaluate to the LogisticRegression intercept (~0.4981).
+            cleaned_for_check = re.sub(r"\bQ[1-5]:", " ", raw_str, flags=re.IGNORECASE)
+            alpha_tokens = re.findall(r"[A-Za-z]+", cleaned_for_check)
+
+            def _is_meaningful_word(word: str) -> bool:
+                w = word.lower()
+                if len(w) == 1:
+                    return w in ("i", "a")
+                if re.search(r"(.)\1{2,}", w):  # repeated chars e.g. aaaa, xxxx
+                    return False
+                if not re.search(r"[aeiouy]", w):  # no vowels e.g. zxcvb, hjkl, mnbv
+                    return False
+                if re.search(r"[bcdfghjklmnpqrstvwxz]{4,}", w):  # 4+ consecutive consonants e.g. asdfgh, sdfg
+                    return False
+                if re.search(r"(qwert|asdf|zxcv|hjkl|yuio|bnm)", w):  # common keyboard mash runs
+                    return False
+                return True
+
+            meaningful_tokens = [w for w in alpha_tokens if _is_meaningful_word(w)]
+            if not meaningful_tokens:
+                return ModalityScoreResult(
+                    status="failed",
+                    model_version="text_sgd_logistic_v1",
+                    error="Input text contains no recognizable words (gibberish or non-word input). No prediction generated.",
+                )
+
             probs = self._text_pipeline.predict_proba([raw_str])
             prob_ppd = float(probs[0, 1])
             clamped_prob = round(float(np.clip(prob_ppd, 0.0, 1.0)), 4)
