@@ -83,25 +83,12 @@ export function ScreeningResultsPage() {
 
     if (screening?.isPending) return null;
 
-    // Prioritize actual submitted EPDS assessment
-    try {
-      const epdsRaw = localStorage.getItem('aanchal_submitted_epds_assessment');
-      if (epdsRaw) {
-        const epds = JSON.parse(epdsRaw);
-        if (epds?.totalScore !== undefined && epds?.totalScore !== null) {
-          return Math.round((Number(epds.totalScore) / 30) * 100);
-        }
-      }
-    } catch (e) { }
-
-    // Live PostgreSQL-synced screening total score or risk score
-    if (screening?.totalScore != null) {
-      return Math.round((Number(screening.totalScore) / 30) * 100);
-    }
-    if (screening?.riskScore != null) {
+    // 1. Live PostgreSQL-synced unified risk score (multimodal fusion -> clinical -> EPDS)
+    if (screening?.id && !String(screening.id).startsWith('SCR-') && screening?.riskScore != null) {
       return Number(screening.riskScore);
     }
 
+    // 2. Multimodal fusion score from current session
     try {
       const mmRaw = localStorage.getItem('aanchal_multimodal_screening_result');
       if (mmRaw) {
@@ -113,6 +100,7 @@ export function ScreeningResultsPage() {
       }
     } catch (e) { }
 
+    // 3. Clinical numerical model probability from current session
     try {
       const cmRaw = localStorage.getItem('aanchal_clinical_model_prediction');
       if (cmRaw) {
@@ -123,6 +111,24 @@ export function ScreeningResultsPage() {
         }
       }
     } catch (e) { }
+
+    // 4. Fallback to EPDS score / screening.riskScore
+    try {
+      const epdsRaw = localStorage.getItem('aanchal_submitted_epds_assessment');
+      if (epdsRaw) {
+        const epds = JSON.parse(epdsRaw);
+        if (epds?.totalScore !== undefined && epds?.totalScore !== null) {
+          return Math.round((Number(epds.totalScore) / 30) * 100);
+        }
+      }
+    } catch (e) { }
+
+    if (screening?.totalScore != null) {
+      return Math.round((Number(screening.totalScore) / 30) * 100);
+    }
+    if (screening?.riskScore != null) {
+      return Number(screening.riskScore);
+    }
 
     return null;
   }, [searchParams, screening]);
