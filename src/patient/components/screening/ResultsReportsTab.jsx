@@ -38,6 +38,15 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
       .then((history) => {
         if (Array.isArray(history) && history.length > 0) {
           const latest = history[0];
+          if (latest.multimodal_scores && typeof latest.multimodal_scores.fusion_score === 'number') {
+            setStoredMultimodalResult(latest.multimodal_scores);
+            try {
+              localStorage.setItem(
+                'aanchal_multimodal_screening_result',
+                JSON.stringify(latest.multimodal_scores)
+              );
+            } catch (e) { }
+          }
           if (latest.clinical_model_prediction && latest.clinical_model_prediction.status === 'completed') {
             setStoredClinicalModel(latest.clinical_model_prediction);
             try {

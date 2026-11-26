@@ -740,9 +740,23 @@ def persist_epds_screening_for_mother(
     )
 
     if existing_mm_screening is not None:
+        merged_mm = {**(existing_mm_screening.multimodal_scores or {}), **multimodal_dict}
+        fusion_val = merged_mm.get("fusion_score")
+        effective_risk = risk_class
+        if isinstance(fusion_val, (int, float)):
+            fusion_pct = fusion_val * 100.0 if fusion_val <= 1.0 else float(fusion_val)
+            fusion_risk = "high" if fusion_pct >= 43 else "moderate" if fusion_pct >= 33 else "low"
+            if scored.safety_alert.triggered or risk_class == "high" or fusion_risk == "high":
+                effective_risk = "high"
+            elif risk_class == "moderate" or fusion_risk == "moderate":
+                effective_risk = "moderate"
+            else:
+                effective_risk = "low"
+
         existing_mm_screening.instrument = "EPDS+MULTIMODAL"
+        existing_mm_screening.screening_date = datetime.now(timezone.utc)
         existing_mm_screening.total_score = scored.total_score
-        existing_mm_screening.risk_classification = risk_class
+        existing_mm_screening.risk_classification = effective_risk
         existing_mm_screening.q10_safety_alert = scored.safety_alert.triggered
         existing_mm_screening.submitted_answers = submitted_answers_map
         existing_mm_screening.item_scores = item_scores_map
@@ -750,7 +764,7 @@ def persist_epds_screening_for_mother(
         existing_mm_screening.fusion_status = computed_fusion_status
         existing_mm_screening.modality_status = {**(existing_mm_screening.modality_status or {}), **mod_status}
         existing_mm_screening.model_metadata = {**(existing_mm_screening.model_metadata or {}), **model_meta}
-        existing_mm_screening.multimodal_scores = {**(existing_mm_screening.multimodal_scores or {}), **multimodal_dict}
+        existing_mm_screening.multimodal_scores = merged_mm
         existing_mm_screening.psychosocial_answers = payload.psychosocial_answers
         if features_snapshot:
             existing_mm_screening.clinical_features_snapshot = features_snapshot
@@ -864,6 +878,7 @@ def get_patient_screenings(
             psychosocial_answers=s.psychosocial_answers,
             clinical_features_snapshot=s.clinical_features_snapshot,
             clinical_model_prediction=s.clinical_model_prediction,
+            multimodal_scores=s.multimodal_scores,
             created_at=s.created_at,
         )
         for s in records
@@ -904,6 +919,7 @@ def get_screening_detail(
         psychosocial_answers=screening.psychosocial_answers,
         clinical_features_snapshot=screening.clinical_features_snapshot,
         clinical_model_prediction=screening.clinical_model_prediction,
+        multimodal_scores=screening.multimodal_scores,
         created_at=screening.created_at,
     )
 
@@ -1061,10 +1077,32 @@ def get_patient_reports_overview(
     )
     screenings = db.scalars(stmt).all()
 
+    from datetime import timedelta
+    ist_tz = timezone(timedelta(hours=5, minutes=30))
+
+    def _to_ist(dt: Optional[datetime]) -> datetime:
+        if dt is None:
+            return datetime.now(ist_tz)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(ist_tz)
+
+    def _compute_screening_risk_pct(s: Screening) -> int:
+        mm = s.multimodal_scores or {}
+        f_score = mm.get("fusion_score")
+        if isinstance(f_score, (int, float)):
+            return int(round(f_score * 100.0 if f_score <= 1.0 else f_score))
+        cm = s.clinical_model_prediction or {}
+        cm_prob = cm.get("predicted_risk_probability")
+        if isinstance(cm_prob, (int, float)):
+            return int(round(cm_prob * 100.0 if cm_prob <= 1.0 else cm_prob))
+        return int(round((s.total_score / 30.0) * 100))
+
     latest_dict = None
     if screenings:
         latest = screenings[0]
-        risk_pct = int(round((latest.total_score / 30.0) * 100))
+        latest_ist = _to_ist(latest.screening_date or latest.created_at)
+        risk_pct = _compute_screening_risk_pct(latest)
         label_map = {
             "high": "Probable Depression (High Risk)",
             "moderate": "Possible Depression (Moderate Risk)",
@@ -1072,8 +1110,8 @@ def get_patient_reports_overview(
         }
         latest_dict = {
             "id": str(latest.id),
-            "date": latest.screening_date.strftime("%d %b %Y"),
-            "completedDateTime": latest.screening_date.strftime("%d %b %Y · %I:%M %p"),
+            "date": latest_ist.strftime("%d %b %Y"),
+            "completedDateTime": latest_ist.strftime("%d %b %Y · %I:%M %p"),
             "riskScore": risk_pct,
             "riskLabel": label_map.get(latest.risk_classification, latest.risk_classification.title()),
             "totalScore": latest.total_score,
@@ -1099,8 +1137,9 @@ def get_patient_reports_overview(
     screenings_list = [
         {
             "id": str(s.id),
-            "date": s.screening_date.strftime("%d %b %Y"),
+            "date": _to_ist(s.screening_date or s.created_at).strftime("%d %b %Y"),
             "totalScore": s.total_score,
+            "riskScore": _compute_screening_risk_pct(s),
             "riskClassification": s.risk_classification,
             "q10SafetyAlert": s.q10_safety_alert,
         }
@@ -1149,12 +1188,16 @@ def download_screening_report_pdf(
         .order_by(desc(ClinicalReview.reviewed_at), desc(ClinicalReview.created_at))
         .limit(1)
     )
-    latest_care_plan = db.scalar(
+    latest_care_plan = None
+    for cp in db.scalars(
         select(CarePlan)
         .where(CarePlan.mother_id == user.mother_id)
         .order_by(desc(CarePlan.updated_at), desc(CarePlan.created_at))
-        .limit(1)
-    )
+    ):
+        if cp.notes and "patient_appointment_request" in cp.notes:
+            continue
+        latest_care_plan = cp
+        break
 
     multimodal_summary = {
         "clinical_score": screening.clinical_score,
@@ -1431,24 +1474,6 @@ def get_patient_appointments(
                     hospitalLocation=a.get("hospitalLocation"),
                 )
             )
-
-    # If new account with no appointments yet, provide the initial baseline consultation
-    if not results:
-        results = [
-            AppointmentResponse(
-                id="c-initial-101",
-                doctorName="Dr. Priya Mehta",
-                role="Perinatal Psychiatry",
-                date="20 Nov 2026",
-                time="11:00 AM",
-                status="Confirmed",
-                type="Telehealth Video",
-                clinic="Apollo Women's Hospital",
-                summary="Initial post-registration baseline assessment with perinatal mental health specialist.",
-                hospitalId="HOSP-001",
-                hospitalName="Apollo Women's Hospital",
-            )
-        ]
 
     return results
 
@@ -1754,17 +1779,54 @@ def get_patient_care_plan(
     from backend.models.care_plan import CarePlan
     from backend.models.clinical_review import ClinicalReview
 
-    latest_plan = db.scalars(
+    latest_plan = None
+    for cp in db.scalars(
         select(CarePlan)
         .where(CarePlan.mother_id == user.mother_id)
         .order_by(desc(CarePlan.updated_at), desc(CarePlan.created_at))
-    ).first()
+    ):
+        if cp.notes and "patient_appointment_request" in cp.notes:
+            continue
+        latest_plan = cp
+        break
 
     latest_review = db.scalars(
         select(ClinicalReview)
         .where(ClinicalReview.mother_id == user.mother_id)
         .order_by(desc(ClinicalReview.reviewed_at), desc(ClinicalReview.created_at))
     ).first()
+
+    def _extract_care_plan_notes(raw_notes: str | None) -> str | None:
+        """Extract only the doctor-entered care plan text from notes JSON blob.
+
+        The notes field may contain a full JSON object (appointment metadata +
+        clinical_assessment). We want only the human-readable care plan text,
+        never the raw JSON blob.
+        """
+        if not raw_notes:
+            return None
+        # If it doesn't look like JSON, return as-is (plain text note)
+        stripped = raw_notes.strip()
+        if not stripped.startswith("{"):
+            return raw_notes
+        try:
+            meta = json.loads(stripped)
+        except Exception:
+            return raw_notes
+        # If this is an appointment request blob, suppress it entirely
+        if meta.get("request_type") or meta.get("patient_appointment_request"):
+            return None
+        # Extract the doctor-authored care plan text from clinical_assessment
+        ca = meta.get("clinical_assessment") or {}
+        care_plan_text = ca.get("carePlan", "").strip()
+        if care_plan_text:
+            return care_plan_text
+        # Also try top-level care_plan_text key
+        alt = meta.get("care_plan_text", "").strip()
+        if alt:
+            return alt
+        # Nothing human-readable found — suppress the blob
+        return None
 
     clinician_plan = (
         {
@@ -1778,7 +1840,7 @@ def get_patient_care_plan(
                 else None
             ),
             "status": latest_plan.status,
-            "notes": latest_plan.notes,
+            "notes": _extract_care_plan_notes(latest_plan.notes),
             "updated_at": latest_plan.updated_at.isoformat() if latest_plan.updated_at else None,
         }
         if latest_plan

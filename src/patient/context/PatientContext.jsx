@@ -176,7 +176,39 @@ export function PatientProvider({ children }) {
     return DEFAULT_PATIENT;
   });
 
-  const [screening, setScreening] = useState(DEFAULT_SCREENING);
+  // Initialise screening from localStorage if a real multimodal result exists,
+  // so the UI shows live data immediately before the backend fetch completes.
+  const [screening, setScreening] = useState(() => {
+    try {
+      const mmRaw = localStorage.getItem('aanchal_multimodal_screening_result');
+      if (mmRaw) {
+        const mm = JSON.parse(mmRaw);
+        const rawTs = mm.screening_date_time || mm.processed_at || mm.created_at;
+        if (rawTs && (mm.fusion_score != null || mm.epds_score != null || mm.total_score != null)) {
+          const dt = new Date(rawTs);
+          const istOpts = { timeZone: 'Asia/Kolkata' };
+          const datePart = dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', ...istOpts });
+          const timePart = dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, ...istOpts });
+          const fusionScore = mm.fusion_score != null ? Number(mm.fusion_score) : null;
+          const riskPct = fusionScore != null
+            ? Math.round(fusionScore <= 1 ? fusionScore * 100 : fusionScore)
+            : mm.epds_score != null ? Math.round((Number(mm.epds_score) / 30) * 100) : DEFAULT_SCREENING.riskScore;
+          const riskCls = mm.risk_classification || (riskPct >= 60 ? 'high' : riskPct >= 40 ? 'moderate' : 'low');
+          return {
+            ...DEFAULT_SCREENING,
+            id: mm.screening_id || mm.id || DEFAULT_SCREENING.id,
+            date: datePart,
+            completedDateTime: `${datePart} · ${timePart}`,
+            latestDate: `${datePart} · ${timePart}`,
+            riskScore: riskPct,
+            riskLabel: `${riskCls.toUpperCase()} Risk (EPDS ${mm.epds_score ?? '—'}/30)`,
+            summary: `AI Multimodal Screening completed. Fusion score: ${riskPct}%`,
+          };
+        }
+      }
+    } catch { /* ignore */ }
+    return DEFAULT_SCREENING;
+  });
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
   const [consultations, setConsultations] = useState(INITIAL_CONSULTATIONS);
   const [downloadToast, setDownloadToast] = useState(null);
@@ -245,27 +277,47 @@ export function PatientProvider({ children }) {
       }
 
       // 2. Screenings & History
+      const computeRiskPct = (s) => {
+        const fs = s?.multimodal_scores?.fusion_score;
+        if (typeof fs === 'number' && !Number.isNaN(fs)) {
+          return Math.round(fs <= 1 ? fs * 100 : fs);
+        }
+        const cmProb = s?.clinical_model_prediction?.predicted_risk_probability;
+        if (typeof cmProb === 'number' && !Number.isNaN(cmProb)) {
+          return Math.round(cmProb <= 1 ? cmProb * 100 : cmProb);
+        }
+        return Math.round(((s?.total_score || 0) / 30) * 100);
+      };
+
       if (screeningsRes.status === 'fulfilled' && Array.isArray(screeningsRes.value) && screeningsRes.value.length > 0) {
         const scrList = screeningsRes.value;
         setPersistentScreenings(scrList);
 
         const latest = scrList[0];
-        const riskPct = Math.round(((latest.total_score || 0) / 30) * 100);
+        const riskPct = computeRiskPct(latest);
+        const _istOpts = { timeZone: 'Asia/Kolkata' };
         const formattedDate = new Date(latest.screening_date || latest.created_at).toLocaleDateString('en-GB', {
           day: '2-digit',
           month: 'short',
           year: 'numeric',
+          ..._istOpts,
         });
-        const timePart = new Date(latest.screening_date || latest.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const timePart = new Date(latest.screening_date || latest.created_at).toLocaleTimeString('en-IN', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true,
+          ..._istOpts,
+        });
 
         // Build trend points from real historical screenings
         const reversed = [...scrList].reverse();
         const trendPoints = reversed.map((s, idx) => ({
           week: `Check-in ${idx + 1}`,
-          score: Math.round(((s.total_score || 0) / 30) * 100),
-          date: new Date(s.screening_date || s.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
+          score: computeRiskPct(s),
+          date: new Date(s.screening_date || s.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', timeZone: 'Asia/Kolkata' }),
         }));
 
+        const epdsSuffix = latest.instrument === 'MULTIMODAL' ? '' : ` (EPDS ${latest.total_score}/30)`;
         setScreening((prev) => ({
           ...prev,
           id: latest.id,
@@ -273,12 +325,14 @@ export function PatientProvider({ children }) {
           completedDateTime: `${formattedDate} · ${timePart}`,
           latestDate: `${formattedDate} · ${timePart}`,
           riskScore: riskPct,
-          riskLabel: `${(latest.risk_classification || 'moderate').toUpperCase()} Risk (EPDS ${latest.total_score}/30)`,
-          summary: latest.notes || `EPDS Assessment score: ${latest.total_score}/30`,
+          riskLabel: `${(latest.risk_classification || 'moderate').toUpperCase()} Risk${epdsSuffix}`,
+          summary: latest.notes || `Screening assessment completed (${riskPct}% risk score).`,
           q10Alert: latest.q10_safety_alert,
           submittedAnswers: latest.submitted_answers,
           itemScores: latest.item_scores,
-          trend: trendPoints.length > 1 ? trendPoints : prev.trend,
+          multimodalScores: latest.multimodal_scores || null,
+          clinicalModelPrediction: latest.clinical_model_prediction || null,
+          trend: trendPoints.length > 0 ? trendPoints : prev.trend,
         }));
       } else if (reportsRes.status === 'fulfilled' && reportsRes.value?.latest_screening) {
         const latest = reportsRes.value.latest_screening;
@@ -293,6 +347,8 @@ export function PatientProvider({ children }) {
           summary: latest.summary,
           q10Alert: latest.q10SafetyAlert,
         }));
+      } else if (screeningsRes.status === 'fulfilled' && Array.isArray(screeningsRes.value) && screeningsRes.value.length === 0) {
+        setPersistentScreenings([]);
       }
 
       // 3. Notifications
@@ -301,7 +357,7 @@ export function PatientProvider({ children }) {
       }
 
       // 4. Appointments
-      if (apptsRes.status === 'fulfilled' && Array.isArray(apptsRes.value) && apptsRes.value.length > 0) {
+      if (apptsRes.status === 'fulfilled' && Array.isArray(apptsRes.value)) {
         setConsultations(apptsRes.value);
       }
 
@@ -327,8 +383,16 @@ export function PatientProvider({ children }) {
     const handleAuthChanged = () => {
       reloadPatientData();
     };
+    const handleScreeningCompleted = () => {
+      // Brief delay to allow localStorage to be written before re-fetching
+      setTimeout(() => reloadPatientData(), 500);
+    };
     window.addEventListener('aanchal-auth-changed', handleAuthChanged);
-    return () => window.removeEventListener('aanchal-auth-changed', handleAuthChanged);
+    window.addEventListener('aanchal-screening-completed', handleScreeningCompleted);
+    return () => {
+      window.removeEventListener('aanchal-auth-changed', handleAuthChanged);
+      window.removeEventListener('aanchal-screening-completed', handleScreeningCompleted);
+    };
   }, [reloadPatientData]);
 
   // Update profile handler connected to PostgreSQL

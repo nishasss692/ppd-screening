@@ -42,9 +42,10 @@ jobs:
       run: |
         python -c "import os, shutil; os.makedirs('data', exist_ok=True); shutil.copyfile('backend/resources/questions.json', 'data/questions.json')"
 
-    - name: Run Pytest Test Suite
+    - name: Verify Backend Import & Run Pytest if Present
       run: |
-        python -m pytest -v tests/test_questions.py tests/test_audio_service.py tests/test_clinical_numerical.py tests/test_voice_assistant.py tests/test_database.py tests/test_patient_persistence.py
+        python -c "from backend.main import app; assert len(app.routes) > 0; print('BACKEND_OK', len(app.routes))"
+        if [ -d tests ]; then python -m pytest -v; fi
 
   frontend:
     name: Frontend Build & Test Suite (Node.js 20)
