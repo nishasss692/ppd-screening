@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { BrandWordmark } from '../dashboard/components/BrandWordmark.jsx';
 import {
   clearHospitalSession,
   fetchHospitalNotifications,
@@ -12,9 +13,16 @@ import './hospital.css';
 
 export function HospitalLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [hospitalUser, setHospitalUser] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [showNotifs, setShowNotifs] = useState(false);
+
+  const pageLabel = location.pathname.includes('/appointments')
+    ? 'Appointments'
+    : location.pathname.includes('/reports')
+      ? 'Reports'
+      : 'Dashboard';
 
   const loadNotifications = useCallback(async () => {
     try {
@@ -56,20 +64,14 @@ export function HospitalLayout() {
       {/* Sidebar */}
       <aside className="hosp-sidebar" aria-label="Hospital Navigation">
         <div className="hosp-sidebar-brand">
-          <div className="hosp-sidebar-logo-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M3 21h18" />
-              <path d="M5 21V7l7-4 7 4v14" />
-              <path d="M9 21v-6h6v6" />
-            </svg>
-          </div>
-          <div className="hosp-sidebar-title-group">
-            <h2>AANCHAL</h2>
-            <span className="hosp-sidebar-badge">Hospital Portal</span>
-          </div>
+          <Link to="/hospital/dashboard" className="dash-brand-link" aria-label="AANCHAL Hospital Portal">
+            <BrandWordmark />
+          </Link>
+          <span className="hosp-sidebar-badge">HOSPITAL</span>
         </div>
 
         <nav aria-label="Main navigation" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+          <div className="hosp-nav-section-label">HOSPITAL NAVIGATION</div>
           <ul className="hosp-nav-list">
             <li>
               <NavLink
@@ -141,7 +143,11 @@ export function HospitalLayout() {
       {/* Main content frame */}
       <div className="hosp-main-area">
         <header className="hosp-top-header">
-          <h1 className="hosp-top-header-title">Clinical Care Coordination</h1>
+          <nav className="hosp-header-breadcrumb" aria-label="Breadcrumb">
+            <span className="hosp-crumb-root">AANCHAL Hospital</span>
+            <span className="hosp-crumb-sep" aria-hidden="true">/</span>
+            <span className="hosp-crumb-current">{pageLabel}</span>
+          </nav>
           <div className="hosp-top-header-right" style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
             {/* Hospital Notification Bell */}
             <div style={{ position: 'relative' }}>
@@ -265,7 +271,9 @@ export function HospitalLayout() {
         </header>
 
         <main className="hosp-content-body">
-          <Outlet context={{ hospitalUser }} />
+          <div className="hosp-command-frame">
+            <Outlet context={{ hospitalUser }} />
+          </div>
         </main>
       </div>
     </div>
