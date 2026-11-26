@@ -278,13 +278,6 @@ export function HospitalLayout() {
               )}
             </div>
 
-            <span className="hosp-org-pill">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 21h18" /><path d="M5 21V7l7-4 7 4v14" />
-              </svg>
-              <span>{hospitalUser.hospital_name} ({hospitalUser.hospital_id})</span>
-            </span>
-
             {/* Hospital Profile Menu */}
             <div style={{ position: 'relative' }}>
               <button
