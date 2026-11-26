@@ -73,9 +73,6 @@ export function CommandCenterPage() {
             <h1 id="command-center-heading" className="miora-dash-title">
               Postpartum Health <em>Intelligence</em>
             </h1>
-            <p className="miora-dash-subtitle">
-              A real-time overview of maternal wellbeing, screenings and cases requiring attention.
-            </p>
           </div>
 
           <div className="miora-dash-header-actions" ref={ctaRef}>

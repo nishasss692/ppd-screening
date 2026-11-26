@@ -331,9 +331,6 @@ export function UploadAnalyzePage({ analyzer = submitMultimodalAnalysis }) {
             <h1 id="upload-analyze-heading" className="miora-dash-title">
               Upload &amp; <em>Analyze</em>
             </h1>
-            <p className="miora-dash-subtitle">
-              Analyze previously recorded text, audio or video to assess maternal wellbeing.
-            </p>
           </div>
         </section>
 

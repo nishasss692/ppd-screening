@@ -1169,7 +1169,7 @@
   display: none;
 }
 
-/* Dashboard Header */
+/* Dashboard Header — Unified Card Box matching Reports & Analytics */
 .miora-dash-header {
   position: relative;
   z-index: 2;
@@ -1178,6 +1178,11 @@
   justify-content: space-between;
   gap: 24px;
   margin-bottom: 22px;
+  padding: 22px 28px;
+  background: linear-gradient(135deg, #ffffff 0%, #fdf5f7 100%);
+  border: 1px solid #f0dfe2;
+  border-radius: 16px;
+  box-shadow: 0 4px 18px rgba(182, 45, 91, 0.04);
 }
 
 .miora-dash-eyebrow {
@@ -1202,15 +1207,16 @@
   font-weight: 500;
   font-size: clamp(24px, 2.4vw, 32px);
   line-height: 1.2;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.01em;
+  word-spacing: 0.04em;
   color: var(--ink);
-  margin: 8px 0 6px;
+  margin: 8px 0 2px;
 }
 
 .miora-dash-title em {
-  color: #ba1e53;
-  font-style: normal;
-  font-weight: 700;
+  color: #ca2261;
+  font-style: italic;
+  font-weight: 500;
 }
 
 .miora-dash-subtitle {
