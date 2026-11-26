@@ -171,8 +171,8 @@ export function App() {
               <Route path="/upload-analyze" element={<UploadAnalyzePage />} />
               <Route path="/results" element={<ResultsPage />} />
               <Route path="/results/:motherId" element={<ResultsPage />} />
-              <Route path="/discordance" element={<Navigate to="/results" replace />} />
-              <Route path="/discordance/:motherId" element={<Navigate to="/results" replace />} />
+              <Route path="/discordance" element={<DiscordancePage />} />
+              <Route path="/discordance/:motherId" element={<DiscordancePage />} />
               <Route path="/clinical-review" element={<ClinicalReviewPage />} />
               <Route path="/clinical-review/:motherId" element={<ClinicalReviewPage />} />
               <Route path="/create-consultation-report" element={<CreateConsultationReportPage />} />
