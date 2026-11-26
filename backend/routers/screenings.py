@@ -47,7 +47,16 @@ def list_screenings(
 ) -> List[ScreeningResponse]:
     """Retrieve all recent screening records across the clinic, newest first."""
     screenings = service.get_all_screenings(db, limit=limit, skip=skip)
-    return [ScreeningResponse.model_validate(s) for s in screenings]
+    deduped = []
+    seen_mothers = set()
+    for s in screenings:
+        m_key = str(s.mother_id or "").strip().lower()
+        if m_key and m_key in seen_mothers:
+            continue
+        if m_key:
+            seen_mothers.add(m_key)
+        deduped.append(ScreeningResponse.model_validate(s))
+    return deduped
 
 
 @router.post(

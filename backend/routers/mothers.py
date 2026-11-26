@@ -181,7 +181,22 @@ def list_mothers(
 ) -> List[MotherResponse]:
     """Retrieve a paginated list of registered mothers, with optional name search."""
     mothers = service.list_mothers(db, skip=skip, limit=limit, search=search)
-    return [MotherResponse.model_validate(m) for m in mothers]
+    deduped = []
+    seen_emails = set()
+    seen_names = set()
+    for m in mothers:
+        email_key = (m.email or "").strip().lower()
+        name_key = " ".join((m.name or "").strip().lower().split())
+        if email_key and email_key in seen_emails:
+            continue
+        if name_key and name_key in seen_names:
+            continue
+        if email_key:
+            seen_emails.add(email_key)
+        if name_key:
+            seen_names.add(name_key)
+        deduped.append(MotherResponse.model_validate(m))
+    return deduped
 
 
 @router.get(

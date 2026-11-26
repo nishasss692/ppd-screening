@@ -121,6 +121,7 @@ def get_clinician_assigned_appointments(
 
     doctor_name_clean = (user.full_name or "").strip().lower()
     results = []
+    seen_appts = set()
     for cp in all_plans:
         meta: Dict[str, Any] = {}
         if cp.notes and cp.notes.strip().startswith("{"):
@@ -176,6 +177,21 @@ def get_clinician_assigned_appointments(
             else:
                 epds_interp = "Within low-distress range (<10). Routine postpartum wellness follow-up."
 
+        appt_date_val = meta.get("confirmed_date") or meta.get("requested_date") or (cp.scheduled_followup_date.strftime("%d %b %Y") if cp.scheduled_followup_date else "Flexible")
+        appt_time_val = meta.get("confirmed_time") or meta.get("requested_time") or "11:00 AM"
+        hosp_name_val = meta.get("hospital_name") or cp.referral_destination or "Apollo Women's Hospital"
+        appt_status_val = (meta.get("status") or cp.status or "scheduled").title()
+        dedup_key = (
+            str(cp.mother_id),
+            str(appt_date_val).strip().lower(),
+            str(appt_time_val).strip().lower(),
+            str(hosp_name_val).strip().lower(),
+            str(appt_status_val).strip().lower(),
+        )
+        if dedup_key in seen_appts:
+            continue
+        seen_appts.add(dedup_key)
+
         results.append({
             "id": str(cp.id),
             "motherId": str(cp.mother_id),
@@ -186,11 +202,11 @@ def get_clinician_assigned_appointments(
             "assignedDoctorName": assigned_name or user.full_name,
             "doctorId": meta.get("doctor_id") or "DR-001",
             "hospitalId": meta.get("hospital_id") or "HOSP-001",
-            "hospitalName": meta.get("hospital_name") or cp.referral_destination or "Apollo Women's Hospital",
-            "date": meta.get("confirmed_date") or meta.get("requested_date") or (cp.scheduled_followup_date.strftime("%d %b %Y") if cp.scheduled_followup_date else "Flexible"),
-            "time": meta.get("confirmed_time") or meta.get("requested_time") or "11:00 AM",
+            "hospitalName": hosp_name_val,
+            "date": appt_date_val,
+            "time": appt_time_val,
             "bookingDate": meta.get("created_at")[:10] if meta.get("created_at") else (cp.created_at.strftime("%d %b %Y") if cp.created_at else None),
-            "status": (meta.get("status") or cp.status or "scheduled").title(),
+            "status": appt_status_val,
             "consultationType": meta.get("consultation_type") or cp.intervention_type or "Telehealth Video",
             "reason": meta.get("reason"),
             "screeningRisk": screening_risk,

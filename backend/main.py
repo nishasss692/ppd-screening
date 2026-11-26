@@ -1,5 +1,6 @@
 """FastAPI backend application for the PPD Screening Research Prototype."""
 
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -62,7 +63,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Enable CORS for local and staging React development
+# Enable CORS for local, staging, and Vercel React deployments
+_extra_origins = [
+    o.strip() for o in os.getenv("ALLOWED_ORIGINS", "").split(",") if o.strip()
+]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -74,8 +78,9 @@ app.add_middleware(
         "http://127.0.0.1:8000",
         "http://localhost:4173",
         "http://127.0.0.1:4173",
+        *_extra_origins,
     ],
-    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?|https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
