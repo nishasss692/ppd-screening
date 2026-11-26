@@ -646,7 +646,11 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
         return null;
       });
       if (multimodalResult) {
-        localStorage.setItem('aanchal_multimodal_screening_result', JSON.stringify(multimodalResult));
+        const storedPayload = {
+          ...multimodalResult,
+          completed_at: multimodalResult.completed_at || multimodalResult.processed_at || new Date().toISOString(),
+        };
+        localStorage.setItem('aanchal_multimodal_screening_result', JSON.stringify(storedPayload));
       } else {
         localStorage.removeItem('aanchal_multimodal_screening_result');
       }
