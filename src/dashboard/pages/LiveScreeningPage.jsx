@@ -57,14 +57,6 @@ export function LiveScreeningPage() {
               Maternal Screening <em>Review</em>
             </h1>
           </div>
-          <div className="miora-dash-hero-photo-wrap" aria-hidden="true">
-            <img
-              src="/assets/mother-baby-header-crop.png"
-              alt=""
-              className="miora-dash-hero-photo"
-              onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
-            />
-          </div>
         </section>
 
         {/* Exactly 3 Common Screening Tabs */}

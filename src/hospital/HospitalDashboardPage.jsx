@@ -69,13 +69,6 @@ export function HospitalDashboardPage() {
             Hospital Care <em>Portal</em>
           </h2>
         </div>
-        <div className="hosp-hero-photo-wrap" aria-hidden="true">
-          <img
-            src="/assets/mother-baby-header-crop.png"
-            alt="Mother and baby"
-            className="hosp-hero-photo"
-          />
-        </div>
       </div>
 
       {error && (

@@ -123,13 +123,6 @@ export function HospitalAppointmentsPage() {
             Consultation Requests &amp; <em>Appointments</em>
           </h1>
         </div>
-        <div className="hosp-hero-photo-wrap" aria-hidden="true">
-          <img
-            src="/assets/mother-baby-header-crop.png"
-            alt="Mother and baby"
-            className="hosp-hero-photo"
-          />
-        </div>
       </div>
 
       {actionSuccess && (

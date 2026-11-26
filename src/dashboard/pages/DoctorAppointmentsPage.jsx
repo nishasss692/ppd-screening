@@ -173,14 +173,6 @@ export function DoctorAppointmentsPage() {
               <DashboardIcon name="refresh" size={14} />
               <span>Refresh</span>
             </button>
-            <div className="miora-dash-hero-photo-wrap" aria-hidden="true">
-              <img
-                src="/assets/mother-baby-header-crop.png"
-                alt=""
-                className="miora-dash-hero-photo"
-                onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
-              />
-            </div>
           </div>
         </section>
 

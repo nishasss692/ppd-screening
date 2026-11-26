@@ -147,13 +147,6 @@ export function HospitalReportsPage() {
             Doctor Consultation <em>Reports</em>
           </h1>
         </div>
-        <div className="hosp-hero-photo-wrap" aria-hidden="true">
-          <img
-            src="/assets/mother-baby-header-crop.png"
-            alt="Mother and baby"
-            className="hosp-hero-photo"
-          />
-        </div>
       </div>
 
       {/* Filter and Search Bar */}
@@ -327,9 +320,8 @@ export function HospitalReportsPage() {
                     <td>{rep.submission_date || 'Pending'}</td>
                     <td>
                       <span
-                        className={`hosp-status-pill ${
-                          rep.status === 'final' ? 'status-confirmed' : 'status-pending'
-                        }`}
+                        className={`hosp-status-pill ${rep.status === 'final' ? 'status-confirmed' : 'status-pending'
+                          }`}
                       >
                         {rep.status === 'final' ? 'Final' : 'Draft'}
                       </span>
