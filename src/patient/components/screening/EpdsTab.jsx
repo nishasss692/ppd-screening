@@ -203,6 +203,9 @@ export function EpdsTab({ onCompleted, inClinicMotherUuid, onScreeningPersisted 
 
       setSubmissionResult(resultData);
       setIsReviewMode(false);
+      try {
+        window.dispatchEvent(new CustomEvent('aanchal-screening-completed', { detail: { ts: Date.now(), source: 'epds' } }));
+      } catch (_e) { /* ignore */ }
       if (onCompleted) {
         onCompleted(resultData);
       }

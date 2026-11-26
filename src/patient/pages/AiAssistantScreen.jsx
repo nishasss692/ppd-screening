@@ -732,11 +732,14 @@ export function AiAssistantScreen() {
         // Update PatientContext screening record for patient views (/patient/reports, etc.)
         if (typeof setScreening === 'function') {
           const riskPct = Math.round((result.total_score / (result.maximum_score || 30)) * 100);
+          const now = new Date();
+          const istDate = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' });
+          const istTime = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
           setScreening((prev) => ({
             ...prev,
-            date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-            completedDateTime: `${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
-            latestDate: `${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+            date: istDate,
+            completedDateTime: `${istDate} · ${istTime}`,
+            latestDate: `${istDate} · ${istTime}`,
             riskScore: riskPct,
             riskLabel: `${result.classification} (EPDS ${result.total_score}/${result.maximum_score || 30})`,
             summary: result.clinical_significance,
@@ -744,6 +747,10 @@ export function AiAssistantScreen() {
             epdsResult: result,
           }));
         }
+
+        try {
+          window.dispatchEvent(new CustomEvent('aanchal-screening-completed', { detail: { ts: Date.now(), source: 'ai-assistant' } }));
+        } catch (_e) { /* ignore */ }
 
         // Trigger persistent sync to reload database-backed patient reports
         if (typeof reloadPatientData === 'function') {

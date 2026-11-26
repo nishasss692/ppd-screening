@@ -191,6 +191,7 @@ class PatientScreeningSummaryResponse(BaseModel):
     psychosocial_answers: Optional[Dict[str, Any]] = None
     clinical_features_snapshot: Optional[Dict[str, Any]] = None
     clinical_model_prediction: Optional[Dict[str, Any]] = None
+    multimodal_scores: Optional[Dict[str, Any]] = None
     created_at: Optional[datetime] = None
 
 

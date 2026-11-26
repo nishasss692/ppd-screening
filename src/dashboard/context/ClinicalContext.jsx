@@ -275,7 +275,14 @@ export function ClinicalProvider({ children }) {
             id: a.alert_id,
             motherId: a.mother_id,
             title: a.title,
-            time: a.created_at ? new Date(a.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'Recently',
+            time: a.created_at
+              ? new Date(a.created_at).toLocaleTimeString('en-IN', {
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  hour12: true,
+                  timeZone: 'Asia/Kolkata',
+                })
+              : 'Recently',
             severity: isCritical ? 'high' : 'low',
             alertType: a.alert_type,
             description: a.description,
@@ -295,14 +302,37 @@ export function ClinicalProvider({ children }) {
         const mappedBackendMothers = filteredBackendMothers.map((bm) => {
           const { initials, avatarInitials } = formatInitials(bm.name);
           const relatedScreening = rawBackendScreenings.find((s) => s.mother_id === bm.id);
-          const score = relatedScreening?.total_score ?? 12;
-          const riskRaw = relatedScreening?.risk_classification || (score >= 13 ? 'High' : score >= 10 ? 'Moderate' : 'Low');
+          const score = relatedScreening?.total_score ?? 0;
+          const relMm = relatedScreening?.multimodal_scores || {};
+          const relFusion = typeof relMm.fusion_score === 'number' ? relMm.fusion_score : null;
+          const riskRaw =
+            relatedScreening?.risk_classification ||
+            (relFusion !== null
+              ? relFusion >= 0.43
+                ? 'High'
+                : relFusion >= 0.33
+                  ? 'Moderate'
+                  : 'Low'
+              : relatedScreening
+                ? score >= 13
+                  ? 'High'
+                  : score >= 10
+                    ? 'Moderate'
+                    : 'Low'
+                : 'Low');
           const capRisk = riskRaw.charAt(0).toUpperCase() + riskRaw.slice(1).toLowerCase();
 
           // Link canonical friendly ID if matching Amara or existing core mother
           const isAmara = (bm.name && bm.name.toLowerCase().includes('amara')) || (bm.email && bm.email.toLowerCase() === 'patient@miora.health');
           const friendlyId = isAmara ? 'M-104' : bm.id;
           const friendlyName = isAmara ? 'Amara K.' : bm.name;
+          const istDateSrc = relatedScreening?.screening_date || bm.created_at;
+          const istDateStr = istDateSrc
+            ? new Date(istDateSrc).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })
+            : 'Today';
+          const istTimeStr = relatedScreening?.screening_date
+            ? new Date(relatedScreening.screening_date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })
+            : 'Recently';
 
           return {
             id: friendlyId,
@@ -313,20 +343,16 @@ export function ClinicalProvider({ children }) {
             phone: bm.phone || '+91-98765-43210',
             email: bm.email || '',
             postpartumWeek: isAmara ? 4 : (bm.pregnancy_type === 'twins' ? 6 : 4),
-            lastScreeningDate: relatedScreening?.screening_date
-              ? new Date(relatedScreening.screening_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-              : bm.created_at
-                ? new Date(bm.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                : 'Today',
+            lastScreeningDate: istDateStr,
             lastScreeningIso: relatedScreening?.screening_date || bm.created_at || new Date().toISOString(),
             status: capRisk === 'High' ? 'Review' : 'Completed',
             risk: capRisk,
             reasonForReview: bm.notes || 'Postpartum clinical screening',
             priority: capRisk === 'High',
-            discordanceFlag: false,
+            discordanceFlag: Boolean(relMm.disagreement_flag),
             discordanceType: null,
             epdsScore: score,
-            lastScreeningTime: 'Recently',
+            lastScreeningTime: istTimeStr,
             voiceCueSummary: 'Screening data synchronized from PostgreSQL backend.',
             textCueSummary: (() => {
               if (typeof bm.medical_history !== 'string') return 'Recorded in patient registry.';
@@ -399,8 +425,12 @@ export function ClinicalProvider({ children }) {
             postpartumWeek: matchedMother?.postpartumWeek || 4,
             status: 'Completed',
             completedAgo: 'Recently',
-            screeningDateTime: bs.screening_date ? new Date(bs.screening_date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Today',
-            processedAt: processedAt ? new Date(processedAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : null,
+            screeningDateTime: bs.screening_date
+              ? `${new Date(bs.screening_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })} · ${new Date(bs.screening_date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}`
+              : 'Today',
+            processedAt: processedAt
+              ? `${new Date(processedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })} · ${new Date(processedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}`
+              : null,
             risk: capRisk,
             modality: fusionScore !== null ? 'Multimodal (Text · Audio · Video · Clinical · EPDS)' : 'EPDS + Clinical Questionnaire',
             combinedScore: fusionScore !== null ? Number(fusionScore.toFixed(4)) : null,
@@ -498,22 +528,19 @@ export function ClinicalProvider({ children }) {
     const handleAuthChanged = () => {
       syncFromBackend();
     };
+    const handleScreeningCompleted = () => {
+      setTimeout(() => syncFromBackend(), 500);
+    };
     window.addEventListener('aanchal-auth-changed', handleAuthChanged);
+    window.addEventListener('aanchal-screening-completed', handleScreeningCompleted);
 
-    // Poll every 10 seconds for real-time appointments & notifications when doctor is active
+    // Poll every 10 seconds for real-time screenings, appointments & notifications when doctor is active
     const interval = setInterval(() => {
       try {
         const rawUser = window.localStorage?.getItem('miora_auth_user_v1');
         const user = rawUser ? JSON.parse(rawUser) : null;
         if (user && (user.role === 'doctor' || user.role === 'admin')) {
-          Promise.allSettled([fetchDoctorNotifications(), fetchClinicianAppointments()]).then(([nRes, aRes]) => {
-            if (nRes.status === 'fulfilled' && Array.isArray(nRes.value)) {
-              setDoctorNotifications(nRes.value);
-            }
-            if (aRes.status === 'fulfilled' && Array.isArray(aRes.value)) {
-              setAppointments(aRes.value);
-            }
-          });
+          syncFromBackend();
         }
       } catch {
         // ignore polling error
@@ -522,6 +549,7 @@ export function ClinicalProvider({ children }) {
 
     return () => {
       window.removeEventListener('aanchal-auth-changed', handleAuthChanged);
+      window.removeEventListener('aanchal-screening-completed', handleScreeningCompleted);
       clearInterval(interval);
     };
   }, [syncFromBackend]);
@@ -667,7 +695,7 @@ export function ClinicalProvider({ children }) {
   }) => {
     const mother = mothers.find((m) => m.id === motherId);
     const cap = capturedModalities || { text: true, voice: false, video: false };
-    const nowTime = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    const nowTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
     const score = preliminaryScore ?? Number(((Number(epdsEquivalent) || 6) / 20).toFixed(2));
     const newScreening = {
       id: `SCR-${248 + (screenings.length - INITIAL_SCREENINGS.length)}`,

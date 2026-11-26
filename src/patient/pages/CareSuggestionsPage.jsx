@@ -131,17 +131,29 @@ export function CareSuggestionsPage() {
 
                 {/* Clinician Care Plan Guidance */}
                 {carePlan?.clinicianPlan?.notes &&
-                  !String(carePlan.clinicianPlan.notes).includes('patient_appointment_request') && (
-                  <div className="care-guidance-callout">
-                    <div className="care-callout-head">
-                      <PatientIcon name="sparkles" size={15} />
-                      <span>Personalised Care Plan Guidance</span>
-                    </div>
-                    <p className="care-callout-text">
-                      {carePlan.clinicianPlan.notes}
-                    </p>
-                  </div>
-                )}
+                  (() => {
+                    const rawNotes = String(carePlan.clinicianPlan.notes);
+                    // Hide if the notes blob is appointment/JSON metadata
+                    try {
+                      const parsed = JSON.parse(rawNotes);
+                      if (parsed && typeof parsed === 'object' && (parsed.request_type || parsed.patient_appointment_request)) {
+                        return null;
+                      }
+                    } catch { /* plain text — render it */ }
+                    if (rawNotes.includes('patient_appointment_request') || rawNotes.startsWith('{')) return null;
+                    return (
+                      <div className="care-guidance-callout">
+                        <div className="care-callout-head">
+                          <PatientIcon name="sparkles" size={15} />
+                          <span>Personalised Care Plan Guidance</span>
+                        </div>
+                        <p className="care-callout-text">
+                          {rawNotes}
+                        </p>
+                      </div>
+                    );
+                  })()
+                }
 
                 {/* Clinician Review Notes */}
                 {carePlan?.clinicianReview && (

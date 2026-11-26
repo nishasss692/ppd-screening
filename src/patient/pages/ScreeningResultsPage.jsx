@@ -83,18 +83,12 @@ export function ScreeningResultsPage() {
 
     if (screening?.isPending) return null;
 
-    // Check localStorage for saved screening results
-    try {
-      const cmRaw = localStorage.getItem('aanchal_clinical_model_prediction');
-      if (cmRaw) {
-        const cm = JSON.parse(cmRaw);
-        if (cm?.predicted_risk_probability !== undefined && cm?.predicted_risk_probability !== null) {
-          const prob = Number(cm.predicted_risk_probability);
-          return Math.round(prob <= 1 ? prob * 100 : prob);
-        }
-      }
-    } catch (e) { }
+    // Prefer live PostgreSQL-synced screening score when available
+    if (screening?.id && !String(screening.id).startsWith('SCR-') && screening?.riskScore != null) {
+      return Number(screening.riskScore);
+    }
 
+    // Check localStorage for saved screening results (multimodal fusion first)
     try {
       const mmRaw = localStorage.getItem('aanchal_multimodal_screening_result');
       if (mmRaw) {
@@ -102,6 +96,17 @@ export function ScreeningResultsPage() {
         if (mm?.fusion_score !== undefined && mm?.fusion_score !== null) {
           const fs = Number(mm.fusion_score);
           return Math.round(fs <= 1 ? fs * 100 : fs);
+        }
+      }
+    } catch (e) { }
+
+    try {
+      const cmRaw = localStorage.getItem('aanchal_clinical_model_prediction');
+      if (cmRaw) {
+        const cm = JSON.parse(cmRaw);
+        if (cm?.predicted_risk_probability !== undefined && cm?.predicted_risk_probability !== null) {
+          const prob = Number(cm.predicted_risk_probability);
+          return Math.round(prob <= 1 ? prob * 100 : prob);
         }
       }
     } catch (e) { }
@@ -258,6 +263,11 @@ export function ScreeningResultsPage() {
                 <span className="results-risk-label-pill">
                   {riskPercentage >= 43 ? 'High Risk Category' : riskPercentage >= 33 ? 'Moderate Risk Category' : 'Low Risk Category'}
                 </span>
+                {screening?.completedDateTime && (
+                  <p style={{ fontSize: '12px', color: 'var(--patient-subtle)', marginTop: '8px', marginBottom: 0 }}>
+                    Completed: {screening.completedDateTime}
+                  </p>
+                )}
               </>
             ) : (
               <div style={{ textAlign: 'center', padding: '16px 0' }}>

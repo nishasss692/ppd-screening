@@ -685,6 +685,10 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
     ]);
 
     setSessionPhase('completed');
+    // Notify PatientContext to re-fetch backend screening data with updated risk score
+    try {
+      window.dispatchEvent(new CustomEvent('aanchal-screening-completed', { detail: { ts: Date.now() } }));
+    } catch (_e) { /* ignore */ }
   };
 
   // Read Prompt Aloud

@@ -1683,9 +1683,8 @@ export function SupportSpacePage({ initialTab = 'community' }) {
 
                   <div className="letter-footer">
                     <span
-                      className={`letter-privacy-indicator ${
-                        letter.shared_with_family ? 'shared' : ''
-                      }`}
+                      className={`letter-privacy-indicator ${letter.shared_with_family ? 'shared' : ''
+                        }`}
                     >
                       <PatientIcon
                         name={letter.shared_with_family ? 'users' : 'lock'}

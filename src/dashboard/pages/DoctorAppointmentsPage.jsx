@@ -128,10 +128,10 @@ export function DoctorAppointmentsPage() {
       setSelectedAppt((prev) =>
         prev
           ? {
-              ...prev,
-              status: res.appointmentStatus || 'Completed',
-              clinicalAssessment: res.clinicalAssessment,
-            }
+            ...prev,
+            status: res.appointmentStatus || 'Completed',
+            clinicalAssessment: res.clinicalAssessment,
+          }
           : null
       );
       if (refreshBackendData) {
@@ -485,7 +485,7 @@ export function DoctorAppointmentsPage() {
                       Transferred AANCHAL Screening Results
                     </h3>
                     <div style={{ fontSize: '0.8rem', color: '#825f66', marginTop: '0.2rem' }}>
-                      Screening Date: {selectedAppt.screeningDate || '17 Nov 2026'} &bull; Screening ID: {selectedAppt.screeningId ? `${selectedAppt.screeningId.slice(0, 8)}...` : 'SCR-4B4DC8B4'}
+                      Screening Date: {selectedAppt.screeningDate || '—'} &bull; Screening ID: {selectedAppt.screeningId ? `${selectedAppt.screeningId.slice(0, 8)}...` : 'SCR-4B4DC8B4'}
                     </div>
                   </div>
                   <span

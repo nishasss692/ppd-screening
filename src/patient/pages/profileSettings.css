@@ -328,6 +328,7 @@
 }
 
 @media (max-width: 640px) {
+
   .patient-profile-card,
   .patient-settings-card {
     padding: 20px 16px;
