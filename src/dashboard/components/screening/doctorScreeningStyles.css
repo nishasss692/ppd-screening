@@ -84,7 +84,137 @@
 }
 
 .doc-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
   margin-bottom: 16px;
+}
+
+/* Maternal Screening Review Search Bar */
+.doc-search-box-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.doc-search-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1.5px solid #ebdcd7;
+  border-radius: 9999px;
+  padding: 6px 14px 6px 12px;
+  gap: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+}
+
+.doc-search-input-group:focus-within {
+  border-color: #ba1e53;
+  box-shadow: 0 0 0 3px rgba(186, 30, 83, 0.12);
+}
+
+.doc-search-icon {
+  display: flex;
+  align-items: center;
+  color: #a38c96;
+}
+
+.doc-search-name-input {
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: 13.5px;
+  color: #2b1b22;
+  background: transparent;
+  width: 230px;
+}
+
+.doc-search-name-input::placeholder {
+  color: #a38c96;
+}
+
+.doc-search-clear-inline {
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  color: #a38c96;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: color 0.15s ease;
+}
+
+.doc-search-clear-inline:hover {
+  color: #ba1e53;
+}
+
+.doc-clear-cohort-btn {
+  background: #fdf2f5;
+  color: #ba1e53;
+  border: 1px solid #f2d5de;
+  border-radius: 9999px;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.doc-clear-cohort-btn:hover {
+  background: #fce7ed;
+  border-color: #ba1e53;
+}
+
+.doc-search-status-cell {
+  text-align: center;
+  padding: 32px 20px !important;
+  color: #66535c;
+  font-size: 13.5px;
+}
+
+.doc-search-status-cell.is-error {
+  color: #be123c;
+  background: #fff1f2;
+}
+
+.doc-search-status-cell.is-empty {
+  background: #faf6f8;
+}
+
+.doc-empty-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #2b1b22;
+  margin-bottom: 4px;
+}
+
+.doc-empty-sub {
+  color: #8d737e;
+  font-size: 13px;
+  margin: 0 0 14px 0;
+}
+
+.doc-search-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(186, 30, 83, 0.2);
+  border-top-color: #ba1e53;
+  border-radius: 50%;
+  animation: docSearchSpin 0.6s linear infinite;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+@keyframes docSearchSpin {
+  to { transform: rotate(360deg); }
 }
 
 .doc-table-container {

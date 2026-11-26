@@ -15,13 +15,12 @@ export const Hero = () => `
       <div class="hero-visual">
         <div class="hero-circle" aria-hidden="true"></div>
         <picture>
-          <source srcset="/assets/hero-mother.avif" type="image/avif" />
-          <source srcset="/assets/hero-mother.webp" type="image/webp" />
+          <source srcset="/assets/mother-baby-emblem.webp" type="image/webp" />
           <img
-            src="/assets/hero-mother.png"
-            alt="Mother holding her baby in a gentle, warm moment"
-            width="474"
-            height="394"
+            src="/assets/mother-baby-emblem.png"
+            alt="AANCHAL Mother holding baby illustration"
+            width="634"
+            height="781"
             loading="eager"
             fetchpriority="high"
             decoding="async"

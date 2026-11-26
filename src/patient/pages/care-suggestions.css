@@ -673,6 +673,135 @@
   white-space: pre-line;
 }
 
+.care-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 20px;
+  margin-top: 6px;
+}
+
+.care-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fdf7f9;
+  border: 1px solid #f5e2e8;
+}
+
+.care-detail-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #8a7880;
+}
+
+.care-detail-value {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #271218;
+}
+
+.care-structured-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.care-structured-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.care-section-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #8a5668;
+}
+
+.care-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.care-guidance-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #fdeef2;
+  border: 1px solid #f4cfd9;
+  color: #9e1b4b;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.care-milestones-list {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.care-milestone-item {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #271218;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #fdf7f9;
+  border: 1px solid #f5e2e8;
+}
+
+.care-milestone-time {
+  flex-shrink: 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #ba1e53;
+  background: #fdeef2;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.care-review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.care-review-risk-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #fdeef2;
+  border: 1px solid #f1c6d3;
+  color: #ba1e53;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .care-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .care-practices-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

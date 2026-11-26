@@ -1,27 +1,58 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useClinicalData } from '../../context/ClinicalContext.jsx';
 import { DashboardIcon } from '../DashboardIcon.jsx';
 import { RiskBadge, StatusBadge } from '../Badges.jsx';
 import { ExportReportModal } from '../ResultsModals.jsx';
+import { MaternalScreeningSearchBar } from './MaternalScreeningSearchBar.jsx';
 
-export function DoctorResultsReportsTab({ defaultMotherId }) {
+export function DoctorResultsReportsTab({
+  defaultMotherId,
+  selectedMotherId: propSelectedMotherId,
+  onSelectMother,
+  searchQuery = '',
+  onSearchChange = () => {},
+  onClearSearch = () => {},
+  searchResults = null,
+  isSearching = false,
+  searchError = null,
+  onRetrySearch = () => {},
+}) {
   const { mothers, screenings } = useClinicalData();
 
-  const [selectedMotherId, setSelectedMotherId] = useState(
+  const [internalSelectedMotherId, setInternalSelectedMotherId] = useState(
     defaultMotherId || (mothers.find((m) => m.id === 'M-108') ? 'M-108' : mothers[0]?.id || 'M-104')
   );
   const [exportOpen, setExportOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
-  const activeMother = useMemo(
-    () => mothers.find((m) => m.id === selectedMotherId) || mothers[0] || null,
-    [mothers, selectedMotherId]
-  );
+  const selectedMotherId = propSelectedMotherId || internalSelectedMotherId;
+  const setSelectedMotherId = (id) => {
+    setInternalSelectedMotherId(id);
+    if (onSelectMother) onSelectMother(id);
+  };
 
-  const activeScreening = useMemo(
-    () => screenings.find((s) => s.motherId === selectedMotherId) || null,
-    [screenings, selectedMotherId]
-  );
+  useEffect(() => {
+    if (defaultMotherId) {
+      setInternalSelectedMotherId(defaultMotherId);
+    }
+  }, [defaultMotherId]);
+
+  const displayedMothers = useMemo(() => {
+    return searchResults !== null ? searchResults : mothers;
+  }, [searchResults, mothers]);
+
+  const activeMother = useMemo(() => {
+    const pool = searchResults !== null ? [...searchResults, ...mothers] : mothers;
+    return pool.find((m) => m.id === selectedMotherId || m.rawUuid === selectedMotherId) || pool[0] || null;
+  }, [searchResults, mothers, selectedMotherId]);
+
+  const activeScreening = useMemo(() => {
+    return (
+      activeMother?.screening ||
+      screenings.find((s) => s.motherId === selectedMotherId || s.motherId === activeMother?.rawUuid) ||
+      null
+    );
+  }, [screenings, selectedMotherId, activeMother]);
 
   const handleExport = () => {
     setExportOpen(true);
@@ -43,7 +74,20 @@ export function DoctorResultsReportsTab({ defaultMotherId }) {
             <h2 style={{ margin: 0, fontSize: '16px', color: '#2b1b22', fontWeight: 600 }}>
               Authorized Patient Assessment History
             </h2>
+            {searchResults !== null && (
+              <span style={{ fontSize: 12, color: '#8d737e', marginTop: 2, display: 'inline-block' }}>
+                Showing {searchResults.length} matching {searchResults.length === 1 ? 'patient' : 'patients'} for &ldquo;{searchQuery}&rdquo;
+              </span>
+            )}
           </div>
+          <MaternalScreeningSearchBar
+            searchQuery={searchQuery}
+            onSearchChange={onSearchChange}
+            onClearSearch={onClearSearch}
+            isSearching={isSearching}
+            hasActiveSearch={searchResults !== null || Boolean(searchQuery)}
+            matchingCount={searchResults ? searchResults.length : undefined}
+          />
         </div>
 
         <div className="doc-table-container">
@@ -60,15 +104,59 @@ export function DoctorResultsReportsTab({ defaultMotherId }) {
               </tr>
             </thead>
             <tbody>
-              {mothers.map((m) => {
-                const isSelected = m.id === selectedMotherId;
-                const mScreen = screenings.find((s) => s.motherId === m.id) || null;
+              {isSearching && displayedMothers.length === 0 && (
+                <tr>
+                  <td colSpan="7" className="doc-search-status-cell">
+                    <span className="doc-search-spinner" />
+                    <span>Searching patient records for &ldquo;{searchQuery}&rdquo;...</span>
+                  </td>
+                </tr>
+              )}
+
+              {searchError && displayedMothers.length === 0 && (
+                <tr>
+                  <td colSpan="7" className="doc-search-status-cell is-error">
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                      <span>{searchError}</span>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button type="button" className="doc-clear-cohort-btn" onClick={onRetrySearch}>
+                          Retry
+                        </button>
+                        <button type="button" className="doc-clear-cohort-btn" onClick={onClearSearch}>
+                          Restore Cohort
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )}
+
+              {!isSearching && searchResults !== null && searchResults.length === 0 && !searchError && (
+                <tr>
+                  <td colSpan="7" className="doc-search-status-cell is-empty">
+                    <div className="doc-empty-title">No mothers found</div>
+                    <div className="doc-empty-sub">
+                      No registered patients matching &ldquo;{searchQuery}&rdquo; were found.
+                    </div>
+                    <button type="button" className="doc-clear-cohort-btn" onClick={onClearSearch}>
+                      Restore Patient Cohort
+                    </button>
+                  </td>
+                </tr>
+              )}
+
+              {displayedMothers.map((m) => {
+                const isSelected = m.id === selectedMotherId || m.rawUuid === selectedMotherId;
+                const mScreen =
+                  m.screening ||
+                  screenings.find((s) => s.motherId === m.id || s.motherId === m.rawUuid) ||
+                  null;
                 const score = mScreen?.epdsEquivalent ?? m.epdsScore ?? 11;
                 const cmDone = mScreen?.clinicalModelPrediction?.status === 'completed';
-                const fusionDone = mScreen?.fusionStatus === 'completed';
+                const fusionDone = mScreen?.fusionStatus === 'completed' || m.fusionStatus === 'completed';
                 return (
                   <tr
-                    key={m.id}
+                    key={m.id || m.rawUuid}
                     className={`doc-cohort-row ${isSelected ? 'is-active-row' : ''}`}
                     onClick={() => setSelectedMotherId(m.id)}
                   >
@@ -76,8 +164,8 @@ export function DoctorResultsReportsTab({ defaultMotherId }) {
                       <strong>{m.name}</strong>
                       <span className="doc-pat-id">({m.id})</span>
                     </td>
-                    <td>Week {m.postpartumWeek}</td>
-                    <td>{mScreen?.screeningDateTime || m.lastScreeningDate}</td>
+                    <td>Week {m.postpartumWeek || m.postpartum_week || '6'}</td>
+                    <td>{mScreen?.screeningDateTime || m.lastScreeningDate || m.screeningDate || 'Recent'}</td>
                     <td>
                       <span className="doc-epds-score-pill">
                         <strong>{score}</strong> / 30
@@ -87,7 +175,7 @@ export function DoctorResultsReportsTab({ defaultMotherId }) {
                       {fusionDone ? (
                         <span className="ai-status-pill is-completed">
                           <span className="ai-status-dot" />
-                          <span>Fusion: {Math.round((mScreen.combinedScore || 0) * 100)}%</span>
+                          <span>Fusion: {typeof mScreen?.combinedScore === 'number' ? `${Math.round(mScreen.combinedScore * 100)}%` : 'Completed'}</span>
                         </span>
                       ) : cmDone ? (
                         <span className="ai-status-pill is-completed">
@@ -102,7 +190,7 @@ export function DoctorResultsReportsTab({ defaultMotherId }) {
                       )}
                     </td>
                     <td>
-                      <StatusBadge status={m.status} />
+                      <StatusBadge status={m.status || m.sessionStatus || 'Completed'} />
                     </td>
                     <td>
                       <button
