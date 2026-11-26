@@ -154,6 +154,9 @@ export function PatientReportsPage() {
     const seenKeys = new Set();
     return (consultations || []).filter((appt) => {
       if (!appt) return false;
+      const st = String(appt.status || '').toLowerCase();
+      // Only show appointments confirmed by the hospital or doctor
+      if (!['confirmed', 'scheduled', 'completed'].includes(st)) return false;
       const idKey = appt.id ? String(appt.id) : '';
       const doc = appt.assigned_doctor_name || appt.requested_doctor_name || appt.doctor_name || appt.doctorName || '';
       const dt = appt.confirmed_date || appt.requested_date || appt.date || '';
@@ -596,15 +599,6 @@ export function PatientReportsPage() {
                   Doctor-finalized clinical reviews, consultation summaries, medication instructions, and care guidance.
                 </p>
               </div>
-
-              <button
-                type="button"
-                className="patient-btn-primary"
-                onClick={() => navigate('/patient/find-doctor')}
-              >
-                <PatientIcon name="calendar" size={14} />
-                <span>Book Consultation</span>
-              </button>
             </div>
 
             {/* Doctor-Finalized Clinical Review (from Clinical Review page) */}
@@ -858,30 +852,31 @@ export function PatientReportsPage() {
                   My Appointments
                 </h2>
                 <p className="reports-card-sub">
-                  Your scheduled, pending, and completed consultations with clinicians and hospitals.
+                  Confirmed consultations approved by your hospital or doctor.
                 </p>
               </div>
               <button
                 type="button"
                 className="patient-btn-primary"
-                onClick={() => navigate('/patient/connect-doctor')}
+                onClick={() => navigate('/patient/find-doctor')}
               >
-                <PatientIcon name="calendar" size={15} />
-                <span>Book Consultation</span>
+                <PatientIcon name="stethoscope" size={15} />
+                <span>Find a Doctor &rarr;</span>
               </button>
             </div>
 
             {uniqueAppointments.length === 0 ? (
               <div className="reports-empty-content" style={{ padding: '32px 16px', textAlign: 'center' }}>
                 <p style={{ margin: '0 0 14px', color: 'var(--patient-subtle)' }}>
-                  You do not have any appointments scheduled yet.
+                  No confirmed appointments yet. Confirmed bookings from your hospital or doctor will appear here.
                 </p>
                 <button
                   type="button"
-                  className="patient-btn-secondary"
-                  onClick={() => navigate('/patient/connect-doctor')}
+                  className="patient-btn-primary"
+                  onClick={() => navigate('/patient/find-doctor')}
                 >
-                  Find a Doctor &amp; Book
+                  <PatientIcon name="stethoscope" size={15} />
+                  <span>Find a Doctor &rarr;</span>
                 </button>
               </div>
             ) : (
@@ -961,9 +956,9 @@ export function PatientReportsPage() {
                         <button
                           type="button"
                           className="patient-btn-secondary"
-                          onClick={() => navigate('/patient/connect-doctor')}
+                          onClick={() => navigate('/patient/find-doctor')}
                         >
-                          Manage / Rebook
+                          Find a Doctor
                         </button>
                       </div>
                     </div>
