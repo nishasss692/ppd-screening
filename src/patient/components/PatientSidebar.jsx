@@ -131,7 +131,9 @@ export function PatientSidebar({
           <ul className="dash-sidebar-list">
             {PATIENT_SIDEBAR_ITEMS.map((item) => {
               const extraActive = item.matchPaths?.some((p) =>
-                location.pathname.startsWith(p)
+                p === '/patient'
+                  ? location.pathname === '/patient' || location.pathname === '/patient/'
+                  : location.pathname === p || location.pathname.startsWith(`${p}/`)
               );
               return (
                 <li key={item.to} className="dash-sidebar-item">

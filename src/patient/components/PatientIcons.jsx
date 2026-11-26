@@ -73,6 +73,7 @@ export function PatientIcon({ name, size = 18, color = 'currentColor', className
       );
     case 'medical-history':
     case 'clipboard':
+    case 'clipboard-check':
     case 'file-text':
       return (
         <svg {...props}>
