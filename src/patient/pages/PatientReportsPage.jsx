@@ -155,8 +155,8 @@ export function PatientReportsPage() {
     return (consultations || []).filter((appt) => {
       if (!appt) return false;
       const st = String(appt.status || '').toLowerCase();
-      // Only show appointments confirmed by the hospital or doctor
-      if (!['confirmed', 'scheduled', 'completed'].includes(st)) return false;
+      // Exclude declined/cancelled; show confirmed and pending confirmation appointments
+      if (st.includes('cancel') || st.includes('declin') || st.includes('reject')) return false;
       const idKey = appt.id ? String(appt.id) : '';
       const doc = appt.assigned_doctor_name || appt.requested_doctor_name || appt.doctor_name || appt.doctorName || '';
       const dt = appt.confirmed_date || appt.requested_date || appt.date || '';
@@ -852,7 +852,7 @@ export function PatientReportsPage() {
                   My Appointments
                 </h2>
                 <p className="reports-card-sub">
-                  Confirmed consultations approved by your hospital or doctor.
+                  Confirmed consultations and pending appointment requests awaiting hospital or doctor confirmation.
                 </p>
               </div>
               <button
@@ -867,33 +867,28 @@ export function PatientReportsPage() {
 
             {uniqueAppointments.length === 0 ? (
               <div className="reports-empty-content" style={{ padding: '32px 16px', textAlign: 'center' }}>
-                <p style={{ margin: '0 0 14px', color: 'var(--patient-subtle)' }}>
-                  No confirmed appointments yet. Confirmed bookings from your hospital or doctor will appear here.
+                <p style={{ margin: 0, color: 'var(--patient-subtle)' }}>
+                  No confirmed or pending appointments yet. Use Find a Doctor above to request a consultation.
                 </p>
-                <button
-                  type="button"
-                  className="patient-btn-primary"
-                  onClick={() => navigate('/patient/find-doctor')}
-                >
-                  <PatientIcon name="stethoscope" size={15} />
-                  <span>Find a Doctor &rarr;</span>
-                </button>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 12 }}>
                 {uniqueAppointments.map((appt) => {
                   const statusRaw = String(appt.status || 'pending').toLowerCase();
+                  const isConfirmed = ['confirmed', 'scheduled', 'completed'].includes(statusRaw);
                   const statusLabel =
-                    statusRaw === 'rescheduled'
-                      ? 'Time Proposed'
-                      : statusRaw.charAt(0).toUpperCase() + statusRaw.slice(1);
+                    statusRaw === 'rescheduled' || statusRaw === 'new time proposed'
+                      ? 'New Time Proposed'
+                      : statusRaw === 'pending' || statusRaw === 'requested'
+                        ? 'Pending Confirmation'
+                        : statusRaw.charAt(0).toUpperCase() + statusRaw.slice(1);
                   const doctorName =
                     appt.assigned_doctor_name ||
                     appt.requested_doctor_name ||
                     appt.doctor_name ||
                     appt.doctorName ||
                     'Assigned Specialist';
-                  const hospitalName = appt.hospital_name || appt.hospitalName || appt.location || '';
+                  const hospitalName = appt.hospital_name || appt.hospitalName || appt.location || appt.clinic || '';
                   const dateLabel = appt.confirmed_date || appt.requested_date || appt.date || 'Date TBD';
                   const timeLabel = appt.confirmed_time || appt.requested_time || appt.time || '';
                   const modeLabel = appt.type || appt.mode || 'Consultation';
@@ -908,59 +903,45 @@ export function PatientReportsPage() {
                         padding: '16px 20px',
                         background: '#ffffff',
                         display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'flex-start',
-                        gap: 16,
-                        flexWrap: 'wrap',
+                        flexDirection: 'column',
+                        gap: 6,
                       }}
                     >
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                          <span
-                            style={{
-                              fontSize: 11.5,
-                              fontWeight: 700,
-                              padding: '3px 10px',
-                              borderRadius: 999,
-                              background: statusRaw === 'confirmed' ? '#ecfdf5' : '#fdf0f4',
-                              color: statusRaw === 'confirmed' ? '#047857' : '#ba1e53',
-                              border: `1px solid ${statusRaw === 'confirmed' ? '#a7f3d0' : '#f3c6d5'}`,
-                            }}
-                          >
-                            {statusLabel}
-                          </span>
-                          <span style={{ fontSize: 12.5, color: 'var(--patient-subtle)', fontWeight: 500 }}>
-                            {modeLabel}
-                          </span>
-                        </div>
-                        <strong style={{ fontSize: 16, color: 'var(--patient-ink)' }}>{doctorName}</strong>
-                        {hospitalName && (
-                          <span style={{ fontSize: 13, color: 'var(--patient-subtle)' }}>{hospitalName}</span>
-                        )}
-                        <div style={{ fontSize: 13.5, color: 'var(--patient-ink)', marginTop: 2 }}>
-                          {dateLabel}{timeLabel ? ` · ${timeLabel}` : ''}
-                        </div>
-                        {reasonText && (
-                          <div style={{ fontSize: 12.5, color: 'var(--patient-subtle)' }}>
-                            Reason: {reasonText}
-                          </div>
-                        )}
-                        {statusRaw === 'rescheduled' && appt.proposed_date && (
-                          <div style={{ fontSize: 12.5, color: '#9d174d', fontWeight: 600 }}>
-                            Proposed Time: {appt.proposed_date}{appt.proposed_time ? ` · ${appt.proposed_time}` : ''}
-                          </div>
-                        )}
-                      </div>
-
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                        <button
-                          type="button"
-                          className="patient-btn-secondary"
-                          onClick={() => navigate('/patient/find-doctor')}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span
+                          style={{
+                            fontSize: 11.5,
+                            fontWeight: 700,
+                            padding: '3px 10px',
+                            borderRadius: 999,
+                            background: isConfirmed ? '#ecfdf5' : '#fef3c7',
+                            color: isConfirmed ? '#047857' : '#92400e',
+                            border: `1px solid ${isConfirmed ? '#a7f3d0' : '#fde68a'}`,
+                          }}
                         >
-                          Find a Doctor
-                        </button>
+                          {statusLabel}
+                        </span>
+                        <span style={{ fontSize: 12.5, color: 'var(--patient-subtle)', fontWeight: 500 }}>
+                          {modeLabel}
+                        </span>
                       </div>
+                      <strong style={{ fontSize: 16, color: 'var(--patient-ink)' }}>{doctorName}</strong>
+                      {hospitalName && (
+                        <span style={{ fontSize: 13, color: 'var(--patient-subtle)' }}>{hospitalName}</span>
+                      )}
+                      <div style={{ fontSize: 13.5, color: 'var(--patient-ink)', marginTop: 2 }}>
+                        {dateLabel}{timeLabel ? ` · ${timeLabel}` : ''}
+                      </div>
+                      {reasonText && (
+                        <div style={{ fontSize: 12.5, color: 'var(--patient-subtle)' }}>
+                          Reason: {reasonText}
+                        </div>
+                      )}
+                      {(statusRaw === 'rescheduled' || statusRaw === 'new time proposed') && (appt.proposed_date || appt.proposedDate) && (
+                        <div style={{ fontSize: 12.5, color: '#9d174d', fontWeight: 600 }}>
+                          Proposed Time: {appt.proposed_date || appt.proposedDate}{(appt.proposed_time || appt.proposedTime) ? ` · ${appt.proposed_time || appt.proposedTime}` : ''}
+                        </div>
+                      )}
                     </div>
                   );
                 })}

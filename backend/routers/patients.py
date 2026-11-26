@@ -1436,24 +1436,6 @@ def get_patient_appointments(
                 )
             )
 
-    # If new account with no appointments yet, provide the initial baseline consultation
-    if not results:
-        results = [
-            AppointmentResponse(
-                id="c-initial-101",
-                doctorName="Dr. Priya Mehta",
-                role="Perinatal Psychiatry",
-                date="20 Nov 2026",
-                time="11:00 AM",
-                status="Confirmed",
-                type="Telehealth Video",
-                clinic="Apollo Women's Hospital",
-                summary="Initial post-registration baseline assessment with perinatal mental health specialist.",
-                hospitalId="HOSP-001",
-                hospitalName="Apollo Women's Hospital",
-            )
-        ]
-
     return results
 
 
