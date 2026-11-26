@@ -98,14 +98,31 @@ export function HospitalAppointmentsPage() {
   };
 
   return (
-    <div>
-      <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 24, fontWeight: 700, color: 'var(--hosp-primary)', margin: '0 0 6px 0' }}>
-          Consultation Requests &amp; Appointments
-        </h2>
-        <p style={{ color: 'var(--hosp-text-muted)', fontSize: 14.5, margin: 0 }}>
-          Review incoming maternal consultation requests, assign available specialists, and schedule sessions.
-        </p>
+    <div className="hosp-command-frame">
+      {/* Breadcrumb Bar */}
+      <div className="hosp-breadcrumb-bar">
+        <span className="hosp-breadcrumb-link">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M3 10.5L12 3l9 7.5V20a1.5 1.5 0 0 1-1.5 1.5H4.5A1.5 1.5 0 0 1 3 20v-9.5z" />
+            <path d="M9.5 21v-7h5v7" />
+          </svg>
+          <span>Home</span>
+        </span>
+        <span className="hosp-breadcrumb-sep" aria-hidden="true">&rsaquo;</span>
+        <span className="hosp-breadcrumb-current">Appointments</span>
+      </div>
+
+      {/* Hero Header Card */}
+      <div className="hosp-hero-card">
+        <div>
+          <div className="hosp-eyebrow">
+            <span>APPOINTMENT COORDINATION</span>
+            <span className="hosp-eyebrow-line" aria-hidden="true" />
+          </div>
+          <h1 className="hosp-hero-title">
+            Consultation Requests &amp; <em>Appointments</em>
+          </h1>
+        </div>
       </div>
 
       {actionSuccess && (

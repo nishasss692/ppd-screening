@@ -51,9 +51,10 @@ export function LiveScreeningPage() {
           <div className="miora-dash-header-copy">
             <div className="miora-dash-eyebrow">
               <span>PATIENT SCREENING REVIEW</span>
+              <span className="miora-dash-eyebrow-line" aria-hidden="true" />
             </div>
             <h1 id="live-screening-heading" className="miora-dash-title">
-              Maternal Screening Review
+              Maternal Screening <em>Review</em>
             </h1>
           </div>
         </section>

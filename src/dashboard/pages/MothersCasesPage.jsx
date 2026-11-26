@@ -201,7 +201,7 @@ export function MothersCasesPage() {
             </div>
           </div>
 
-          <div className="miora-dash-header-actions">
+          <div className="miora-dash-header-actions" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <button
               type="button"
               className="miora-cta-primary"

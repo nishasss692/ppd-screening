@@ -133,9 +133,10 @@ export function DiscordancePage() {
           <div className="miora-dash-header-copy">
             <div className="miora-dash-eyebrow">
               <span>DISCORDANCE ANALYSIS</span>
+              <span className="miora-dash-eyebrow-line" aria-hidden="true" />
             </div>
             <h1 id="discordance-page-heading" className="miora-dash-title">
-              Cross-Modal Discordance
+              Cross-Modal <em>Discordance</em>
             </h1>
           </div>
 

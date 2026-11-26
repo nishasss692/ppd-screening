@@ -73,12 +73,9 @@ export function CommandCenterPage() {
             <h1 id="command-center-heading" className="miora-dash-title">
               Postpartum Health <em>Intelligence</em>
             </h1>
-            <p className="miora-dash-subtitle">
-              A real-time overview of maternal wellbeing, screenings and cases requiring attention.
-            </p>
           </div>
 
-          <div className="miora-dash-header-actions" ref={ctaRef}>
+          <div className="miora-dash-header-actions" ref={ctaRef} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <button
               type="button"
               className="miora-cta-primary"

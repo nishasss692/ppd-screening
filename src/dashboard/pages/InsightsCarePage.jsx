@@ -266,9 +266,10 @@ export function InsightsCarePage() {
           <div className="miora-dash-header-copy">
             <div className="miora-dash-eyebrow">
               <span>INSIGHTS &amp; CARE</span>
+              <span className="miora-dash-eyebrow-line" aria-hidden="true" />
             </div>
             <h1 id="insights-care-heading" className="miora-dash-title">
-              Personalized Insights &amp; Care
+              Personalized Insights &amp; <em>Care</em>
             </h1>
           </div>
 

@@ -145,33 +145,32 @@ export function DoctorAppointmentsPage() {
   };
 
   return (
-    <div className="miora-dash-layout">
-      <main className="miora-dash-main" aria-label="Assigned Appointments & Consultations">
-        {/* Page Header */}
-        <section className="miora-dash-header">
-          <div className="miora-dash-header-left">
+    <div className="miora-command-shell">
+      <div className="miora-command-frame" aria-label="Assigned Appointments & Consultations">
+        {/* Page Header matching Maternal Screening Review */}
+        <section className="miora-dash-header" aria-labelledby="appointments-heading">
+          <div className="miora-dash-header-copy">
             <div className="miora-dash-eyebrow">
-              <span className="miora-badge-subtle">DR. PRIYA MEHTA · CLINICAL WORKSPACE</span>
-              <span className="miora-live-indicator" title="Connected to PostgreSQL backend">
+              <span>{String(doctorName || 'CLINICIAN').toUpperCase()} &middot; CLINICAL WORKSPACE</span>
+              <span className="miora-dash-eyebrow-line" aria-hidden="true" />
+              <span className="miora-live-indicator" title="Connected to PostgreSQL backend" style={{ marginLeft: 4 }}>
                 <span className="miora-live-dot" />
                 Live Sync
               </span>
             </div>
-            <h1 className="miora-dash-title patient-page-heading">
-              Assigned Consultations &amp; Appointments
+            <h1 id="appointments-heading" className="miora-dash-title">
+              Assigned Consultations &amp; <em>Appointments</em>
             </h1>
-            <p className="miora-dash-subtitle">
-              Review and manage upcoming patient bookings, transferred multimodal screening assessments, and diagnostic reports assigned to <strong>{doctorName}</strong>.
-            </p>
           </div>
-          <div className="miora-dash-header-actions">
+          <div className="miora-dash-header-actions" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <button
               type="button"
-              className="miora-cta-secondary"
+              className="miora-btn-secondary"
               onClick={() => refreshBackendData && refreshBackendData()}
               title="Refresh appointments from backend"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '9px 16px', borderRadius: '999px' }}
             >
-              <DashboardIcon name="clock" size={15} />
+              <DashboardIcon name="refresh" size={14} />
               <span>Refresh</span>
             </button>
           </div>
@@ -206,10 +205,10 @@ export function DoctorAppointmentsPage() {
         </section>
 
         {/* Filter bar */}
-        <div className="patient-card" style={{ marginBottom: '1.25rem', padding: '1rem 1.25rem' }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="miora-card" style={{ marginBottom: '18px', padding: '14px 18px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', justifyContent: 'space-between' }}>
             {/* Status Tabs */}
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               {[
                 { id: 'all', label: 'All Appointments' },
                 { id: 'pending', label: `Pending (${pendingCount})` },
@@ -221,14 +220,14 @@ export function DoctorAppointmentsPage() {
                   type="button"
                   onClick={() => setStatusFilter(tab.id)}
                   style={{
-                    padding: '0.45rem 0.9rem',
-                    borderRadius: '20px',
+                    padding: '7px 15px',
+                    borderRadius: '999px',
                     border: '1px solid',
-                    borderColor: statusFilter === tab.id ? '#a3485e' : '#e5d7d7',
-                    background: statusFilter === tab.id ? '#a3485e' : '#ffffff',
-                    color: statusFilter === tab.id ? '#ffffff' : '#57333b',
+                    borderColor: statusFilter === tab.id ? 'rgba(202, 34, 97, 0.25)' : '#ebd8de',
+                    background: statusFilter === tab.id ? '#fde7ec' : '#ffffff',
+                    color: statusFilter === tab.id ? '#ba1e53' : '#54464b',
                     fontWeight: 600,
-                    fontSize: '0.85rem',
+                    fontSize: '13px',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
                   }}
@@ -239,30 +238,21 @@ export function DoctorAppointmentsPage() {
             </div>
 
             {/* Search Input */}
-            <div style={{ position: 'relative', minWidth: '240px' }}>
+            <div className="miora-registry-search" style={{ minWidth: '250px' }}>
+              <DashboardIcon name="search" size={15} strokeWidth={1.8} />
               <input
-                type="text"
+                type="search"
                 placeholder="Search patient, date, type..."
+                aria-label="Search patient, date, type"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.45rem 0.9rem 0.45rem 2.2rem',
-                  borderRadius: '8px',
-                  border: '1px solid #e0d0d0',
-                  fontSize: '0.875rem',
-                  background: '#fcf9f9',
-                }}
               />
-              <span style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#8c7676' }}>
-                <DashboardIcon name="eye" size={14} />
-              </span>
             </div>
           </div>
         </div>
 
         {/* Appointments List / Table */}
-        <section className="patient-card" aria-label="Appointments list">
+        <section className="miora-card" aria-label="Appointments list">
           {filteredAppointments.length === 0 ? (
             <div style={{ padding: '3rem 1.5rem', textAlign: 'center', color: '#7a6064' }}>
               <DashboardIcon name="calendar" size={36} />
@@ -747,7 +737,7 @@ export function DoctorAppointmentsPage() {
             </div>
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 }

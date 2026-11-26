@@ -412,9 +412,29 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
   // ---------------------------------------------------------------------------
   // 3. Submit Mother's Answer (Voice or Text) & Advance Assistant
   // ---------------------------------------------------------------------------
+  const isLikelyGibberish = (raw) => {
+    const words = raw.trim().match(/[A-Za-z]+/g) || [];
+    if (words.length === 0) return true;
+    const meaningfulWords = words.filter((word) => {
+      const w = word.toLowerCase();
+      if (w.length === 1) return w === 'i' || w === 'a';
+      if (/(.)\1{2,}/.test(w)) return false;
+      if (!/[aeiouy]/.test(w)) return false;
+      if (/[bcdfghjklmnpqrstvwxz]{4,}/.test(w)) return false;
+      if (/(qwert|asdf|zxcv|hjkl|yuio|bnm)/.test(w)) return false;
+      return true;
+    });
+    return meaningfulWords.length === 0;
+  };
+
   const handleSendMessage = () => {
     const textToSend = inputText.trim();
     if (!textToSend) return;
+
+    if (isLikelyGibberish(textToSend)) {
+      setSpeechError('Please enter a meaningful response in words so your screening can be evaluated accurately.');
+      return;
+    }
 
     handleStopVoice();
 

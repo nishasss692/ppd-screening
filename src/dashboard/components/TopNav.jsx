@@ -9,6 +9,8 @@ import { DoctorAssistantPopover } from './DoctorAssistantPopover.jsx';
 
 const BREADCRUMB_MAP = {
   '/mothers': 'Mothers & Cases',
+  '/appointments': 'Consultations & Appointments',
+  '/doctor/dashboard': 'Consultations & Appointments',
   '/live-screening': 'AI & EPDS Screening',
   '/upload-analyze': 'Screening Upload & Analysis',
   '/results': 'Clinical Results',

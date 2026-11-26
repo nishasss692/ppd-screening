@@ -618,3 +618,18 @@ def test_typed_only_with_clinical_and_video_retains_clinical_in_fusion(sample_vi
     assert res_t["fusion_status"] == "completed"
     assert res_t["fusion_method"] == "weighted_clinical_text"
     assert res_t["fusion_score"] is not None
+
+
+def test_text_model_rejects_gibberish():
+    """Verify gibberish or zero-vocabulary text produces no prediction score."""
+    svc = ThreeModalityInferenceService()
+    svc.startup()
+
+    res_gib = svc.predict_text("Q1: asdfgh Q2: zxcvb Q3: qwerty Q4: hjkl Q5: mnbv")
+    assert res_gib.status == "failed"
+    assert res_gib.score is None
+    assert "no recognizable" in (res_gib.error or "").lower()
+
+    res_nums = svc.predict_text("123456 7890 !!!")
+    assert res_nums.status == "failed"
+    assert res_nums.score is None

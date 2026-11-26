@@ -89,9 +89,10 @@ export function ResultsPage() {
           <div className="miora-dash-header-copy">
             <div className="miora-dash-eyebrow">
               <span>SCREENING RESULTS</span>
+              <span className="miora-dash-eyebrow-line" aria-hidden="true" />
             </div>
             <h1 id="results-page-heading" className="miora-dash-title">
-              Maternal Screening Results
+              Maternal Screening <em>Results</em>
             </h1>
           </div>
 
