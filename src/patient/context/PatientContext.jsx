@@ -301,7 +301,7 @@ export function PatientProvider({ children }) {
       }
 
       // 4. Appointments
-      if (apptsRes.status === 'fulfilled' && Array.isArray(apptsRes.value) && apptsRes.value.length > 0) {
+      if (apptsRes.status === 'fulfilled' && Array.isArray(apptsRes.value)) {
         setConsultations(apptsRes.value);
       }
 
