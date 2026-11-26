@@ -1,41 +1,55 @@
 /* ==========================================================================
    AANCHAL Hospital Portal Stylesheet
-   Deep Teal / Navy accents with unified AANCHAL branding
+   Light Sage Green & Warm Beige palette unified with AANCHAL editorial typography
    ========================================================================== */
 
 :root {
-  --hosp-bg: #f4f8f7;
+  --hosp-bg: #f7f4ec;
   --hosp-surface: #ffffff;
-  --hosp-primary: #0f3d3e;
-  --hosp-primary-hover: #0a2d2e;
-  --hosp-teal: #14b8a6;
-  --hosp-teal-dark: #0d9488;
-  --hosp-teal-light: #ccfbf1;
-  --hosp-teal-soft: #f0fdfa;
-  --hosp-navy: #0e2a38;
-  --hosp-border: #d5e5e3;
-  --hosp-border-focus: #0f3d3e;
-  --hosp-text: #0f2b2c;
-  --hosp-text-muted: #527576;
-  --hosp-shadow-sm: 0 1px 3px rgba(15, 61, 62, 0.08);
-  --hosp-shadow: 0 4px 12px rgba(15, 61, 62, 0.09);
-  --hosp-radius: 10px;
+  --hosp-primary: #1e6b4e;
+  --hosp-primary-hover: #16523b;
+  --hosp-teal: #2d8a64;
+  --hosp-teal-dark: #1e6b4e;
+  --hosp-teal-light: #dff2e7;
+  --hosp-teal-soft: #eef8f2;
+  --hosp-beige: #f7f4ec;
+  --hosp-beige-deep: #f1ece0;
+  --hosp-navy: #1d2b24;
+  --hosp-border: #dce7de;
+  --hosp-border-focus: #2d8a64;
+  --hosp-text: #1b2a22;
+  --hosp-text-muted: #5a6d63;
+  --hosp-shadow-sm: 0 4px 18px rgba(30, 107, 78, 0.04);
+  --hosp-shadow: 0 8px 24px rgba(30, 107, 78, 0.08);
+  --hosp-radius: 16px;
+}
+
+@keyframes hospFadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Shell Layout */
 .hosp-layout-shell {
   display: flex;
   min-height: 100vh;
-  background: radial-gradient(circle at 88% 8%, #fcecef 0%, #fdf8f4 46%, #fcf6f2 100%);
+  background: radial-gradient(circle at 88% 8%, #dff2e7 0%, #f8f5ec 48%, #f3efe4 100%);
   color: var(--hosp-text);
-  font-family: inherit;
+  font-family: var(--sans, 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
 }
 
 /* Sidebar */
 .hosp-sidebar {
   width: 260px;
-  background-color: var(--hosp-primary);
-  color: #ffffff;
+  background-color: #fbfaf6;
+  color: var(--hosp-text);
+  border-right: 1px solid var(--hosp-border);
   display: flex;
   flex-direction: column;
   padding: 24px 16px;
@@ -46,39 +60,42 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 0 8px 24px 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-  margin-bottom: 24px;
+  padding: 0 8px 20px 8px;
+  border-bottom: 1px solid var(--hosp-border);
+  margin-bottom: 20px;
 }
 
 .hosp-sidebar-logo-icon {
   width: 38px;
   height: 38px;
-  border-radius: 9px;
-  background: linear-gradient(135deg, #14b8a6, #0d9488);
+  border-radius: 11px;
+  background: linear-gradient(135deg, #2d8a64, #1e6b4e);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #ffffff;
+  box-shadow: 0 4px 12px rgba(30, 107, 78, 0.2);
 }
 
 .hosp-sidebar-title-group h2 {
-  font-size: 17px;
-  font-weight: 700;
+  font-family: var(--serif, 'Playfair Display', Georgia, serif);
+  font-size: 19px;
+  font-weight: 600;
   margin: 0;
-  letter-spacing: 0.5px;
-  color: #ffffff;
+  letter-spacing: 0.02em;
+  color: var(--hosp-primary);
 }
 
 .hosp-sidebar-badge {
   display: inline-block;
-  background: rgba(20, 184, 166, 0.25);
-  color: #5eead4;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 7px;
-  border-radius: 4px;
+  background: var(--hosp-teal-light);
+  color: var(--hosp-primary);
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
   margin-top: 3px;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
@@ -96,30 +113,33 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 14px;
-  border-radius: 8px;
-  color: #d1e7e5;
+  padding: 11px 14px;
+  border-radius: 12px;
+  color: var(--hosp-text-muted);
   text-decoration: none;
-  font-size: 14.5px;
+  font-size: 14px;
   font-weight: 500;
-  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  transition: all 180ms cubic-bezier(0.2, 0, 0, 1);
 }
 
 .hosp-nav-link:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  background-color: var(--hosp-teal-soft);
+  color: var(--hosp-text);
+  transform: translateX(2px);
 }
 
 .hosp-nav-link.is-active {
-  background-color: var(--hosp-teal);
-  color: #ffffff;
+  background-color: var(--hosp-teal-light);
+  color: var(--hosp-primary);
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(20, 184, 166, 0.35);
+  border-color: rgba(30, 107, 78, 0.16);
+  box-shadow: 0 2px 8px rgba(30, 107, 78, 0.06);
 }
 
 .hosp-sidebar-footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
-  padding-top: 18px;
+  border-top: 1px solid var(--hosp-border);
+  padding-top: 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -127,14 +147,15 @@
 
 .hosp-user-info-box {
   padding: 10px 12px;
-  background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
+  background-color: var(--hosp-teal-soft);
+  border: 1px solid var(--hosp-border);
+  border-radius: 12px;
 }
 
 .hosp-user-name {
   font-size: 13.5px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--hosp-text);
   display: block;
   white-space: nowrap;
   overflow: hidden;
@@ -143,7 +164,7 @@
 
 .hosp-user-hospital {
   font-size: 12px;
-  color: #99f6e4;
+  color: var(--hosp-primary);
   display: block;
   margin-top: 2px;
 }
@@ -155,20 +176,20 @@
   gap: 8px;
   width: 100%;
   padding: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: transparent;
-  color: #ffffff;
-  border-radius: 8px;
+  border: 1px solid var(--hosp-border);
+  background: #ffffff;
+  color: var(--hosp-text);
+  border-radius: 10px;
   font-size: 13.5px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 180ms ease;
 }
 
 .hosp-logout-btn:hover {
-  background-color: rgba(239, 68, 68, 0.2);
-  border-color: #f87171;
-  color: #fecaca;
+  background-color: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
 }
 
 /* Main Content Area */
@@ -180,20 +201,29 @@
 }
 
 .hosp-top-header {
-  height: 64px;
-  background-color: var(--hosp-surface);
+  height: 68px;
+  background: rgba(248, 245, 236, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--hosp-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 32px;
+  position: sticky;
+  top: 0;
+  z-index: 30;
 }
 
 .hosp-top-header-title {
-  font-size: 18px;
+  font-family: var(--serif, 'Playfair Display', Georgia, serif);
+  font-size: 21px;
   font-weight: 600;
-  color: var(--hosp-primary);
+  letter-spacing: 0.01em;
+  word-spacing: 0.04em;
+  color: var(--hosp-text);
   margin: 0;
+  white-space: nowrap;
 }
 
 .hosp-top-header-right {
@@ -206,39 +236,41 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 6px 14px;
   background-color: var(--hosp-teal-soft);
   border: 1px solid var(--hosp-border);
-  border-radius: 20px;
+  border-radius: 999px;
   font-size: 12.5px;
   font-weight: 600;
   color: var(--hosp-primary);
 }
 
 .hosp-content-body {
-  padding: 32px;
-  max-width: 1200px;
+  padding: 28px 32px;
+  max-width: 1240px;
   width: 100%;
   margin: 0 auto;
+  animation: hospFadeInUp 340ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 /* Dashboard Metric Cards */
 .hosp-metrics-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-  margin-bottom: 32px;
+  gap: 18px;
+  margin-bottom: 26px;
 }
 
 .hosp-metric-card {
-  background-color: var(--hosp-surface);
+  background: linear-gradient(155deg, #ffffff 0%, #f9fbf9 100%);
   border: 1px solid var(--hosp-border);
   border-radius: var(--hosp-radius);
   padding: 22px;
   box-shadow: var(--hosp-shadow-sm);
   display: flex;
   flex-direction: column;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 200ms ease;
+  animation: hospFadeInUp 380ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .hosp-metric-card:hover {
@@ -254,17 +286,17 @@
 }
 
 .hosp-metric-label {
-  font-size: 13.5px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--hosp-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.05em;
 }
 
 .hosp-metric-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -273,11 +305,12 @@
 }
 
 .hosp-metric-val {
+  font-family: var(--serif, 'Playfair Display', Georgia, serif);
   font-size: 32px;
-  font-weight: 700;
-  color: var(--hosp-primary);
+  font-weight: 600;
+  color: var(--hosp-text);
   margin: 0;
-  line-height: 1;
+  line-height: 1.05;
 }
 
 .hosp-metric-sub {
@@ -294,6 +327,7 @@
   box-shadow: var(--hosp-shadow-sm);
   margin-bottom: 24px;
   overflow: hidden;
+  transition: box-shadow 180ms ease;
 }
 
 .hosp-card-header {
@@ -302,13 +336,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #fafdfd;
+  background-color: #fbfaf6;
 }
 
 .hosp-card-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--hosp-primary);
+  font-family: var(--serif, 'Playfair Display', Georgia, serif);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--hosp-text);
   margin: 0;
 }
 
