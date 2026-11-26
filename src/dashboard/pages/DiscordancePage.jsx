@@ -37,13 +37,20 @@ export function DiscordancePage() {
 
   const activeScreening = useMemo(() => {
     if (requestedMotherId) {
-      return (
-        screenings.find((s) => s.motherId.toLowerCase() === requestedMotherId.toLowerCase()) ||
-        null
+      const match = screenings.find(
+        (s) =>
+          (s.motherId && s.motherId.toLowerCase() === requestedMotherId.toLowerCase()) ||
+          (s.rawMotherUuid && s.rawMotherUuid.toLowerCase() === requestedMotherId.toLowerCase()) ||
+          (s.motherName && s.motherName.toLowerCase() === requestedMotherId.toLowerCase())
       );
+      if (match) return match;
     }
     if (selectedMotherId) {
-      const ctxMatch = screenings.find((s) => s.motherId === selectedMotherId);
+      const ctxMatch = screenings.find(
+        (s) =>
+          (s.motherId && s.motherId.toLowerCase() === selectedMotherId.toLowerCase()) ||
+          (s.rawMotherUuid && s.rawMotherUuid.toLowerCase() === selectedMotherId.toLowerCase())
+      );
       if (ctxMatch) return ctxMatch;
     }
     return screenings.find((s) => s.motherId === 'M-108') || screenings[0] || null;

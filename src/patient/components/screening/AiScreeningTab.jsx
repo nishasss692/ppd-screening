@@ -68,6 +68,10 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
   // Stored responses per question for model pipelines
   const [questionResponses, setQuestionResponses] = useState([]);
 
+  const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
+  const isSubmittingAnswerRef = useRef(false);
+  const latestTranscriptRef = useRef('');
+
   // Multimodal model pipeline readiness status from FastAPI backend
   const [pipelineStatus, setPipelineStatus] = useState(null);
 
@@ -371,15 +375,20 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
         const combined = (finalTranscript + interimTranscript).trim();
         if (combined) {
           usedVoiceForQuestionRef.current = true;
+          latestTranscriptRef.current = combined;
           setInputText(combined);
         }
 
-        // Auto-pause after 2.2 seconds of silence
+        // Auto-pause and advance after 2.5 seconds of silence if text captured
         if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
         if (combined.length > 0) {
           silenceTimerRef.current = setTimeout(() => {
             handleStopVoice();
-          }, 2200);
+            // Automatically submit and advance if patient finished speaking
+            if (latestTranscriptRef.current && !isSubmittingAnswerRef.current) {
+              handleSendMessage(latestTranscriptRef.current);
+            }
+          }, 2500);
         }
       };
 
@@ -407,7 +416,7 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
     }
   };
 
-  const handleStopVoice = () => {
+  const handleStopVoice = (autoSubmit = false) => {
     if (silenceTimerRef.current) {
       clearTimeout(silenceTimerRef.current);
       silenceTimerRef.current = null;
@@ -418,6 +427,9 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
       } catch (e) { }
     }
     setIsListening(false);
+    if (autoSubmit && latestTranscriptRef.current && !isSubmittingAnswerRef.current) {
+      handleSendMessage(latestTranscriptRef.current);
+    }
   };
 
   // ---------------------------------------------------------------------------
@@ -438,8 +450,11 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
     return meaningfulWords.length === 0;
   };
 
-  const handleSendMessage = () => {
-    const textToSend = inputText.trim();
+  const handleSendMessage = (explicitText = null) => {
+    if (isSubmittingAnswerRef.current) return;
+
+    const rawText = typeof explicitText === 'string' ? explicitText : inputText;
+    const textToSend = rawText ? rawText.trim() : '';
     if (!textToSend) return;
 
     if (isLikelyGibberish(textToSend)) {
@@ -447,11 +462,15 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
       return;
     }
 
+    isSubmittingAnswerRef.current = true;
+    setIsSubmittingAnswer(true);
+    setSpeechError(null);
     handleStopVoice();
 
     const currentQ = CONVERSATIONAL_SCREENING_QUESTIONS[currentQuestionIdx];
     const isVoice = usedVoiceForQuestionRef.current;
     usedVoiceForQuestionRef.current = false;
+    latestTranscriptRef.current = '';
 
     // 1. Add Mother's message to chat
     const motherMsg = {
@@ -498,11 +517,15 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           },
         ]);
+        isSubmittingAnswerRef.current = false;
+        setIsSubmittingAnswer(false);
       }, 600);
     } else {
       // All 5 questions answered! Finalize session
       setTimeout(() => {
         handleFinalizeScreeningSession([...questionResponses, newResponseRecord]);
+        isSubmittingAnswerRef.current = false;
+        setIsSubmittingAnswer(false);
       }, 800);
     }
   };
@@ -882,8 +905,9 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
                 type="button"
                 className={`ai-chat-mic-btn ${isListening ? 'is-active-recording' : ''}`}
                 onClick={handleToggleVoice}
-                title={isListening ? 'Stop speaking and review transcript' : 'Answer with your microphone'}
-                aria-label={isListening ? 'Stop listening' : 'Start voice dictation'}
+                disabled={isSubmittingAnswer}
+                title={isListening ? 'Finish speaking and submit answer' : 'Answer with your microphone'}
+                aria-label={isListening ? 'Stop listening and submit' : 'Start voice dictation'}
               >
                 <span className="ai-chat-mic-icon" aria-hidden="true">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -892,7 +916,7 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
                     <line x1="12" y1="19" x2="12" y2="22" />
                   </svg>
                 </span>
-                <span>{isListening ? 'Finish Speaking' : 'Speak Answer'}</span>
+                <span>{isSubmittingAnswer ? 'Processing...' : isListening ? 'Finish Speaking & Submit' : 'Speak Answer'}</span>
               </button>
 
               {/* Text Input Field (Allows typing or editing transcript) */}

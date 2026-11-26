@@ -131,7 +131,16 @@ export function EpdsTab({ onCompleted, inClinicMotherUuid, onScreeningPersisted 
     let storedMultimodalResult = null;
     try {
       const rawMm = localStorage.getItem('aanchal_multimodal_screening_result');
-      if (rawMm) storedMultimodalResult = JSON.parse(rawMm);
+      if (rawMm) {
+        const parsedMm = JSON.parse(rawMm);
+        // Only include multimodal result if completed recently (within 30 minutes)
+        if (parsedMm?.completed_at || parsedMm?.screening_date) {
+          const mmTime = new Date(parsedMm.completed_at || parsedMm.screening_date).getTime();
+          if (Date.now() - mmTime < 30 * 60 * 1000) {
+            storedMultimodalResult = parsedMm;
+          }
+        }
+      }
     } catch (e) { }
 
     const payload = {

@@ -63,7 +63,12 @@ export function ClinicalReviewPage({ reviewSubmitter = submitClinicalReview }) {
 
   const activeMother = useMemo(() => {
     const targetId = requestedMotherId || selectedMotherId || 'M-108';
-    const match = mothers.find((m) => m.id.toLowerCase() === targetId.toLowerCase());
+    const match = mothers.find(
+      (m) =>
+        (m.id && m.id.toLowerCase() === targetId.toLowerCase()) ||
+        (m.rawUuid && m.rawUuid.toLowerCase() === targetId.toLowerCase()) ||
+        (m.name && m.name.toLowerCase() === targetId.toLowerCase())
+    );
     if (match) return match;
     if (requestedMotherId) return null;
     return mothers.find((m) => m.id === 'M-108') || mothers[0] || null;
@@ -71,7 +76,11 @@ export function ClinicalReviewPage({ reviewSubmitter = submitClinicalReview }) {
 
   const motherScreenings = useMemo(() => {
     if (!activeMother) return [];
-    return screenings.filter((s) => s.motherId === activeMother.id);
+    return screenings.filter(
+      (s) =>
+        s.motherId === activeMother.id ||
+        (s.rawMotherUuid && activeMother.rawUuid && s.rawMotherUuid === activeMother.rawUuid)
+    );
   }, [screenings, activeMother]);
 
   const activeScreening = motherScreenings[0] || null;

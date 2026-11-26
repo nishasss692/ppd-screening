@@ -73,41 +73,58 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
     }
 
     let pct = null;
-    if (typeof storedMultimodalResult?.fusion_score === 'number') {
-      pct = Math.round(storedMultimodalResult.fusion_score * 100);
-    } else if (typeof storedClinicalModel?.predicted_risk_probability === 'number') {
-      pct = Math.round(storedClinicalModel.predicted_risk_probability * 100);
-    } else if (typeof storedClinicalModel?.predicted_probability === 'number') {
-      pct = Math.round(storedClinicalModel.predicted_probability * 100);
-    } else if (typeof epdsScore === 'number') {
-      pct = Math.round((epdsScore / 30) * 100);
-    } else if (typeof storedMultimodalResult?.text_score === 'number') {
-      pct = Math.round(storedMultimodalResult.text_score * 100);
-    } else {
-      pct = 28;
-    }
-
     let key = 'low';
     let label = 'Low Risk';
-    if (
-      hasQ10Alert ||
-      (typeof epdsScore === 'number' && epdsScore >= 13) ||
-      storedClinicalModel?.predicted_label === 'HIGH_RISK' ||
-      pct >= 60
-    ) {
-      key = 'high';
-      label = 'High Risk';
-    } else if (
-      (typeof epdsScore === 'number' && epdsScore >= 10) ||
-      storedClinicalModel?.predicted_label === 'MODERATE_RISK' ||
-      pct >= 35
-    ) {
-      key = 'moderate';
-      label = 'Moderate Risk';
+
+    // Prioritize actual submitted EPDS score as the primary validated clinical instrument
+    if (typeof epdsScore === 'number') {
+      pct = Math.round((epdsScore / 30) * 100);
+      if (hasQ10Alert || epdsScore >= 13) {
+        key = 'high';
+        label = 'High Risk';
+      } else if (epdsScore >= 10) {
+        key = 'moderate';
+        label = 'Moderate Risk';
+      } else {
+        key = 'low';
+        label = 'Low Risk';
+      }
+    } else if (typeof storedMultimodalResult?.fusion_score === 'number') {
+      pct = Math.round(storedMultimodalResult.fusion_score * 100);
+      if (pct >= 60) {
+        key = 'high';
+        label = 'High Risk';
+      } else if (pct >= 35) {
+        key = 'moderate';
+        label = 'Moderate Risk';
+      } else {
+        key = 'low';
+        label = 'Low Risk';
+      }
+    } else if (typeof storedClinicalModel?.predicted_risk_probability === 'number') {
+      pct = Math.round(storedClinicalModel.predicted_risk_probability * 100);
+      if (pct >= 60 || storedClinicalModel?.predicted_label === 'HIGH_RISK') {
+        key = 'high';
+        label = 'High Risk';
+      } else if (pct >= 35 || storedClinicalModel?.predicted_label === 'MODERATE_RISK') {
+        key = 'moderate';
+        label = 'Moderate Risk';
+      } else {
+        key = 'low';
+        label = 'Low Risk';
+      }
+    } else if (typeof storedMultimodalResult?.text_score === 'number') {
+      pct = Math.round(storedMultimodalResult.text_score * 100);
+      key = pct >= 60 ? 'high' : pct >= 35 ? 'moderate' : 'low';
+      label = key === 'high' ? 'High Risk' : key === 'moderate' ? 'Moderate Risk' : 'Low Risk';
+    } else {
+      pct = 28;
+      key = 'low';
+      label = 'Low Risk';
     }
 
     return { riskPercentage: pct, riskLevel: label, riskKey: key };
-  }, [hasAnyAssessment, hasQ10Alert, storedMultimodalResult, storedClinicalModel, epdsScore]);
+  }, [hasAnyAssessment, hasQ10Alert, epdsScore, storedMultimodalResult, storedClinicalModel]);
 
   const isHigherRisk = Boolean(
     (typeof epdsScore === 'number' && epdsScore >= 10) ||

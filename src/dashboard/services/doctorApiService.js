@@ -309,6 +309,24 @@ export async function saveAppointmentClinicalAssessment(appointmentId, payload) 
 }
 
 /**
+ * Update doctor appointment status (confirm, reschedule, or cancel).
+ * PUT /api/dashboard/appointments/{appointment_id}/status
+ */
+export async function updateDoctorAppointmentStatus(appointmentId, payload) {
+  const url = `${getApiBase()}/api/dashboard/appointments/${encodeURIComponent(appointmentId)}/status`;
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${res.status}: Failed to update appointment status`);
+  }
+  return res.json();
+}
+
+/**
  * Download clinical screening transcript from GET /api/screenings/{screening_id}/transcript.txt.
  */
 export async function downloadClinicianScreeningTxtBlob(screeningId) {

@@ -698,21 +698,13 @@ def persist_epds_screening_for_mother(
         try:
             cand = db.get(Screening, uuid.UUID(str(mm_res["screening_id"])))
             if cand and cand.mother_id == mother.id and cand.instrument == "MULTIMODAL":
-                existing_mm_screening = cand
+                # Only link if the multimodal screening was completed in the current active session (within 30 mins)
+                now_utc = datetime.now(timezone.utc)
+                cand_dt = cand.created_at if cand.created_at.tzinfo else cand.created_at.replace(tzinfo=timezone.utc)
+                if (now_utc - cand_dt).total_seconds() < 1800:
+                    existing_mm_screening = cand
         except Exception:
             pass
-
-    if not existing_mm_screening and not mm_res:
-        # Check for a recent MULTIMODAL-only screening for this mother to merge
-        recent_mm = db.scalar(
-            select(Screening)
-            .where(Screening.mother_id == mother.id, Screening.instrument == "MULTIMODAL")
-            .order_by(desc(Screening.screening_date))
-            .limit(1)
-        )
-        if recent_mm and recent_mm.multimodal_scores:
-            mm_res = dict(recent_mm.multimodal_scores)
-            existing_mm_screening = recent_mm
 
     if isinstance(mm_res, dict) and mm_res:
         for k in (
@@ -1506,6 +1498,38 @@ def book_patient_appointment(
 
     target_hospital = payload.hospital_name or payload.clinic or "AANCHAL Partner Hospital"
     target_hospital_id = payload.hospital_id or "HOSP-001"
+    target_doctor_id = payload.doctor_id or "DR-001"
+
+    # Check for existing duplicate active/pending appointment
+    existing_care_plans = db.scalars(
+        select(CarePlan).where(CarePlan.mother_id == mother.id)
+    ).all()
+    for ecp in existing_care_plans:
+        if ecp.status in ("pending", "confirmed", "scheduled"):
+            try:
+                emeta = json.loads(ecp.notes) if ecp.notes and ecp.notes.strip().startswith("{") else {}
+            except Exception:
+                emeta = {}
+            # If same doctor or hospital on same requested date
+            if (
+                emeta.get("requested_date") == payload.date
+                and (emeta.get("doctor_name") == payload.doctor_name or emeta.get("doctor_id") == target_doctor_id)
+            ):
+                formatted_d = appt_date.strftime("%d %b %Y") if appt_date else payload.date
+                return AppointmentResponse(
+                    id=str(ecp.id),
+                    doctorName=emeta.get("doctor_name") or payload.doctor_name,
+                    role=emeta.get("doctor_role") or payload.role,
+                    date=formatted_d,
+                    time=emeta.get("requested_time") or payload.time,
+                    status=(emeta.get("status") or ecp.status or "Pending Confirmation").title(),
+                    type=emeta.get("consultation_type") or payload.type,
+                    clinic=emeta.get("hospital_name") or target_hospital,
+                    summary=emeta.get("reason") or payload.reason,
+                    hospitalId=emeta.get("hospital_id") or target_hospital_id,
+                    hospitalName=emeta.get("hospital_name") or target_hospital,
+                    hospitalLocation=emeta.get("hospital_location") or payload.hospital_location,
+                )
 
     # Build rich appointment request metadata
     notes_payload = {
@@ -1636,6 +1660,99 @@ def book_patient_appointment(
         hospitalId=target_hospital_id,
         hospitalName=target_hospital,
         hospitalLocation=payload.hospital_location,
+    )
+
+
+@router.put(
+    "/me/appointments/{appointment_id}/cancel",
+    response_model=AppointmentResponse,
+    summary="Cancel a patient appointment",
+)
+def cancel_patient_appointment(
+    appointment_id: str,
+    user: User = Depends(require_patient),
+    db: Session = Depends(get_db),
+) -> AppointmentResponse:
+    """Allow patient to cancel their own booked appointment."""
+    import uuid as _uuid
+    from backend.services.notification_service import create_notification_dedup
+
+    if not user.mother_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mother entity not linked.")
+
+    try:
+        cp_uuid = _uuid.UUID(appointment_id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid appointment ID.")
+
+    cp = db.get(CarePlan, cp_uuid)
+    if not cp or cp.mother_id != user.mother_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Appointment not found.")
+
+    cp.status = "cancelled"
+    meta: Dict[str, Any] = {}
+    if cp.notes and cp.notes.strip().startswith("{"):
+        try:
+            meta = json.loads(cp.notes)
+        except Exception:
+            meta = {}
+    meta["status"] = "cancelled"
+    meta["cancelled_at"] = datetime.now(timezone.utc).isoformat()
+    cp.notes = json.dumps(meta)
+
+    mother = db.get(Mother, user.mother_id)
+    if mother:
+        m_meta = _get_mother_portal_meta(mother)
+        m_appts = m_meta.get("appointments", [])
+        for a in m_appts:
+            if a.get("id") == str(cp.id):
+                a["status"] = "Cancelled"
+        m_meta["appointments"] = m_appts
+        mother.notes = json.dumps(m_meta)
+
+    # Notify doctor & hospital
+    target_doctor_id = meta.get("doctor_id") or "DR-001"
+    target_hospital_id = meta.get("hospital_id") or "HOSP-001"
+    patient_name = mother.name if mother else "Patient"
+
+    create_notification_dedup(
+        db,
+        recipient_id=target_doctor_id,
+        recipient_role="doctor",
+        notification_type="appointment_cancelled",
+        title="Appointment Cancelled",
+        message=f"{patient_name} has cancelled their appointment scheduled for {meta.get('requested_date', 'scheduled date')}.",
+        related_appointment_id=str(cp.id),
+        metadata={"patientName": patient_name, "appointmentId": str(cp.id)},
+    )
+    create_notification_dedup(
+        db,
+        recipient_id=target_hospital_id,
+        recipient_role="hospital",
+        notification_type="appointment_cancelled",
+        title="Appointment Cancelled by Patient",
+        message=f"{patient_name} has cancelled consultation with {meta.get('doctor_name', 'Doctor')}.",
+        related_appointment_id=str(cp.id),
+        metadata={"patientName": patient_name, "appointmentId": str(cp.id)},
+    )
+
+    db.commit()
+    db.refresh(cp)
+
+    formatted_date = meta.get("confirmed_date") or meta.get("requested_date") or (cp.scheduled_followup_date.strftime("%d %b %Y") if cp.scheduled_followup_date else "Flexible")
+    return AppointmentResponse(
+        id=str(cp.id),
+        doctorName=meta.get("doctor_name", "Assigned Doctor"),
+        role=meta.get("doctor_role", "Perinatal Specialist"),
+        date=formatted_date,
+        time=meta.get("confirmed_time") or meta.get("requested_time", "11:00 AM"),
+        status="Cancelled",
+        type=meta.get("consultation_type", "Telehealth Video"),
+        clinic=meta.get("hospital_name", "AANCHAL Partner Hospital"),
+        summary=meta.get("reason"),
+        hospitalId=meta.get("hospital_id"),
+        hospitalName=meta.get("hospital_name"),
+        hospitalLocation=meta.get("hospital_location"),
     )
 
 
