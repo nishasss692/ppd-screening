@@ -709,7 +709,7 @@ def persist_epds_screening_for_mother(
     if existing_mm_screening is None:
         recent_mm = db.scalars(
             select(Screening)
-            .where(Screening.mother_id == mother.id, Screening.instrument == "MULTIMODAL")
+            .where(Screening.mother_id == mother.id, Screening.instrument.in_(("MULTIMODAL", "EPDS+MULTIMODAL")))
             .order_by(desc(Screening.created_at))
             .limit(1)
         ).first()
@@ -1525,66 +1525,81 @@ def book_patient_appointment(
 
     target_hospital = payload.hospital_name or payload.clinic or "AANCHAL Partner Hospital"
     target_hospital_id = payload.hospital_id or "HOSP-001"
-    target_doctor_id = payload.doctor_id or "DR-001"
+    target_doctor_id = (payload.doctor_id or "").strip()
+    if not target_doctor_id:
+        doc_name_lower = (payload.doctor_name or "").lower()
+        if "priya" in doc_name_lower or "mehta" in doc_name_lower:
+            target_doctor_id = "DR-001"
+        elif "house" in doc_name_lower:
+            target_doctor_id = "DR-002"
+        else:
+            target_doctor_id = "DR-001"
 
-    # Check for existing duplicate active/pending appointment
+    now_utc = datetime.now(timezone.utc)
+    care_plan_id = uuid.uuid4()
+
+    # Debounce rapid accidental double-clicks (< 5 seconds) with identical payload
     existing_care_plans = db.scalars(
-        select(CarePlan).where(CarePlan.mother_id == mother.id)
+        select(CarePlan).where(CarePlan.mother_id == mother.id).order_by(desc(CarePlan.created_at)).limit(5)
     ).all()
     for ecp in existing_care_plans:
-        if ecp.status in ("pending", "confirmed", "scheduled"):
+        if ecp.created_at and (now_utc - ecp.created_at.replace(tzinfo=timezone.utc if ecp.created_at.tzinfo is None else ecp.created_at.tzinfo)).total_seconds() < 5:
             try:
                 emeta = json.loads(ecp.notes) if ecp.notes and ecp.notes.strip().startswith("{") else {}
+                if emeta.get("appointment_date") == payload.date and emeta.get("appointment_time") == payload.time:
+                    formatted_d = appt_date.strftime("%d %b %Y") if appt_date else payload.date
+                    return AppointmentResponse(
+                        id=str(ecp.id),
+                        doctorName=emeta.get("doctor_name") or payload.doctor_name,
+                        role=emeta.get("doctor_role") or payload.role,
+                        date=formatted_d,
+                        time=emeta.get("requested_time") or payload.time,
+                        status=(emeta.get("status") or ecp.status or "Pending Confirmation").title(),
+                        type=emeta.get("consultation_type") or payload.type,
+                        clinic=emeta.get("hospital_name") or target_hospital,
+                        summary=emeta.get("reason") or payload.reason,
+                        hospitalId=emeta.get("hospital_id") or target_hospital_id,
+                        hospitalName=emeta.get("hospital_name") or target_hospital,
+                        hospitalLocation=emeta.get("hospital_location") or payload.hospital_location,
+                    )
             except Exception:
-                emeta = {}
-            # If same doctor or hospital on same requested date
-            if (
-                emeta.get("requested_date") == payload.date
-                and (emeta.get("doctor_name") == payload.doctor_name or emeta.get("doctor_id") == target_doctor_id)
-            ):
-                formatted_d = appt_date.strftime("%d %b %Y") if appt_date else payload.date
-                return AppointmentResponse(
-                    id=str(ecp.id),
-                    doctorName=emeta.get("doctor_name") or payload.doctor_name,
-                    role=emeta.get("doctor_role") or payload.role,
-                    date=formatted_d,
-                    time=emeta.get("requested_time") or payload.time,
-                    status=(emeta.get("status") or ecp.status or "Pending Confirmation").title(),
-                    type=emeta.get("consultation_type") or payload.type,
-                    clinic=emeta.get("hospital_name") or target_hospital,
-                    summary=emeta.get("reason") or payload.reason,
-                    hospitalId=emeta.get("hospital_id") or target_hospital_id,
-                    hospitalName=emeta.get("hospital_name") or target_hospital,
-                    hospitalLocation=emeta.get("hospital_location") or payload.hospital_location,
-                )
+                pass
 
-    # Build rich appointment request metadata
+    # Build rich appointment request metadata with all required canonical fields
     notes_payload = {
         "request_type": "patient_appointment_request",
+        "appointment_id": str(care_plan_id),
+        "patient_id": str(mother.id),
+        "patient_name": mother.name,
+        "doctor_id": target_doctor_id,
+        "doctor_name": payload.doctor_name,
         "hospital_id": target_hospital_id,
         "hospital_name": target_hospital,
         "hospital_location": payload.hospital_location or "Bangalore, Karnataka",
-        "doctor_id": payload.doctor_id or "DR-001",
-        "doctor_name": payload.doctor_name,
+        "appointment_date": payload.date,
+        "appointment_time": payload.time,
+        "appointment_type": payload.type,
+        "appointment_status": "pending",
+        "created_at": now_utc.isoformat(),
+        # Auxiliary and legacy fields for compatibility
         "doctor_role": payload.role,
         "requested_date": payload.date,
         "requested_time": payload.time,
         "consultation_type": payload.type,
-        "patient_name": mother.name,
         "patient_phone": payload.phone or mother.phone or "+91-98765-43210",
         "reason": payload.reason,
         "status": "pending",
-        "created_at": datetime.now(timezone.utc).isoformat(),
     }
 
-    # 1. Create row in PostgreSQL care_plans table
+    # 1. Create row in PostgreSQL care_plans table with doctor_id as assigned_clinician_id
     new_care_plan = CarePlan(
+        id=care_plan_id,
         mother_id=mother.id,
         priority="routine",
         intervention_type=payload.type,
         referral_destination=f"{target_hospital} [{target_hospital_id}]",
         scheduled_followup_date=appt_date,
-        assigned_clinician_id=payload.doctor_name,
+        assigned_clinician_id=target_doctor_id,
         status="pending",
         notes=json.dumps(notes_payload),
     )
@@ -1594,7 +1609,6 @@ def book_patient_appointment(
     # 1b. Create persistent notifications for Doctor and Hospital (deduplicated)
     from backend.services.notification_service import create_notification_dedup
     formatted_date = appt_date.strftime("%d %b %Y") if appt_date else payload.date
-    target_doctor_id = payload.doctor_id or "DR-001"
 
     create_notification_dedup(
         db,

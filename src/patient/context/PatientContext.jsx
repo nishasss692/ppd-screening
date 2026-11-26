@@ -473,20 +473,8 @@ export function PatientProvider({ children }) {
       await reloadPatientData().catch(() => { });
       return booked;
     } catch (err) {
-      console.warn('Booking appointment fallback in offline/test environment:', err);
-      const fallbackBooked = {
-        id: `c-${Date.now()}`,
-        doctorName: appointmentData.doctor_name || 'Dr. Priya Mehta',
-        role: appointmentData.role || 'Perinatal Psychiatry Lead',
-        date: appointmentData.date,
-        time: appointmentData.time,
-        status: 'Scheduled',
-        type: appointmentData.type || 'Telehealth Video',
-        clinic: appointmentData.clinic || 'AANCHAL Maternal Care Unit',
-        reason: appointmentData.reason,
-      };
-      setConsultations((prev) => [fallbackBooked, ...prev]);
-      return fallbackBooked;
+      console.error('Failed to book appointment on backend:', err);
+      throw err;
     }
   };
 

@@ -124,7 +124,7 @@ function BookingForm({ doctor, hospital, patient, onConfirmed }) {
 
     try {
       const booked = await bookAppointment(appointmentPayload);
-      const refId = booked?.id || makeDemoRefId();
+      const refId = booked?.id || `APP-${Date.now()}`;
       onConfirmed({
         doctorName: doctor.name,
         specialization: doctor.specialization,
@@ -135,16 +135,8 @@ function BookingForm({ doctor, hospital, patient, onConfirmed }) {
         refId,
       });
     } catch (err) {
-      /* bookAppointment fallback handles offline/local states */
-      onConfirmed({
-        doctorName: doctor.name,
-        specialization: doctor.specialization,
-        hospitalName: hospital?.name,
-        hospitalLocation: hospital?.location,
-        date: selectedDate,
-        slot: selectedSlot,
-        refId: makeDemoRefId(),
-      });
+      console.error('Failed to book appointment:', err);
+      setValidationError(err?.message || 'Failed to submit appointment request. Please verify connection and try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -360,7 +352,7 @@ function BookingForm({ doctor, hospital, patient, onConfirmed }) {
               <span>Submitting Request…</span>
             </>
           ) : (
-            <span>Submit Appointment Request</span>
+            <span>Confirm Appointment</span>
           )}
         </button>
       </div>

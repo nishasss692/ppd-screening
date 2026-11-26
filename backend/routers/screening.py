@@ -7,9 +7,11 @@ Exposes:
 
 from datetime import datetime, timezone
 import json
+import logging
 from typing import Any, Dict, List, Optional, Union
 import uuid
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
 from backend.database.connection import get_db
@@ -38,6 +40,8 @@ router = APIRouter(
     prefix="/api/screenings",
     tags=["Central Screening Orchestration"],
 )
+
+logger = logging.getLogger(__name__)
 
 
 @router.post(
@@ -350,12 +354,13 @@ async def analyze_multimodal_screening(
 
     if files_video is not None and resolved_video is None:
         mod_video = inference_result["modalities"].get("video", {})
-        mod_video["status"] = "unavailable"
+        mod_video["status"] = "recorded"
         mod_video["details"] = {
             "raw_recording_received": True,
             "filename": files_video.filename,
+            "note": "Video recorded under informed maternal consent for clinician review.",
         }
-        inference_result["modality_status"]["video"] = "unavailable"
+        inference_result["modality_status"]["video"] = "recorded"
 
     # Standalone EPDS Question 10 Safety Check (Deterministic rule outside ML probability fusion)
     q10_safety_alert: Optional[Dict[str, Any]] = None
@@ -470,6 +475,7 @@ async def analyze_multimodal_screening(
                         "character_count": len(resolved_text) if resolved_text else 0,
                         "audio_features_count": len(resolved_audio) if resolved_audio else 0,
                         "video_features_count": len(resolved_video) if resolved_video else 0,
+                        "video_recording": {"filename": files_video.filename, "status": "completed" if resolved_video else "recorded"} if files_video is not None else None,
                         "processed_at": processed_timestamp,
                     },
                     multimodal_scores=mm_payload,
@@ -481,7 +487,8 @@ async def analyze_multimodal_screening(
                 db.commit()
                 db.refresh(new_mm_screening)
                 persisted_screening_id = str(new_mm_screening.id)
-    except Exception:
+    except Exception as exc:
+        logger.error("Failed to persist multimodal screening record for mother %s: %s", effective_mother_id, exc, exc_info=True)
         db.rollback()
 
     return ThreeModalityAnalyzeResponse(

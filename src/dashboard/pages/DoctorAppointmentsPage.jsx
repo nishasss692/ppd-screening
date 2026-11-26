@@ -31,6 +31,13 @@ export function DoctorAppointmentsPage() {
   const authUser = getCurrentUser();
   const doctorName = authUser?.fullName || authUser?.name || 'Dr. Priya Mehta';
 
+  // Automatically refresh clinician appointments from backend on page mount
+  useEffect(() => {
+    if (typeof refreshBackendData === 'function') {
+      refreshBackendData();
+    }
+  }, [refreshBackendData]);
+
   // Auto-open appointment from notification ?appt=... query param
   useEffect(() => {
     const apptParam = searchParams.get('appt');
@@ -385,7 +392,7 @@ export function DoctorAppointmentsPage() {
                         <td style={{ padding: '1rem', fontWeight: 600, color: '#3b1f24' }}>
                           {appt.epdsScore !== null && appt.epdsScore !== undefined
                             ? `${appt.epdsScore} / 30`
-                            : '13 / 30'}
+                            : 'Pending'}
                         </td>
                         <td style={{ padding: '1rem' }}>
                           <span
@@ -404,15 +411,37 @@ export function DoctorAppointmentsPage() {
                           </span>
                         </td>
                         <td style={{ padding: '1rem', textAlign: 'right' }}>
-                          <button
-                            type="button"
-                            className="miora-cta-primary"
-                            style={{ padding: '0.4rem 0.85rem', fontSize: '0.825rem' }}
-                            onClick={() => setSelectedAppt(appt)}
-                          >
-                            <DashboardIcon name="fileText" size={13} />
-                            <span>View Details</span>
-                          </button>
+                          <div style={{ display: 'inline-flex', gap: '0.4rem', alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                            <button
+                              type="button"
+                              className="miora-cta-secondary"
+                              style={{ padding: '0.35rem 0.65rem', fontSize: '0.78rem' }}
+                              title="View Patient Record"
+                              onClick={() => navigate(`/mothers/${appt.motherId || appt.patientId}`)}
+                            >
+                              <DashboardIcon name="user" size={12} />
+                              <span>View Patient</span>
+                            </button>
+                            <button
+                              type="button"
+                              className="miora-cta-secondary"
+                              style={{ padding: '0.35rem 0.65rem', fontSize: '0.78rem' }}
+                              title="View Screening Results in Central AI Portal"
+                              onClick={() => navigate(`/live-screening?mother=${appt.motherId || appt.patientId}`)}
+                            >
+                              <DashboardIcon name="activity" size={12} />
+                              <span>View Screening</span>
+                            </button>
+                            <button
+                              type="button"
+                              className="miora-cta-primary"
+                              style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
+                              onClick={() => setSelectedAppt(appt)}
+                            >
+                              <DashboardIcon name="fileText" size={12} />
+                              <span>Details</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -514,23 +543,47 @@ export function DoctorAppointmentsPage() {
                       Transferred AANCHAL Screening Results
                     </h3>
                     <div style={{ fontSize: '0.8rem', color: '#825f66', marginTop: '0.2rem' }}>
-                      Screening Date: {selectedAppt.screeningDate || '—'} &bull; Screening ID: {selectedAppt.screeningId ? `${selectedAppt.screeningId.slice(0, 8)}...` : 'SCR-4B4DC8B4'}
+                      Screening Date: {selectedAppt.screeningDate || '—'} &bull; Screening ID: {selectedAppt.screeningId ? `${selectedAppt.screeningId.slice(0, 8)}...` : 'Pending screening'}
                     </div>
                   </div>
                   <span
                     style={{
-                      background: '#fde8e8',
-                      color: '#991b1b',
+                      background: (selectedAppt.screeningRisk || '').toLowerCase().includes('high') ? '#fde8e8' : (selectedAppt.screeningRisk || '').toLowerCase().includes('mod') ? '#fef3c7' : '#ecfdf5',
+                      color: (selectedAppt.screeningRisk || '').toLowerCase().includes('high') ? '#991b1b' : (selectedAppt.screeningRisk || '').toLowerCase().includes('mod') ? '#92400e' : '#065f46',
                       fontWeight: 700,
                       fontSize: '0.85rem',
                       padding: '0.35rem 0.85rem',
                       borderRadius: '20px',
-                      border: '1px solid #fca5a5',
+                      border: `1px solid ${(selectedAppt.screeningRisk || '').toLowerCase().includes('high') ? '#fca5a5' : (selectedAppt.screeningRisk || '').toLowerCase().includes('mod') ? '#fde68a' : '#a7f3d0'}`,
                     }}
                   >
-                    {selectedAppt.screeningRisk || 'High Risk'}
+                    {selectedAppt.screeningRisk || 'Pending'}
                   </span>
                 </div>
+
+                {/* Deterministic Safety Q10 Alert */}
+                {selectedAppt.q10SafetyAlert && (
+                  <div
+                    style={{
+                      background: '#fff1f2',
+                      border: '2px solid #e11d48',
+                      borderRadius: '8px',
+                      padding: '0.85rem 1rem',
+                      marginBottom: '1rem',
+                      color: '#9f1239',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <DashboardIcon name="alertTriangle" size={18} style={{ color: '#e11d48', flexShrink: 0 }} />
+                      <strong style={{ fontSize: '0.9rem', color: '#881337' }}>
+                        EPDS Question 10 Safety Flag: Immediate Clinical Assessment Required
+                      </strong>
+                    </div>
+                    <p style={{ margin: '4px 0 0 26px', fontSize: '0.8rem', lineHeight: 1.4 }}>
+                      Thoughts of self-harm indicated. Refer to Tele-MANAS at <strong>14416 / 1800-891-4416</strong>.
+                    </p>
+                  </div>
+                )}
 
                 {/* 1. EPDS Assessment */}
                 <div style={{ marginBottom: '1.25rem' }}>
@@ -544,11 +597,19 @@ export function DoctorAppointmentsPage() {
                       <strong style={{ fontSize: '1.05rem', color: '#8e273e' }}>
                         {selectedAppt.epdsScore !== null && selectedAppt.epdsScore !== undefined
                           ? `${selectedAppt.epdsScore} / 30`
-                          : '13 / 30'}
+                          : 'Pending screening'}
                       </strong>
                     </div>
                     <div style={{ fontSize: '0.85rem', color: '#68454b', marginTop: '0.4rem', borderTop: '1px dashed #f0e1e3', paddingTop: '0.4rem' }}>
-                      <strong>Clinical Interpretation:</strong> Probable depression (Standard validated clinical cutoff &ge; 13 indicates probable major depressive episode requiring immediate diagnostic evaluation and psychosocial intervention).
+                      <strong>Clinical Interpretation:</strong>{' '}
+                      {selectedAppt.epdsInterpretation ||
+                        (selectedAppt.epdsScore !== null && selectedAppt.epdsScore !== undefined
+                          ? selectedAppt.epdsScore >= 13
+                            ? 'Above clinical cut-off (>=13). Probable depressive symptomatology; specialist evaluation recommended.'
+                            : selectedAppt.epdsScore >= 10
+                              ? 'Elevated distress range (10-12). Clinical monitoring and emotional support recommended.'
+                              : 'Within low-distress range (0-9). Routine postpartum wellness follow-up.'
+                          : 'Screening questionnaire pending completion by patient.')}
                     </div>
                   </div>
                 </div>
@@ -561,26 +622,34 @@ export function DoctorAppointmentsPage() {
                   </div>
                   {(() => {
                     const mm = selectedAppt.multimodalResult || {};
-                    const tScore = mm.text_risk ?? mm.text ?? mm.text_score ?? 0.62;
-                    const vScore = mm.voice_risk ?? mm.audio_risk ?? mm.voice ?? mm.audio ?? 0.58;
-                    const vidScore = mm.video_risk ?? mm.video ?? 0.45;
-                    const fmt = (val) => (typeof val === 'number' ? val.toFixed(2) : String(val));
+                    const mmMods = mm.modalities || {};
+                    const tScore = typeof mm.text_score === 'number' ? mm.text_score : (typeof mmMods.text?.score === 'number' ? mmMods.text.score : null);
+                    const vScore = typeof mm.audio_score === 'number' ? mm.audio_score : (typeof mmMods.audio?.score === 'number' ? mmMods.audio.score : (typeof mmMods.voice?.score === 'number' ? mmMods.voice.score : null));
+                    const vidScore = typeof mm.video_score === 'number' ? mm.video_score : (typeof mmMods.video?.score === 'number' ? mmMods.video.score : null);
+                    const vidRecorded = mmMods.video?.status === 'recorded' || mm.modality_status?.video === 'recorded';
+
                     return (
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginTop: '0.5rem' }}>
                         <div style={{ background: '#ffffff', border: '1px solid #eedcde', borderRadius: '8px', padding: '0.75rem', textAlign: 'center' }}>
                           <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#886269', fontWeight: 600 }}>Text (NLP)</div>
-                          <div style={{ fontSize: '1rem', fontWeight: 700, color: '#8e273e', marginTop: '0.2rem' }}>{fmt(tScore)}</div>
-                          <div style={{ fontSize: '0.75rem', color: '#68454b', marginTop: '0.15rem' }}>Narrative distress signal</div>
+                          <div style={{ fontSize: '1rem', fontWeight: 700, color: '#8e273e', marginTop: '0.2rem' }}>
+                            {tScore !== null ? tScore.toFixed(2) : 'Not captured'}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: '#68454b', marginTop: '0.15rem' }}>Narrative sentiment</div>
                         </div>
                         <div style={{ background: '#ffffff', border: '1px solid #eedcde', borderRadius: '8px', padding: '0.75rem', textAlign: 'center' }}>
                           <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#886269', fontWeight: 600 }}>Voice (Acoustic)</div>
-                          <div style={{ fontSize: '1rem', fontWeight: 700, color: '#b45309', marginTop: '0.2rem' }}>{fmt(vScore)}</div>
+                          <div style={{ fontSize: '1rem', fontWeight: 700, color: '#b45309', marginTop: '0.2rem' }}>
+                            {vScore !== null ? vScore.toFixed(2) : 'Not captured'}
+                          </div>
                           <div style={{ fontSize: '0.75rem', color: '#68454b', marginTop: '0.15rem' }}>Acoustic &amp; prosody</div>
                         </div>
                         <div style={{ background: '#ffffff', border: '1px solid #eedcde', borderRadius: '8px', padding: '0.75rem', textAlign: 'center' }}>
                           <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#886269', fontWeight: 600 }}>Video (Facial)</div>
-                          <div style={{ fontSize: '1rem', fontWeight: 700, color: '#047857', marginTop: '0.2rem' }}>{fmt(vidScore)}</div>
-                          <div style={{ fontSize: '0.75rem', color: '#68454b', marginTop: '0.15rem' }}>Facial affect cues</div>
+                          <div style={{ fontSize: '1rem', fontWeight: 700, color: '#047857', marginTop: '0.2rem' }}>
+                            {vidScore !== null ? vidScore.toFixed(2) : (vidRecorded ? 'Recorded' : 'Not captured')}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: '#68454b', marginTop: '0.15rem' }}>Facial dynamics</div>
                         </div>
                       </div>
                     );
@@ -591,21 +660,29 @@ export function DoctorAppointmentsPage() {
                 <div style={{ marginBottom: '1.25rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600, color: '#57222f', fontSize: '0.95rem' }}>
                     <DashboardIcon name="barChart" size={16} />
-                    <span>3. Combined Screening Results &amp; Discordance</span>
+                    <span>3. Combined Screening Results &amp; Discordance Assessment</span>
                   </div>
                   <div style={{ background: '#ffffff', border: '1px solid #eedcde', borderRadius: '8px', padding: '0.85rem 1rem', marginTop: '0.5rem' }}>
                     <p style={{ margin: '0 0 0.5rem', fontSize: '0.85rem', color: '#442229' }}>
-                      <strong>Overall Risk:</strong> {selectedAppt.screeningRisk || 'High Risk'}
+                      <strong>Overall Risk:</strong> {selectedAppt.screeningRisk || 'Pending evaluation'}
                       {selectedAppt.clinicalPrediction?.predicted_risk_probability != null
-                        ? ` (Combined Risk Probability: ${(selectedAppt.clinicalPrediction.predicted_risk_probability * 100).toFixed(1)}%)`
+                        ? ` (Clinical Model Risk: ${(selectedAppt.clinicalPrediction.predicted_risk_probability * 100).toFixed(1)}%)`
                         : ''}
                     </p>
-                    <p style={{ margin: '0 0 0.5rem', fontSize: '0.85rem', color: '#68454b' }}>
-                      <strong>Discordance Analysis:</strong> Cross-modal comparison between self-reported EPDS ({selectedAppt.epdsScore ?? 13}/30) and multimodal behavioral signals.
-                    </p>
-                    <p style={{ margin: 0, fontSize: '0.85rem', color: '#68454b' }}>
-                      <strong>EPDS Interpretation:</strong> {selectedAppt.epdsInterpretation || 'Above clinical cut-off threshold; specialist consultation and care plan advised.'}
-                    </p>
+                    {selectedAppt.discordanceAssessment ? (
+                      <div style={{ margin: '0.5rem 0', padding: '0.65rem 0.85rem', background: '#faf5f7', borderRadius: '6px', borderLeft: '3px solid #ba1e53' }}>
+                        <strong style={{ fontSize: '0.85rem', color: '#57222f' }}>
+                          {selectedAppt.discordanceAssessment.title}:
+                        </strong>
+                        <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#68454b', lineHeight: 1.4 }}>
+                          {selectedAppt.discordanceAssessment.description}
+                        </p>
+                      </div>
+                    ) : (
+                      <p style={{ margin: '0 0 0.5rem', fontSize: '0.85rem', color: '#68454b' }}>
+                        <strong>Discordance Analysis:</strong> Cross-modal comparison between self-reported EPDS ({selectedAppt.epdsScore !== null && selectedAppt.epdsScore !== undefined ? `${selectedAppt.epdsScore}/30` : 'Pending'}) and multimodal behavioral signals.
+                      </p>
+                    )}
                   </div>
                 </div>
 
