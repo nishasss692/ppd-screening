@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import canonicalQuestionsJson from '../../../../data/questions.json';
+import canonicalQuestionsJson from '../../../../backend/resources/questions.json';
 import { PatientIcon } from '../PatientIcons.jsx';
 import { saveScreeningSession } from '../../services/patientApiService.js';
 import { submitInClinicScreening } from '../../../dashboard/services/doctorApiService.js';

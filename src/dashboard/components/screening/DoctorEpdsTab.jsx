@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useClinicalData } from '../../context/ClinicalContext.jsx';
-import canonicalQuestionsJson from '../../../../data/questions.json';
+import canonicalQuestionsJson from '../../../../backend/resources/questions.json';
 import { DashboardIcon } from '../DashboardIcon.jsx';
 import { RiskBadge, StatusBadge } from '../Badges.jsx';
 import { MaternalScreeningSearchBar } from './MaternalScreeningSearchBar.jsx';
