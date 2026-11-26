@@ -6898,5 +6898,148 @@
   }
 }
 
+/* ==========================================================================
+   Doctor Dashboard — Green & White Theme, Wave, Box Design & Hero Photo
+   Scoped strictly to .dash-enterprise-shell:not(.patient-app-shell)
+   ========================================================================== */
+.dash-enterprise-shell:not(.patient-app-shell) {
+  background: radial-gradient(circle at 88% 8%, #d8efe1 0%, #eef7f1 48%, #e6f3eb 100%);
+}
+
+.dash-enterprise-shell:not(.patient-app-shell) .dash-sidebar {
+  background: #ffffff;
+  border-right-color: #d7e7dc;
+}
+
+.dash-enterprise-shell:not(.patient-app-shell) .dash-sidebar-head {
+  border-bottom-color: #e4f0e7;
+}
+
+.dash-enterprise-shell:not(.patient-app-shell) .dash-sidebar-portal-tag {
+  background: #e2f3e9;
+  color: #1b5e42;
+}
+
+.dash-enterprise-shell:not(.patient-app-shell) .aanchal-official-logo {
+  filter: hue-rotate(155deg) saturate(1.2) brightness(0.85);
+}
+
+.dash-enterprise-shell:not(.patient-app-shell) .dash-sidebar-link:hover {
+  background: #f0f9f3;
+  color: #1b5e42;
+}
+
+.dash-enterprise-shell:not(.patient-app-shell) .dash-sidebar-link.is-active {
+  background: #e2f3e9;
+  color: #1b5e42;
+  box-shadow: inset 3.5px 0 0 #1b5e42;
+}
+
+.dash-enterprise-shell:not(.patient-app-shell) .dash-sidebar-footer {
+  border-top-color: #e4f0e7;
+  background: #f8fcfa;
+}
+
+.dash-enterprise-shell:not(.patient-app-shell) .dash-sidebar-avatar,
+.dash-enterprise-shell:not(.patient-app-shell) .dash-avatar-btn {
+  background: linear-gradient(135deg, #2d8a64, #1b5e42);
+  color: #ffffff;
+}
+
+.dash-enterprise-shell:not(.patient-app-shell) .dash-top-header {
+  background: rgba(255, 255, 255, 0.9);
+  border-bottom-color: #d7e7dc;
+}
+
+.dash-enterprise-shell:not(.patient-app-shell) .miora-command-frame {
+  background: #ffffff;
+  border: 1px solid #d7e7dc;
+  border-radius: 24px;
+  box-shadow: 0 12px 34px rgba(30, 107, 78, 0.05);
+}
+
+.dash-enterprise-shell:not(.patient-app-shell) .miora-command-frame::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 160' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23d8efe1' stop-opacity='0'/%3E%3Cstop offset='48%25' stop-color='%23bde3cc' stop-opacity='0.5'/%3E%3Cstop offset='100%25' stop-color='%23e2f3e9' stop-opacity='0.22'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0 140 C 160 135, 220 35, 390 42 C 510 46, 560 92, 640 30 L 640 160 L 0 160 Z' fill='url(%23g)'/%3E%3C/svg%3E");
+}
+
+.dash-enterprise-shell:not(.patient-app-shell) .miora-dash-header {
+  background: linear-gradient(135deg, #ffffff 0%, #f3faf6 100%);
+  border: 1px solid #d7e7dc;
+  border-radius: 16px;
+  padding: 22px 28px;
+  box-shadow: 0 4px 18px rgba(30, 107, 78, 0.04);
+}
+
+.dash-enterprise-shell:not(.patient-app-shell) .miora-dash-eyebrow-line {
+  background: #b8d7c3;
+}
+
+.dash-enterprise-shell:not(.patient-app-shell) .miora-dash-title {
+  font-family: var(--serif, 'Playfair Display', Georgia, serif);
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  word-spacing: 0.06em;
+}
+
+.dash-enterprise-shell:not(.patient-app-shell) .miora-dash-title em {
+  color: #1b5e42;
+  font-style: italic;
+  font-weight: 500;
+  margin-left: 4px;
+}
+
+.miora-dash-hero-photo-wrap {
+  width: 128px;
+  height: 92px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #d7e7dc;
+  background: #eef7f1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.miora-dash-hero-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: hue-rotate(138deg) saturate(0.88) brightness(1.03);
+}
+
+.dash-enterprise-shell:not(.patient-app-shell) .miora-card,
+.dash-enterprise-shell:not(.patient-app-shell) .miora-kpi-card {
+  background: #ffffff;
+  border-color: #d7e7dc;
+  box-shadow: 0 4px 16px rgba(30, 107, 78, 0.04);
+}
+
+.dash-enterprise-shell:not(.patient-app-shell) .miora-card-icon,
+.dash-enterprise-shell:not(.patient-app-shell) .miora-kpi-icon-wrap {
+  color: #1b5e42;
+  background: #e8f5ed;
+}
+
+.dash-enterprise-shell:not(.patient-app-shell) .miora-cta-primary {
+  background: linear-gradient(90deg, #2d8a64 0%, #1b5e42 100%);
+  box-shadow: 0 4px 14px rgba(30, 107, 78, 0.22);
+}
+
+.dash-enterprise-shell:not(.patient-app-shell) .miora-cta-primary:hover {
+  background: linear-gradient(90deg, #359b71 0%, #216f4e 100%);
+}
+
+.dash-enterprise-shell:not(.patient-app-shell) .screening-tab-nav-btn.is-active {
+  background: #1b5e42;
+  color: #ffffff;
+  border-color: #1b5e42;
+}
+
+.dash-enterprise-shell:not(.patient-app-shell) .miora-page-btn.is-active {
+  background: #1b5e42;
+  border-color: #1b5e42;
+}
+
 
 

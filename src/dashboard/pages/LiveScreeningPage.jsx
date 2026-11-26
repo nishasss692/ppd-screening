@@ -51,10 +51,19 @@ export function LiveScreeningPage() {
           <div className="miora-dash-header-copy">
             <div className="miora-dash-eyebrow">
               <span>PATIENT SCREENING REVIEW</span>
+              <span className="miora-dash-eyebrow-line" aria-hidden="true" />
             </div>
             <h1 id="live-screening-heading" className="miora-dash-title">
-              Maternal Screening Review
+              Maternal Screening <em>Review</em>
             </h1>
+          </div>
+          <div className="miora-dash-hero-photo-wrap" aria-hidden="true">
+            <img
+              src="/assets/mother-baby-header-crop.png"
+              alt=""
+              className="miora-dash-hero-photo"
+              onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
+            />
           </div>
         </section>
 

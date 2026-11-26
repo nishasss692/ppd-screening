@@ -75,7 +75,7 @@ export function CommandCenterPage() {
             </h1>
           </div>
 
-          <div className="miora-dash-header-actions" ref={ctaRef}>
+          <div className="miora-dash-header-actions" ref={ctaRef} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <button
               type="button"
               className="miora-cta-primary"

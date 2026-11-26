@@ -316,9 +316,10 @@ export function ClinicalReviewPage({ reviewSubmitter = submitClinicalReview }) {
           <div className="miora-dash-header-copy">
             <div className="miora-dash-eyebrow">
               <span>CLINICAL REVIEW</span>
+              <span className="miora-dash-eyebrow-line" aria-hidden="true" />
             </div>
             <h1 id="clinical-review-heading" className="miora-dash-title">
-              Clinical Review &amp; Assessment
+              Clinical Review &amp; <em>Assessment</em>
             </h1>
           </div>
 
