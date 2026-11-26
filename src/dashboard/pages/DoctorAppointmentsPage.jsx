@@ -145,20 +145,20 @@ export function DoctorAppointmentsPage() {
   };
 
   return (
-    <div className="miora-dash-layout">
-      <main className="miora-dash-main" aria-label="Assigned Appointments & Consultations">
-        {/* Page Header */}
-        <section className="miora-card" style={{ padding: '22px 26px', marginBottom: '18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap', background: 'linear-gradient(135deg, #ffffff 0%, #fdf5f7 100%)' }}>
-          <div className="miora-dash-header-left">
+    <div className="miora-command-shell">
+      <div className="miora-command-frame" aria-label="Assigned Appointments & Consultations">
+        {/* Page Header matching Maternal Screening Review */}
+        <section className="miora-dash-header" aria-labelledby="appointments-heading">
+          <div className="miora-dash-header-copy">
             <div className="miora-dash-eyebrow">
               <span>{String(doctorName || 'CLINICIAN').toUpperCase()} &middot; CLINICAL WORKSPACE</span>
-              <span className="miora-live-indicator" title="Connected to PostgreSQL backend">
+              <span className="miora-live-indicator" title="Connected to PostgreSQL backend" style={{ marginLeft: 10 }}>
                 <span className="miora-live-dot" />
                 Live Sync
               </span>
             </div>
-            <h1 className="miora-dash-title" style={{ margin: '6px 0 0' }}>
-              Assigned Consultations &amp; <em>Appointments</em>
+            <h1 id="appointments-heading" className="miora-dash-title">
+              Assigned Consultations &amp; Appointments
             </h1>
           </div>
           <div className="miora-dash-header-actions">
@@ -736,7 +736,7 @@ export function DoctorAppointmentsPage() {
             </div>
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 }
