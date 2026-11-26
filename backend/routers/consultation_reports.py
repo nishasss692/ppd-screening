@@ -286,7 +286,17 @@ def list_consultation_reports(
 
     reports = db.scalars(query).all()
     results = []
+    seen_reports = set()
     for r in reports:
+        dedup_key = (
+            str(r.mother_id or r.patient_identifier or "").strip().lower(),
+            str(r.consultation_date or "").strip().lower(),
+            str(r.doctor_name or "").strip().lower(),
+            str(r.status or "").strip().lower(),
+        )
+        if dedup_key in seen_reports:
+            continue
+        seen_reports.add(dedup_key)
         results.append(
             HospitalReportListItem(
                 id=str(r.id),

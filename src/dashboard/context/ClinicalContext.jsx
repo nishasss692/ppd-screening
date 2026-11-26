@@ -201,6 +201,95 @@ export function deduplicateScreenings(screeningsList, mothersList = []) {
   return result;
 }
 
+/**
+ * Deduplicate clinician appointments by ID and (patient, hospital, date, time, status).
+ */
+export function deduplicateAppointments(list) {
+  if (!Array.isArray(list)) return [];
+  const seenIds = new Set();
+  const seenKeys = new Set();
+  const result = [];
+  for (const a of list) {
+    if (!a) continue;
+    const idKey = a.id ? String(a.id).toLowerCase().trim() : null;
+    if (idKey && seenIds.has(idKey)) continue;
+    const patientKey = String(a.patientName || a.motherId || a.patientId || '').toLowerCase().trim();
+    const compositeKey = `${patientKey}|${String(a.hospitalName || '').toLowerCase().trim()}|${String(a.date || '').toLowerCase().trim()}|${String(a.time || '').toLowerCase().trim()}|${String(a.status || '').toLowerCase().trim()}`;
+    if (patientKey && seenKeys.has(compositeKey)) continue;
+    if (idKey) seenIds.add(idKey);
+    if (patientKey) seenKeys.add(compositeKey);
+    result.push(a);
+  }
+  return result;
+}
+
+/**
+ * Deduplicate consultation reports by ID, report_code, and (patient, date, doctor).
+ */
+export function deduplicateConsultationReports(list) {
+  if (!Array.isArray(list)) return [];
+  const seenIds = new Set();
+  const seenCodes = new Set();
+  const seenKeys = new Set();
+  const result = [];
+  for (const r of list) {
+    if (!r) continue;
+    const idKey = r.id ? String(r.id).toLowerCase().trim() : null;
+    const codeKey = r.report_code ? String(r.report_code).toLowerCase().trim() : null;
+    if (idKey && seenIds.has(idKey)) continue;
+    if (codeKey && seenCodes.has(codeKey)) continue;
+    const compositeKey = `${String(r.patient_name || r.patient_identifier || '').toLowerCase().trim()}|${String(r.appointment_date || r.created_at || '').toLowerCase().trim()}|${String(r.doctor_name || '').toLowerCase().trim()}`;
+    if (seenKeys.has(compositeKey)) continue;
+    if (idKey) seenIds.add(idKey);
+    if (codeKey) seenCodes.add(codeKey);
+    seenKeys.add(compositeKey);
+    result.push(r);
+  }
+  return result;
+}
+
+/**
+ * Deduplicate clinical alerts by ID and (motherId, title).
+ */
+export function deduplicateAlerts(list) {
+  if (!Array.isArray(list)) return [];
+  const seenIds = new Set();
+  const seenKeys = new Set();
+  const result = [];
+  for (const a of list) {
+    if (!a) continue;
+    const idKey = a.id ? String(a.id).toLowerCase().trim() : null;
+    if (idKey && seenIds.has(idKey)) continue;
+    const compositeKey = `${String(a.motherId || '').toLowerCase().trim()}|${String(a.title || '').toLowerCase().trim()}`;
+    if (seenKeys.has(compositeKey)) continue;
+    if (idKey) seenIds.add(idKey);
+    seenKeys.add(compositeKey);
+    result.push(a);
+  }
+  return result;
+}
+
+/**
+ * Deduplicate doctor notifications by ID and (title, message).
+ */
+export function deduplicateNotifications(list) {
+  if (!Array.isArray(list)) return [];
+  const seenIds = new Set();
+  const seenKeys = new Set();
+  const result = [];
+  for (const n of list) {
+    if (!n) continue;
+    const idKey = n.id ? String(n.id).toLowerCase().trim() : null;
+    if (idKey && seenIds.has(idKey)) continue;
+    const compositeKey = `${String(n.title || '').toLowerCase().trim()}|${String(n.message || '').toLowerCase().trim()}`;
+    if (seenKeys.has(compositeKey)) continue;
+    if (idKey) seenIds.add(idKey);
+    seenKeys.add(compositeKey);
+    result.push(n);
+  }
+  return result;
+}
+
 export function ClinicalProvider({ children }) {
   const [mothers, setMothers] = useState(() => deduplicateMothers(INITIAL_MOTHERS));
   const [screenings, setScreenings] = useState(() => deduplicateScreenings(INITIAL_SCREENINGS, INITIAL_MOTHERS));
@@ -245,13 +334,13 @@ export function ClinicalProvider({ children }) {
       const rawBackendMothers = mList.status === 'fulfilled' && Array.isArray(mList.value) ? mList.value : [];
       const rawBackendScreenings = sList.status === 'fulfilled' && Array.isArray(sList.value) ? sList.value : [];
       if (cReports.status === 'fulfilled' && Array.isArray(cReports.value)) {
-        setConsultationReports(cReports.value);
+        setConsultationReports(deduplicateConsultationReports(cReports.value));
       }
       if (cAppts.status === 'fulfilled' && Array.isArray(cAppts.value)) {
-        setAppointments(cAppts.value);
+        setAppointments(deduplicateAppointments(cAppts.value));
       }
       if (dNotifs.status === 'fulfilled' && Array.isArray(dNotifs.value)) {
-        setDoctorNotifications(dNotifs.value);
+        setDoctorNotifications(deduplicateNotifications(dNotifs.value));
       }
 
       if (dMetrics.status === 'fulfilled' && dMetrics.value) {
@@ -288,10 +377,7 @@ export function ClinicalProvider({ children }) {
             description: a.description,
           };
         });
-        setAlerts((prev) => {
-          const combined = [...mappedAlerts, ...prev.filter((p) => !mappedAlerts.some((ma) => ma.id === p.id))];
-          return combined;
-        });
+        setAlerts(deduplicateAlerts(mappedAlerts));
       }
 
       let currentMothersSnapshot = INITIAL_MOTHERS;

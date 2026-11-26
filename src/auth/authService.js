@@ -115,6 +115,16 @@ export function signOutUser() {
  * Validates credentials against PostgreSQL backend via JWT authentication.
  * Supports Doctor, Patient, and Patient's Family logins.
  */
+function getAuthApiBase() {
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_MIORA_API_URL) {
+    return import.meta.env.VITE_MIORA_API_URL.replace(/\/$/, '');
+  }
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin;
+  }
+  return 'http://127.0.0.1:8000';
+}
+
 export async function authenticate({ email, password, selectedRole }) {
   // Simulate brief realistic authentication latency
   await new Promise((resolve) => setTimeout(resolve, 400));
@@ -145,13 +155,15 @@ export async function authenticate({ email, password, selectedRole }) {
       ? 'family'
       : selectedRole === 'doctor'
         ? 'doctor'
-        : 'patient';
+        : selectedRole === 'hospital'
+          ? 'hospital'
+          : 'patient';
 
   // Attempt backend PostgreSQL authentication if server is reachable
   let backendUser = null;
   let backendRedirectUrl = null;
   try {
-    const apiBase = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : '';
+    const apiBase = getAuthApiBase();
     const response = await fetch(`${apiBase}/api/auth/login`, {
       method: 'POST',
       headers: {
@@ -397,12 +409,14 @@ export async function registerAccount({ name, email, password, role, patientEmai
       ? 'family'
       : role === 'doctor'
         ? 'doctor'
-        : 'patient';
+        : role === 'hospital'
+          ? 'hospital'
+          : 'patient';
 
   // Attempt backend PostgreSQL registration (supporting all 3 roles)
   let backendRegistered = null;
   try {
-    const apiBase = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : '';
+    const apiBase = getAuthApiBase();
     const response = await fetch(`${apiBase}/api/auth/register`, {
       method: 'POST',
       headers: {
