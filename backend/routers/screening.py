@@ -387,7 +387,8 @@ async def analyze_multimodal_screening(
         if mother_obj:
             f_score = inference_result.get("fusion_score")
             if isinstance(f_score, (int, float)):
-                mm_risk = "high" if f_score >= 0.65 else "moderate" if f_score >= 0.35 else "low"
+                f_pct = f_score * 100.0 if f_score <= 1.0 else float(f_score)
+                mm_risk = "high" if f_pct >= 43 else "moderate" if f_pct >= 33 else "low"
             else:
                 mm_risk = "moderate"
 
@@ -405,44 +406,81 @@ async def analyze_multimodal_screening(
                 "processed_at": processed_timestamp,
             }
             clin_mod = inference_result.get("modalities", {}).get("clinical")
-            new_mm_screening = Screening(
-                mother_id=mother_obj.id,
-                instrument="MULTIMODAL",
-                total_score=0,
-                risk_classification=mm_risk,
-                q10_safety_alert=bool(q10_safety_alert and q10_safety_alert.get("triggered")),
-                submitted_answers={},
-                item_scores={},
-                screening_status="completed",
-                fusion_status=inference_result.get("fusion_status") or "completed",
-                modality_status=inference_result.get("modality_status") or {},
-                model_metadata={
-                    "model_version": inference_result.get("model_version"),
-                    "narrative_excerpt": resolved_text[:400] if resolved_text else None,
-                    "character_count": len(resolved_text) if resolved_text else 0,
-                    "audio_features_count": len(resolved_audio) if resolved_audio else 0,
-                    "video_features_count": len(resolved_video) if resolved_video else 0,
-                    "processed_at": processed_timestamp,
-                },
-                multimodal_scores=mm_payload,
-                clinical_features_snapshot=resolved_clinical,
-                clinical_model_prediction=(
-                    {
-                        "predicted_risk_probability": clin_mod.get("score"),
-                        "predicted_class": clin_mod.get("predicted_class"),
-                        "status": clin_mod.get("status"),
-                        "model_utilized": clin_mod.get("model_version") or "random_forest",
-                        "predicted_label": "HIGH_RISK" if (clin_mod.get("score") or 0) >= 0.5 else "MODERATE_RISK",
-                    }
-                    if isinstance(clin_mod, dict) and clin_mod.get("status") == "completed"
-                    else None
-                ),
-                notes="AI Multimodal Screening completed via Patient Portal.",
+            clin_pred_payload = (
+                {
+                    "predicted_risk_probability": clin_mod.get("score"),
+                    "predicted_class": clin_mod.get("predicted_class"),
+                    "status": clin_mod.get("status"),
+                    "model_utilized": clin_mod.get("model_version") or "random_forest",
+                    "predicted_label": (
+                        "HIGH_RISK"
+                        if (clin_mod.get("score") or 0) >= 0.43
+                        else "MODERATE_RISK"
+                        if (clin_mod.get("score") or 0) >= 0.33
+                        else "LOW_RISK"
+                    ),
+                }
+                if isinstance(clin_mod, dict) and clin_mod.get("status") == "completed"
+                else None
             )
-            db.add(new_mm_screening)
-            db.commit()
-            db.refresh(new_mm_screening)
-            persisted_screening_id = str(new_mm_screening.id)
+
+            # Merge into a recent (<30 mins) EPDS screening for the same mother if submitted first
+            now_utc = datetime.now(timezone.utc)
+            recent_epds = db.scalars(
+                select(Screening)
+                .where(Screening.mother_id == mother_obj.id, Screening.instrument.in_(("EPDS", "EPDS+MULTIMODAL")))
+                .order_by(Screening.created_at.desc())
+                .limit(1)
+            ).first()
+            merged_recent = False
+            if recent_epds and recent_epds.created_at:
+                cand_dt = recent_epds.created_at if recent_epds.created_at.tzinfo else recent_epds.created_at.replace(tzinfo=timezone.utc)
+                if (now_utc - cand_dt).total_seconds() < 1800:
+                    recent_epds.instrument = "EPDS+MULTIMODAL"
+                    recent_epds.screening_date = now_utc
+                    recent_epds.fusion_status = inference_result.get("fusion_status") or "completed"
+                    recent_epds.modality_status = {**(recent_epds.modality_status or {}), **(inference_result.get("modality_status") or {})}
+                    recent_epds.multimodal_scores = {**(recent_epds.multimodal_scores or {}), **mm_payload}
+                    if clin_pred_payload:
+                        recent_epds.clinical_model_prediction = clin_pred_payload
+                    if recent_epds.q10_safety_alert or recent_epds.risk_classification == "high" or mm_risk == "high":
+                        recent_epds.risk_classification = "high"
+                    elif recent_epds.risk_classification == "moderate" or mm_risk == "moderate":
+                        recent_epds.risk_classification = "moderate"
+                    db.commit()
+                    db.refresh(recent_epds)
+                    persisted_screening_id = str(recent_epds.id)
+                    merged_recent = True
+
+            if not merged_recent:
+                new_mm_screening = Screening(
+                    mother_id=mother_obj.id,
+                    instrument="MULTIMODAL",
+                    total_score=0,
+                    risk_classification=mm_risk,
+                    q10_safety_alert=bool(q10_safety_alert and q10_safety_alert.get("triggered")),
+                    submitted_answers={},
+                    item_scores={},
+                    screening_status="completed",
+                    fusion_status=inference_result.get("fusion_status") or "completed",
+                    modality_status=inference_result.get("modality_status") or {},
+                    model_metadata={
+                        "model_version": inference_result.get("model_version"),
+                        "narrative_excerpt": resolved_text[:400] if resolved_text else None,
+                        "character_count": len(resolved_text) if resolved_text else 0,
+                        "audio_features_count": len(resolved_audio) if resolved_audio else 0,
+                        "video_features_count": len(resolved_video) if resolved_video else 0,
+                        "processed_at": processed_timestamp,
+                    },
+                    multimodal_scores=mm_payload,
+                    clinical_features_snapshot=resolved_clinical,
+                    clinical_model_prediction=clin_pred_payload,
+                    notes="AI Multimodal Screening completed via Patient Portal.",
+                )
+                db.add(new_mm_screening)
+                db.commit()
+                db.refresh(new_mm_screening)
+                persisted_screening_id = str(new_mm_screening.id)
     except Exception:
         db.rollback()
 

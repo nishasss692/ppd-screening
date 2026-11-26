@@ -694,17 +694,29 @@ def persist_epds_screening_for_mother(
     existing_mm_screening: Optional[Screening] = None
 
     # Check if a MULTIMODAL screening row was already persisted in this session
+    now_utc = datetime.now(timezone.utc)
     if isinstance(mm_res, dict) and mm_res.get("screening_id"):
         try:
             cand = db.get(Screening, uuid.UUID(str(mm_res["screening_id"])))
-            if cand and cand.mother_id == mother.id and cand.instrument == "MULTIMODAL":
-                # Only link if the multimodal screening was completed in the current active session (within 30 mins)
-                now_utc = datetime.now(timezone.utc)
+            if cand and cand.mother_id == mother.id and cand.instrument in ("MULTIMODAL", "EPDS+MULTIMODAL"):
                 cand_dt = cand.created_at if cand.created_at.tzinfo else cand.created_at.replace(tzinfo=timezone.utc)
                 if (now_utc - cand_dt).total_seconds() < 1800:
                     existing_mm_screening = cand
         except Exception:
             pass
+
+    # Fallback: link the mother's most recent MULTIMODAL screening from the last 30 mins
+    if existing_mm_screening is None:
+        recent_mm = db.scalars(
+            select(Screening)
+            .where(Screening.mother_id == mother.id, Screening.instrument == "MULTIMODAL")
+            .order_by(desc(Screening.created_at))
+            .limit(1)
+        ).first()
+        if recent_mm and recent_mm.created_at:
+            cand_dt = recent_mm.created_at if recent_mm.created_at.tzinfo else recent_mm.created_at.replace(tzinfo=timezone.utc)
+            if (now_utc - cand_dt).total_seconds() < 1800:
+                existing_mm_screening = recent_mm
 
     if isinstance(mm_res, dict) and mm_res:
         for k in (
@@ -765,11 +777,26 @@ def persist_epds_screening_for_mother(
         existing_mm_screening.notes = payload.notes or f"Completed AI Multimodal + EPDS Screening. EPDS Score: {scored.total_score}/30"
         new_screening = existing_mm_screening
     else:
+        # Unify risk_classification using fusion_score / clinical_score (43% High, 33% Moderate) + EPDS
+        eff_risk = risk_class
+        prob_val = multimodal_dict.get("fusion_score")
+        if prob_val is None and isinstance(clinical_pred_dict, dict):
+            prob_val = clinical_pred_dict.get("predicted_risk_probability")
+        if isinstance(prob_val, (int, float)):
+            prob_pct = prob_val * 100.0 if prob_val <= 1.0 else float(prob_val)
+            prob_risk = "high" if prob_pct >= 43 else "moderate" if prob_pct >= 33 else "low"
+            if scored.safety_alert.triggered or risk_class == "high" or prob_risk == "high":
+                eff_risk = "high"
+            elif risk_class == "moderate" or prob_risk == "moderate":
+                eff_risk = "moderate"
+            else:
+                eff_risk = "low"
+
         new_screening = Screening(
             mother_id=mother.id,
             instrument="EPDS",
             total_score=scored.total_score,
-            risk_classification=risk_class,
+            risk_classification=eff_risk,
             q10_safety_alert=scored.safety_alert.triggered,
             submitted_answers=submitted_answers_map,
             item_scores=item_scores_map,

@@ -490,6 +490,13 @@ export function ClinicalProvider({ children }) {
                 ? cmPred.predicted_risk_probability
                 : null;
           const fusionScore = typeof mm.fusion_score === 'number' ? mm.fusion_score : null;
+          const effectiveProb = fusionScore !== null ? fusionScore : clinicalScore;
+          const effectiveProbPct = typeof effectiveProb === 'number' ? (effectiveProb <= 1 ? effectiveProb * 100 : effectiveProb) : null;
+          const unifiedRisk =
+            effectiveProbPct !== null
+              ? (effectiveProbPct >= 43 ? 'High' : effectiveProbPct >= 33 ? 'Moderate' : 'Low')
+              : capRisk;
+          const finalRisk = bs.q10_safety_alert ? 'High' : (capRisk === 'High' || unifiedRisk === 'High' ? 'High' : (capRisk === 'Moderate' || unifiedRisk === 'Moderate' ? 'Moderate' : 'Low'));
           const processedAt = mm.processed_at || bs.model_metadata?.processed_at || bs.screening_date || null;
 
           const textStatus = textScore !== null ? 'completed' : (mmMods.text?.status || cap.text || 'pending');
@@ -513,9 +520,9 @@ export function ClinicalProvider({ children }) {
             processedAt: processedAt
               ? `${new Date(processedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })} · ${new Date(processedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}`
               : null,
-            risk: capRisk,
+            risk: finalRisk,
             modality: fusionScore !== null ? 'Multimodal (Text · Audio · Video · Clinical · EPDS)' : 'EPDS + Clinical Questionnaire',
-            combinedScore: fusionScore !== null ? Number(fusionScore.toFixed(4)) : null,
+            combinedScore: effectiveProb !== null ? Number(effectiveProb.toFixed(4)) : null,
             epdsEquivalent: score,
             totalScore: score,
             q10SafetyAlert: Boolean(bs.q10_safety_alert),
@@ -555,7 +562,10 @@ export function ClinicalProvider({ children }) {
               clinical: {
                 status: clinicalStatus,
                 score: clinicalScore,
-                label: cmPred?.predicted_label || cmPred?.risk_category || null,
+                label:
+                  typeof clinicalScore === 'number'
+                    ? (clinicalScore >= 0.43 ? 'HIGH_RISK' : clinicalScore >= 0.33 ? 'MODERATE_RISK' : 'LOW_RISK')
+                    : (cmPred?.predicted_label || cmPred?.risk_category || null),
                 modelVersion: cmPred?.model_utilized || 'clinical_random_forest_v1',
               },
             },
