@@ -17,6 +17,8 @@ export function HospitalLayout() {
   const [hospitalUser, setHospitalUser] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [showNotifs, setShowNotifs] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const pageLabel = location.pathname.includes('/appointments')
     ? 'Appointments'
@@ -62,12 +64,23 @@ export function HospitalLayout() {
   return (
     <div className="hosp-layout-shell">
       {/* Sidebar */}
-      <aside className="hosp-sidebar" aria-label="Hospital Navigation">
+      <aside className={`hosp-sidebar ${sidebarCollapsed ? 'is-collapsed' : ''}`} aria-label="Hospital Navigation">
         <div className="hosp-sidebar-brand">
-          <Link to="/hospital/dashboard" className="dash-brand-link" aria-label="AANCHAL Hospital Portal">
+          <Link to="/hospital/dashboard" className="hosp-brand-pill" aria-label="AANCHAL Hospital Portal">
             <BrandWordmark />
           </Link>
-          <span className="hosp-sidebar-badge">HOSPITAL</span>
+          {!sidebarCollapsed && <span className="hosp-sidebar-badge">HOSPITAL</span>}
+          <button
+            type="button"
+            className="hosp-sidebar-collapse-btn"
+            aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            onClick={() => setSidebarCollapsed((c) => !c)}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              {sidebarCollapsed ? <polyline points="9 18 15 12 9 6" /> : <polyline points="15 18 9 12 15 6" />}
+            </svg>
+          </button>
         </div>
 
         <nav aria-label="Main navigation" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
@@ -76,6 +89,7 @@ export function HospitalLayout() {
             <li>
               <NavLink
                 to="/hospital/dashboard"
+                title={sidebarCollapsed ? 'Dashboard' : undefined}
                 className={({ isActive }) => `hosp-nav-link${isActive ? ' is-active' : ''}`}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -84,12 +98,13 @@ export function HospitalLayout() {
                   <rect x="14" y="14" width="7" height="7" />
                   <rect x="3" y="14" width="7" height="7" />
                 </svg>
-                <span>Dashboard</span>
+                <span className="hosp-nav-label">Dashboard</span>
               </NavLink>
             </li>
             <li>
               <NavLink
                 to="/hospital/appointments"
+                title={sidebarCollapsed ? 'Appointments' : undefined}
                 className={({ isActive }) => `hosp-nav-link${isActive ? ' is-active' : ''}`}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -98,12 +113,13 @@ export function HospitalLayout() {
                   <line x1="8" y1="2" x2="8" y2="6" />
                   <line x1="3" y1="10" x2="21" y2="10" />
                 </svg>
-                <span>Appointments</span>
+                <span className="hosp-nav-label">Appointments</span>
               </NavLink>
             </li>
             <li>
               <NavLink
                 to="/hospital/reports"
+                title={sidebarCollapsed ? 'Reports' : undefined}
                 className={({ isActive }) => `hosp-nav-link${isActive ? ' is-active' : ''}`}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -113,7 +129,7 @@ export function HospitalLayout() {
                   <line x1="16" y1="17" x2="8" y2="17" />
                   <polyline points="10 9 9 9 8 9" />
                 </svg>
-                <span>Reports</span>
+                <span className="hosp-nav-label">Reports</span>
               </NavLink>
             </li>
           </ul>
@@ -128,13 +144,14 @@ export function HospitalLayout() {
               className="hosp-logout-btn"
               onClick={handleLogout}
               aria-label="Log out of hospital portal"
+              title={sidebarCollapsed ? 'Sign Out' : undefined}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                 <polyline points="16 17 21 12 16 7" />
                 <line x1="21" y1="12" x2="9" y2="12" />
               </svg>
-              <span>Sign Out</span>
+              <span className="hosp-logout-label">Sign Out</span>
             </button>
           </div>
         </nav>
@@ -267,6 +284,60 @@ export function HospitalLayout() {
               </svg>
               <span>{hospitalUser.hospital_name} ({hospitalUser.hospital_id})</span>
             </span>
+
+            {/* Hospital Profile Menu */}
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                className="hosp-avatar-btn"
+                aria-label="Hospital profile menu"
+                aria-expanded={profileOpen}
+                onClick={() => {
+                  setProfileOpen((p) => !p);
+                  setShowNotifs(false);
+                }}
+              >
+                <span>{(hospitalUser.hospital_name || 'H')[0].toUpperCase()}</span>
+              </button>
+
+              {profileOpen && (
+                <div className="hosp-profile-popover" role="dialog" aria-label="Hospital profile details">
+                  <div className="hosp-profile-head">
+                    <strong>{hospitalUser.hospital_name}</strong>
+                    <span>{hospitalUser.hospital_id} &middot; {hospitalUser.hospital_location}</span>
+                    <span className="hosp-profile-role-pill">Hospital Coordinator</span>
+                  </div>
+                  <div className="hosp-profile-divider" />
+                  <button
+                    type="button"
+                    className="hosp-profile-menu-item"
+                    onClick={() => {
+                      setProfileOpen(false);
+                      navigate('/hospital/dashboard');
+                    }}
+                  >
+                    Dashboard Overview
+                  </button>
+                  <button
+                    type="button"
+                    className="hosp-profile-menu-item"
+                    onClick={() => {
+                      setProfileOpen(false);
+                      navigate('/hospital/appointments');
+                    }}
+                  >
+                    Manage Appointments
+                  </button>
+                  <button
+                    type="button"
+                    className="hosp-profile-menu-item is-danger"
+                    onClick={handleLogout}
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 

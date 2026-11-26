@@ -44,65 +44,101 @@
   font-family: var(--sans, 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
 }
 
-/* Sidebar */
+/* Sidebar — Dark Sage Green with white active pill */
 .hosp-sidebar {
   width: 250px;
-  background-color: #ffffff;
-  color: var(--hosp-text);
-  border-right: 1px solid var(--hosp-border);
+  background-color: #1b4d38;
+  color: #e9f5ee;
+  border-right: 1px solid #153e2d;
   display: flex;
   flex-direction: column;
   padding: 20px 14px;
   flex-shrink: 0;
+  transition: width 200ms ease, padding 200ms ease;
+}
+
+.hosp-sidebar.is-collapsed {
+  width: 74px;
+  padding: 20px 10px;
 }
 
 .hosp-sidebar-brand {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 4px 8px 16px;
-  border-bottom: 1px solid var(--hosp-border);
+  gap: 8px;
+  padding: 4px 4px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
   margin-bottom: 14px;
 }
 
+.hosp-sidebar.is-collapsed .hosp-sidebar-brand {
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hosp-brand-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  padding: 5px 10px;
+  border-radius: 10px;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.hosp-brand-pill .aanchal-official-logo {
+  filter: hue-rotate(155deg) saturate(1.25) brightness(0.82);
+  height: 28px !important;
+}
+
+.hosp-sidebar.is-collapsed .hosp-brand-pill {
+  padding: 4px 6px;
+}
+
+.hosp-sidebar-collapse-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 150ms ease;
+}
+
+.hosp-sidebar-collapse-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 .hosp-nav-section-label {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: #7d8f85;
+  color: rgba(226, 244, 234, 0.68);
   padding: 6px 12px 8px;
   text-transform: uppercase;
 }
 
-.hosp-sidebar-logo-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: 11px;
-  background: linear-gradient(135deg, #2d8a64, #1e6b4e);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(30, 107, 78, 0.2);
-}
-
-.hosp-sidebar-title-group h2 {
-  font-family: var(--serif, 'Playfair Display', Georgia, serif);
-  font-size: 19px;
-  font-weight: 600;
-  margin: 0;
-  letter-spacing: 0.02em;
-  color: var(--hosp-primary);
+.hosp-sidebar.is-collapsed .hosp-nav-section-label,
+.hosp-sidebar.is-collapsed .hosp-nav-label,
+.hosp-sidebar.is-collapsed .hosp-user-info-box,
+.hosp-sidebar.is-collapsed .hosp-logout-label {
+  display: none;
 }
 
 .hosp-sidebar-badge {
   display: inline-block;
-  background: var(--hosp-teal-light);
-  color: var(--hosp-primary);
-  font-size: 10.5px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #e9f7ef;
+  font-size: 10px;
   font-weight: 700;
-  padding: 3px 9px;
+  padding: 3px 8px;
   border-radius: 999px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -111,7 +147,7 @@
 .hosp-nav-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
   list-style: none;
   padding: 0;
   margin: 0;
@@ -123,9 +159,9 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 14px;
+  padding: 11px 14px;
   border-radius: 12px;
-  color: var(--hosp-text-muted);
+  color: #d6ebe0;
   text-decoration: none;
   font-size: 13.5px;
   font-weight: 500;
@@ -133,18 +169,21 @@
   transition: all 180ms cubic-bezier(0.2, 0, 0, 1);
 }
 
+.hosp-sidebar.is-collapsed .hosp-nav-link {
+  justify-content: center;
+  padding: 11px 8px;
+}
+
 .hosp-nav-link:hover {
-  background-color: var(--hosp-teal-soft);
-  color: var(--hosp-text);
-  transform: translateX(2px);
+  background-color: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
 }
 
 .hosp-nav-link.is-active {
-  background-color: var(--hosp-teal-light);
-  color: var(--hosp-primary);
-  font-weight: 600;
-  border-color: rgba(30, 107, 78, 0.16);
-  box-shadow: 0 2px 8px rgba(30, 107, 78, 0.05);
+  background-color: #ffffff;
+  color: #1b4d38;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14);
 }
 
 .hosp-nav-link.is-active::before {
@@ -155,11 +194,11 @@
   bottom: 7px;
   width: 3.5px;
   border-radius: 0 4px 4px 0;
-  background: var(--hosp-primary);
+  background: #1b4d38;
 }
 
 .hosp-sidebar-footer {
-  border-top: 1px solid var(--hosp-border);
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
   padding-top: 16px;
   display: flex;
   flex-direction: column;
@@ -168,15 +207,15 @@
 
 .hosp-user-info-box {
   padding: 10px 12px;
-  background-color: var(--hosp-teal-soft);
-  border: 1px solid var(--hosp-border);
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 12px;
 }
 
 .hosp-user-name {
   font-size: 13.5px;
   font-weight: 600;
-  color: var(--hosp-text);
+  color: #ffffff;
   display: block;
   white-space: nowrap;
   overflow: hidden;
@@ -185,7 +224,7 @@
 
 .hosp-user-hospital {
   font-size: 12px;
-  color: var(--hosp-primary);
+  color: #cbe6d7;
   display: block;
   margin-top: 2px;
 }
@@ -197,9 +236,9 @@
   gap: 8px;
   width: 100%;
   padding: 10px;
-  border: 1px solid var(--hosp-border);
-  background: #ffffff;
-  color: var(--hosp-text);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
   border-radius: 10px;
   font-size: 13.5px;
   font-weight: 500;
@@ -208,9 +247,9 @@
 }
 
 .hosp-logout-btn:hover {
-  background-color: #fef2f2;
-  border-color: #fecaca;
-  color: #b91c1c;
+  background-color: rgba(239, 68, 68, 0.22);
+  border-color: #fca5a5;
+  color: #ffffff;
 }
 
 /* Main Content Area */
@@ -502,38 +541,143 @@
 }
 
 /* Data Table */
-.hosp-table-wrap {
+.hosp-table-wrap,
+.hosp-table-responsive {
   width: 100%;
   overflow-x: auto;
 }
 
-.hosp-table {
+.hosp-table-card {
+  background: #ffffff;
+  border: 1px solid var(--hosp-border);
+  border-radius: 16px;
+  box-shadow: var(--hosp-shadow-sm);
+  overflow: hidden;
+}
+
+.hosp-table,
+.hosp-data-table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
-  font-size: 14px;
+  font-size: 13.5px;
 }
 
-.hosp-table th {
-  padding: 14px 20px;
-  background-color: #f8fbfb;
+.hosp-table th,
+.hosp-data-table th {
+  padding: 14px 18px;
+  background-color: #f4faf6;
   color: var(--hosp-text-muted);
-  font-weight: 600;
-  font-size: 12.5px;
+  font-weight: 700;
+  font-size: 11.5px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.05em;
   border-bottom: 1px solid var(--hosp-border);
+  white-space: nowrap;
 }
 
-.hosp-table td {
-  padding: 16px 20px;
-  border-bottom: 1px solid #edf4f3;
+.hosp-table td,
+.hosp-data-table td {
+  padding: 15px 18px;
+  border-bottom: 1px solid #ebf3ed;
   color: var(--hosp-text);
   vertical-align: middle;
 }
 
-.hosp-table tr:hover td {
-  background-color: #fbfdfd;
+.hosp-table tr:hover td,
+.hosp-data-table tbody tr:hover td {
+  background-color: #f6fbf8;
+}
+
+.hosp-avatar-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2d8a64, #1b4d38);
+  color: #ffffff;
+  border: 2px solid #d8efe1;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.hosp-avatar-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(27, 77, 56, 0.22);
+}
+
+.hosp-profile-popover {
+  position: absolute;
+  top: 44px;
+  right: 0;
+  width: 240px;
+  background: #ffffff;
+  border: 1px solid var(--hosp-border);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(27, 77, 56, 0.14);
+  padding: 12px;
+  z-index: 60;
+}
+
+.hosp-profile-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 6px 8px;
+}
+
+.hosp-profile-head strong {
+  font-size: 14px;
+  color: var(--hosp-text);
+}
+
+.hosp-profile-head span {
+  font-size: 12px;
+  color: var(--hosp-text-muted);
+}
+
+.hosp-profile-role-pill {
+  margin-top: 6px;
+  align-self: flex-start;
+  background: var(--hosp-teal-light);
+  color: var(--hosp-primary) !important;
+  font-weight: 700;
+  font-size: 11px !important;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.hosp-profile-divider {
+  height: 1px;
+  background: var(--hosp-border);
+  margin: 6px 0;
+}
+
+.hosp-profile-menu-item {
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--hosp-text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.hosp-profile-menu-item:hover {
+  background: var(--hosp-teal-soft);
+  color: var(--hosp-primary);
+}
+
+.hosp-profile-menu-item.is-danger:hover {
+  background: #fef2f2;
+  color: #b91c1c;
 }
 
 /* Status Badges */

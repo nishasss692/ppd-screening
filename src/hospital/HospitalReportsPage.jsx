@@ -123,16 +123,31 @@ export function HospitalReportsPage() {
 
   return (
     <div className="hosp-reports-page">
-      {/* Top Header */}
-      <header className="hosp-page-header">
+      {/* Breadcrumb Bar */}
+      <div className="hosp-breadcrumb-bar">
+        <span className="hosp-breadcrumb-link">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M3 10.5L12 3l9 7.5V20a1.5 1.5 0 0 1-1.5 1.5H4.5A1.5 1.5 0 0 1 3 20v-9.5z" />
+            <path d="M9.5 21v-7h5v7" />
+          </svg>
+          <span>Home</span>
+        </span>
+        <span className="hosp-breadcrumb-sep" aria-hidden="true">&rsaquo;</span>
+        <span className="hosp-breadcrumb-current">Reports</span>
+      </div>
+
+      {/* Hero Header Card */}
+      <div className="hosp-hero-card">
         <div>
-          <span className="hosp-header-kicker">Clinical Documentation</span>
-          <h1 className="hosp-page-title">Doctor Consultation Reports</h1>
-          <p className="hosp-page-subtitle">
-            Formal post-consultation reports submitted by attending physicians for hospital patient records.
-          </p>
+          <div className="hosp-eyebrow">
+            <span>CLINICAL DOCUMENTATION</span>
+            <span className="hosp-eyebrow-line" aria-hidden="true" />
+          </div>
+          <h1 className="hosp-hero-title">
+            Doctor Consultation <em>Reports</em>
+          </h1>
         </div>
-      </header>
+      </div>
 
       {/* Filter and Search Bar */}
       <section className="hosp-filter-bar" aria-label="Report search and filters">
