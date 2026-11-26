@@ -5,10 +5,8 @@ import {
   AANCHAL_LOGO_PNG,
   AANCHAL_LOGO_WEBP,
   AANCHAL_LOGO_DATA_URI,
-  HERO_MOTHER_PNG,
-  HERO_MOTHER_WEBP,
-  HERO_MOTHER_DATA_URI,
 } from '../../assets/brandAssets.js';
+import motherBabyEmblemImg from '../../assets/mother-baby-emblem.png';
 import './patientHome.css';
 
 export function PatientHomePage() {
@@ -83,31 +81,19 @@ export function PatientHomePage() {
             </div>
           </div>
 
-          {/* Right Column: Original Static 2D Mother & Baby Sculpture */}
+          {/* Right Column: Mother & Baby Emblem Illustration */}
           <div
             className="aanchal-hero-visual"
             aria-label="AANCHAL Mother & Baby Sculpture"
             role="region"
           >
-            <picture>
-              <source srcSet={HERO_MOTHER_WEBP} type="image/webp" />
-              <img
-                src={HERO_MOTHER_PNG}
-                alt="AANCHAL Mother and Baby Sculpture"
-                className="aanchal-hero-sculpture"
-                loading="eager"
-                decoding="async"
-                onError={(e) => {
-                  const picture = e.currentTarget.closest('picture');
-                  if (picture) {
-                    picture.querySelectorAll('source').forEach((s) => s.remove());
-                  }
-                  if (e.currentTarget.src !== HERO_MOTHER_DATA_URI) {
-                    e.currentTarget.src = HERO_MOTHER_DATA_URI;
-                  }
-                }}
-              />
-            </picture>
+            <img
+              src={motherBabyEmblemImg}
+              alt="AANCHAL Mother and Baby Sculpture"
+              className="aanchal-hero-sculpture"
+              loading="eager"
+              decoding="async"
+            />
           </div>
         </div>
       </section>

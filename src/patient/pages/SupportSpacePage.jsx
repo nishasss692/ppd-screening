@@ -562,17 +562,6 @@ export function SupportSpacePage({ initialTab = 'community' }) {
               family connections.
             </p>
           </div>
-
-          <div className="reports-hero-illu-wrap" aria-hidden="true">
-            <img
-              src="/assets/mother-baby-header-crop.png"
-              alt=""
-              className="reports-hero-illustration"
-              onError={(e) => {
-                e.target.style.display = 'none';
-              }}
-            />
-          </div>
         </div>
 
         <nav className="moments-tabs-nav" aria-label="Moments Sections" style={{ marginTop: 0 }}>

@@ -33,10 +33,9 @@ describe('Separate Authentication Screens (Login & Create Account)', () => {
 
     // Left branding
     expect(screen.getByLabelText(/AANCHAL brand presentation/i)).toBeInTheDocument();
-    expect(screen.getByText(/Maternal Emotional/i)).toBeInTheDocument();
-    expect(screen.getByText(/Intelligence/i)).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Compassionate/i);
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Postpartum Journey/i);
+    expect(screen.queryByText(/Maternal Emotional/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Welcome to AANCHAL/i);
+    expect(screen.getByText(/A space to feel heard, supported and cared for/i)).toBeInTheDocument();
 
     // Large illustration has been removed
     expect(screen.queryByAltText(/Caring mother holding her newborn baby/i)).not.toBeInTheDocument();

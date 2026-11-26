@@ -43,26 +43,12 @@ export function PatientScreeningPage() {
 
       {/* Hero Header Box matching Reports & Analytics */}
       <div className="patient-card reports-hero-card screening-hero-box" style={{ marginBottom: '20px', position: 'relative', overflow: 'hidden' }}>
-        <div className="reports-hero-text" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <img
-            src="/assets/care-header-mother-baby.png"
-            alt=""
-            aria-hidden="true"
-            style={{
-              width: '64px',
-              height: '64px',
-              borderRadius: '14px',
-              objectFit: 'cover',
-              border: '1px solid #f2dce4',
-              flexShrink: 0,
-            }}
-          />
-          <div>
-            <div className="miora-dash-eyebrow">
-              <span>MATERNAL SCREENING</span>
-              <span className="miora-dash-eyebrow-line" aria-hidden="true" />
-            </div>
-            {activeTab === 'results' ? (
+        <div className="reports-hero-text">
+          <div className="miora-dash-eyebrow">
+            <span>MATERNAL SCREENING</span>
+            <span className="miora-dash-eyebrow-line" aria-hidden="true" />
+          </div>
+          {activeTab === 'results' ? (
               <h1 className="miora-dash-title patient-page-heading reports-title">
                 Results &amp; <em>Reports</em>
               </h1>
@@ -71,7 +57,6 @@ export function PatientScreeningPage() {
                 AI Screening <em>Session</em>
               </h1>
             )}
-          </div>
         </div>
 
         {/* 4-Stage Progress Tracker */}

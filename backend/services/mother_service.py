@@ -50,13 +50,37 @@ class MotherService:
         db: Session,
         skip: int = 0,
         limit: int = 50,
+        search: Optional[str] = None,
     ) -> List[Mother]:
-        """List Mother records with pagination, ordered by creation date descending."""
+        """List Mother records with pagination, ordered by creation date descending.
+        Supports optional partial case-insensitive name search across all database records.
+        """
+        stmt = select(Mother)
+        if search and search.strip():
+            stmt = stmt.where(Mother.name.ilike(f"%{search.strip()}%"))
         stmt = (
-            select(Mother)
-            .order_by(desc(Mother.created_at))
+            stmt.order_by(desc(Mother.created_at))
             .offset(max(0, skip))
             .limit(min(max(1, limit), 200))
+        )
+        return list(db.scalars(stmt).all())
+
+    @staticmethod
+    def search_mothers(
+        db: Session,
+        query: str,
+        limit: int = 50,
+    ) -> List[Mother]:
+        """Search registered patient records in the database by case-insensitive partial name match."""
+        cleaned = (query or "").strip()
+        if not cleaned:
+            return []
+        resolved_limit = limit if isinstance(limit, int) else 50
+        stmt = (
+            select(Mother)
+            .where(Mother.name.ilike(f"%{cleaned}%"))
+            .order_by(Mother.name.asc(), desc(Mother.created_at))
+            .limit(min(max(1, resolved_limit), 200))
         )
         return list(db.scalars(stmt).all())
 

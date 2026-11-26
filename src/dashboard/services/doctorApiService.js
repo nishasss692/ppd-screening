@@ -94,6 +94,23 @@ export async function fetchMothers(skip = 0, limit = 100) {
 }
 
 /**
+ * Search mothers by name in backend PostgreSQL database via GET /api/mothers/search?q={query}.
+ * Supports partial, case-insensitive name matching across all database records.
+ * @param {string} query
+ * @param {number} [limit=50]
+ */
+export async function searchMothersByName(query, limit = 50) {
+  const cleaned = (query || '').trim();
+  if (!cleaned) return [];
+  const url = `${getApiBase()}/api/mothers/search?q=${encodeURIComponent(cleaned)}&limit=${limit}`;
+  const res = await fetch(url, { headers: getHeaders() });
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}: Failed to search patient records`);
+  }
+  return res.json();
+}
+
+/**
  * Fetch all clinical screenings from GET /api/screenings.
  */
 export async function fetchScreenings(skip = 0, limit = 100) {

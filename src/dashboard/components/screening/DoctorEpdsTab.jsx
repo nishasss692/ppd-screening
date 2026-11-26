@@ -3,30 +3,55 @@ import { useClinicalData } from '../../context/ClinicalContext.jsx';
 import canonicalQuestionsJson from '../../../../data/questions.json';
 import { DashboardIcon } from '../DashboardIcon.jsx';
 import { RiskBadge, StatusBadge } from '../Badges.jsx';
+import { MaternalScreeningSearchBar } from './MaternalScreeningSearchBar.jsx';
 
-export function DoctorEpdsTab({ defaultMotherId }) {
+export function DoctorEpdsTab({
+  defaultMotherId,
+  selectedMotherId: propSelectedMotherId,
+  onSelectMother,
+  searchQuery = '',
+  onSearchChange = () => {},
+  onClearSearch = () => {},
+  searchResults = null,
+  isSearching = false,
+  searchError = null,
+  onRetrySearch = () => {},
+}) {
   const { mothers, screenings } = useClinicalData();
   const questions = useMemo(() => canonicalQuestionsJson.questions || [], []);
 
-  const [selectedMotherId, setSelectedMotherId] = useState(
+  const [internalSelectedMotherId, setInternalSelectedMotherId] = useState(
     defaultMotherId || (mothers.find((m) => m.id === 'M-104') ? 'M-104' : mothers[0]?.id || 'M-104')
   );
 
+  const selectedMotherId = propSelectedMotherId || internalSelectedMotherId;
+  const setSelectedMotherId = (id) => {
+    setInternalSelectedMotherId(id);
+    if (onSelectMother) onSelectMother(id);
+  };
+
   useEffect(() => {
     if (defaultMotherId) {
-      setSelectedMotherId(defaultMotherId);
+      setInternalSelectedMotherId(defaultMotherId);
     }
   }, [defaultMotherId]);
 
-  const activeMother = useMemo(
-    () => mothers.find((m) => m.id === selectedMotherId) || mothers[0] || null,
-    [mothers, selectedMotherId]
-  );
+  const displayedMothers = useMemo(() => {
+    return searchResults !== null ? searchResults : mothers;
+  }, [searchResults, mothers]);
 
-  const activeScreening = useMemo(
-    () => screenings.find((s) => s.motherId === selectedMotherId) || null,
-    [screenings, selectedMotherId]
-  );
+  const activeMother = useMemo(() => {
+    const pool = searchResults !== null ? [...searchResults, ...mothers] : mothers;
+    return pool.find((m) => m.id === selectedMotherId || m.rawUuid === selectedMotherId) || pool[0] || null;
+  }, [searchResults, mothers, selectedMotherId]);
+
+  const activeScreening = useMemo(() => {
+    return (
+      activeMother?.screening ||
+      screenings.find((s) => s.motherId === selectedMotherId || s.motherId === activeMother?.rawUuid) ||
+      null
+    );
+  }, [screenings, selectedMotherId, activeMother]);
 
   // Use real backend itemScores/submittedAnswers when present; otherwise deterministic breakdown
   const epdsDetails = useMemo(() => {
@@ -104,7 +129,20 @@ export function DoctorEpdsTab({ defaultMotherId }) {
             <h2 style={{ margin: 0, fontSize: '16px', color: '#2b1b22', fontWeight: 600 }}>
               Authorized Patient EPDS Cohort
             </h2>
+            {searchResults !== null && (
+              <span style={{ fontSize: 12, color: '#8d737e', marginTop: 2, display: 'inline-block' }}>
+                Showing {searchResults.length} matching {searchResults.length === 1 ? 'patient' : 'patients'} for &ldquo;{searchQuery}&rdquo;
+              </span>
+            )}
           </div>
+          <MaternalScreeningSearchBar
+            searchQuery={searchQuery}
+            onSearchChange={onSearchChange}
+            onClearSearch={onClearSearch}
+            isSearching={isSearching}
+            hasActiveSearch={searchResults !== null || Boolean(searchQuery)}
+            matchingCount={searchResults ? searchResults.length : undefined}
+          />
         </div>
 
         <div className="doc-table-container">
@@ -122,13 +160,58 @@ export function DoctorEpdsTab({ defaultMotherId }) {
               </tr>
             </thead>
             <tbody>
-              {mothers.map((m) => {
-                const isSelected = m.id === selectedMotherId;
-                const score = m.epdsScore ?? 11;
-                const isQ10Flagged = score >= 13;
+              {isSearching && displayedMothers.length === 0 && (
+                <tr>
+                  <td colSpan="8" className="doc-search-status-cell">
+                    <span className="doc-search-spinner" />
+                    <span>Searching patient records for &ldquo;{searchQuery}&rdquo;...</span>
+                  </td>
+                </tr>
+              )}
+
+              {searchError && displayedMothers.length === 0 && (
+                <tr>
+                  <td colSpan="8" className="doc-search-status-cell is-error">
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                      <span>{searchError}</span>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button type="button" className="doc-clear-cohort-btn" onClick={onRetrySearch}>
+                          Retry
+                        </button>
+                        <button type="button" className="doc-clear-cohort-btn" onClick={onClearSearch}>
+                          Restore Cohort
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )}
+
+              {!isSearching && searchResults !== null && searchResults.length === 0 && !searchError && (
+                <tr>
+                  <td colSpan="8" className="doc-search-status-cell is-empty">
+                    <div className="doc-empty-title">No mothers found</div>
+                    <div className="doc-empty-sub">
+                      No registered patients matching &ldquo;{searchQuery}&rdquo; were found.
+                    </div>
+                    <button type="button" className="doc-clear-cohort-btn" onClick={onClearSearch}>
+                      Restore Patient Cohort
+                    </button>
+                  </td>
+                </tr>
+              )}
+
+              {displayedMothers.map((m) => {
+                const isSelected = m.id === selectedMotherId || m.rawUuid === selectedMotherId;
+                const mScreen =
+                  m.screening ||
+                  screenings.find((s) => s.motherId === m.id || s.motherId === m.rawUuid) ||
+                  null;
+                const score = mScreen?.epdsEquivalent ?? m.epdsScore ?? 11;
+                const isQ10Flagged = mScreen?.q10SafetyAlert ? Boolean(mScreen.q10SafetyAlert.triggered || mScreen.q10SafetyAlert.score > 0) : score >= 13;
                 return (
                   <tr
-                    key={m.id}
+                    key={m.id || m.rawUuid}
                     className={`doc-cohort-row ${isSelected ? 'is-active-row' : ''}`}
                     onClick={() => setSelectedMotherId(m.id)}
                   >
@@ -136,10 +219,10 @@ export function DoctorEpdsTab({ defaultMotherId }) {
                       <strong>{m.name}</strong>
                       <span className="doc-pat-id">({m.id})</span>
                     </td>
-                    <td>Week {m.postpartumWeek}</td>
-                    <td>{m.lastScreeningDate}</td>
+                    <td>Week {m.postpartumWeek || m.postpartum_week || '6'}</td>
+                    <td>{mScreen?.screeningDateTime || m.lastScreeningDate || m.screeningDate || 'Recent'}</td>
                     <td>
-                      <StatusBadge status={m.status === 'Pending' ? 'Pending' : 'Completed'} />
+                      <StatusBadge status={m.status === 'Pending' || m.sessionStatus === 'Pending' ? 'Pending' : 'Completed'} />
                     </td>
                     <td>
                       <span className="doc-epds-score-pill">
