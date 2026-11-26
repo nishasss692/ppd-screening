@@ -1796,6 +1796,38 @@ def get_patient_care_plan(
         .order_by(desc(ClinicalReview.reviewed_at), desc(ClinicalReview.created_at))
     ).first()
 
+    def _extract_care_plan_notes(raw_notes: str | None) -> str | None:
+        """Extract only the doctor-entered care plan text from notes JSON blob.
+
+        The notes field may contain a full JSON object (appointment metadata +
+        clinical_assessment). We want only the human-readable care plan text,
+        never the raw JSON blob.
+        """
+        if not raw_notes:
+            return None
+        # If it doesn't look like JSON, return as-is (plain text note)
+        stripped = raw_notes.strip()
+        if not stripped.startswith("{"):
+            return raw_notes
+        try:
+            meta = json.loads(stripped)
+        except Exception:
+            return raw_notes
+        # If this is an appointment request blob, suppress it entirely
+        if meta.get("request_type") or meta.get("patient_appointment_request"):
+            return None
+        # Extract the doctor-authored care plan text from clinical_assessment
+        ca = meta.get("clinical_assessment") or {}
+        care_plan_text = ca.get("carePlan", "").strip()
+        if care_plan_text:
+            return care_plan_text
+        # Also try top-level care_plan_text key
+        alt = meta.get("care_plan_text", "").strip()
+        if alt:
+            return alt
+        # Nothing human-readable found — suppress the blob
+        return None
+
     clinician_plan = (
         {
             "id": str(latest_plan.id),
@@ -1808,11 +1840,7 @@ def get_patient_care_plan(
                 else None
             ),
             "status": latest_plan.status,
-            "notes": (
-                None
-                if latest_plan.notes and "patient_appointment_request" in latest_plan.notes
-                else latest_plan.notes
-            ),
+            "notes": _extract_care_plan_notes(latest_plan.notes),
             "updated_at": latest_plan.updated_at.isoformat() if latest_plan.updated_at else None,
         }
         if latest_plan

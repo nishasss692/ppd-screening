@@ -132,15 +132,22 @@ export function CareSuggestionsPage() {
                 {/* Clinician Care Plan Guidance */}
                 {carePlan?.clinicianPlan?.notes &&
                   (() => {
-                    const rawNotes = String(carePlan.clinicianPlan.notes);
-                    // Hide if the notes blob is appointment/JSON metadata
-                    try {
-                      const parsed = JSON.parse(rawNotes);
-                      if (parsed && typeof parsed === 'object' && (parsed.request_type || parsed.patient_appointment_request)) {
-                        return null;
-                      }
-                    } catch { /* plain text — render it */ }
-                    if (rawNotes.includes('patient_appointment_request') || rawNotes.startsWith('{')) return null;
+                    const rawNotes = String(carePlan.clinicianPlan.notes).trim();
+                    // Suppress any JSON blob — only render plain human-readable text
+                    if (rawNotes.startsWith('{') || rawNotes.startsWith('[')) {
+                      try {
+                        const parsed = JSON.parse(rawNotes);
+                        // If it's any JSON object at all, suppress it
+                        if (parsed && typeof parsed === 'object') return null;
+                      } catch { /* invalid JSON — treat as plain text below */ }
+                    }
+                    // Also suppress if it contains obvious appointment/JSON markers
+                    if (
+                      rawNotes.includes('patient_appointment_request') ||
+                      rawNotes.includes('"request_type"') ||
+                      rawNotes.includes('"hospital_id"') ||
+                      rawNotes.includes('"doctor_id"')
+                    ) return null;
                     return (
                       <div className="care-guidance-callout">
                         <div className="care-callout-head">
