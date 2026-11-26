@@ -34,10 +34,10 @@ export function ConnectDoctorPage() {
   const urlDoctorId = searchParams.get('doctorId') || searchParams.get('doctor');
 
   const [selectedDoctorId, setSelectedDoctorId] = useState(() => {
-    if (urlDoctorId && (urlDoctorId.toLowerCase().includes('priya') || urlDoctorId.toLowerCase() === 'dr-001')) {
-      return 'DR-001';
+    if (urlDoctorId && (urlDoctorId.toLowerCase().includes('rostova') || urlDoctorId.toLowerCase() === 'dr-rostova')) {
+      return 'DR-ROSTOVA';
     }
-    return 'DR-ROSTOVA';
+    return 'DR-001';
   });
 
   const activeDoctor = AVAILABLE_DOCTORS.find((d) => d.doctorId === selectedDoctorId) || AVAILABLE_DOCTORS[0];
@@ -463,7 +463,7 @@ export function ConnectDoctorPage() {
                   Cancel
                 </button>
                 <button type="submit" className="patient-btn-primary">
-                  Confirm Consultation
+                  Confirm Appointment
                 </button>
               </div>
             </form>

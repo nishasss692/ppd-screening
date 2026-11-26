@@ -20,13 +20,15 @@ export function DoctorAiScreeningTab({
   const { mothers, screenings } = useClinicalData();
 
   const [internalSelectedMotherId, setInternalSelectedMotherId] = useState(
-    defaultMotherId || (mothers.find((m) => m.id === 'M-104') ? 'M-104' : mothers[0]?.id || 'M-104')
+    defaultMotherId || (mothers.length > 0 ? mothers[0].id : 'M-104')
   );
+  const [selectedScreeningId, setSelectedScreeningId] = useState(null);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   const selectedMotherId = propSelectedMotherId || internalSelectedMotherId;
   const setSelectedMotherId = (id) => {
     setInternalSelectedMotherId(id);
+    setSelectedScreeningId(null);
     if (onSelectMother) onSelectMother(id);
   };
 
@@ -45,13 +47,24 @@ export function DoctorAiScreeningTab({
     return pool.find((m) => m.id === selectedMotherId || m.rawUuid === selectedMotherId) || pool[0] || null;
   }, [searchResults, mothers, selectedMotherId]);
 
-  const activeScreening = useMemo(() => {
-    return (
-      activeMother?.screening ||
-      screenings.find((s) => s.motherId === selectedMotherId || s.motherId === activeMother?.rawUuid) ||
-      null
+  const motherScreenings = useMemo(() => {
+    if (!activeMother) return [];
+    return screenings.filter(
+      (s) =>
+        s.motherId === activeMother.id ||
+        s.motherId === activeMother.rawUuid ||
+        s.rawMotherUuid === activeMother.rawUuid ||
+        s.motherId === selectedMotherId
     );
-  }, [screenings, selectedMotherId, activeMother]);
+  }, [screenings, activeMother, selectedMotherId]);
+
+  const activeScreening = useMemo(() => {
+    if (selectedScreeningId) {
+      const match = motherScreenings.find((s) => s.id === selectedScreeningId);
+      if (match) return match;
+    }
+    return motherScreenings[0] || activeMother?.screening || null;
+  }, [motherScreenings, selectedScreeningId, activeMother]);
 
   const handleDownloadPdf = async () => {
     const targetId = activeScreening?.rawUuid || activeScreening?.id;
@@ -168,14 +181,14 @@ export function DoctorAiScreeningTab({
                 const hasRecording = Boolean(
                   mScreen?.capturedModalities?.video ||
                   mScreen?.modelMetadata?.video_recording ||
-                  m.hasRecording ||
-                  m.id === 'M-104' ||
-                  m.id === 'M-108'
+                  mScreen?.modalities?.video?.status === 'completed' ||
+                  mScreen?.modalities?.video?.status === 'recorded' ||
+                  m.hasRecording
                 );
                 const textMod = mScreen?.modalities?.text;
-                const voiceMod = mScreen?.modalities?.voice;
+                const voiceMod = mScreen?.modalities?.voice || mScreen?.modalities?.audio;
                 const videoMod = mScreen?.modalities?.video;
-                const clinPred = mScreen?.clinicalModelPrediction;
+                const clinPred = mScreen?.clinicalModelPrediction || mScreen?.modalities?.clinical;
                 const fusionDone = mScreen?.fusionStatus === 'completed' || m.fusionStatus === 'completed';
 
                 return (
@@ -300,6 +313,34 @@ export function DoctorAiScreeningTab({
             </div>
           </div>
 
+          {motherScreenings.length > 1 && (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 14, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: '#66535c' }}>Screening Sessions:</span>
+              {motherScreenings.map((s, idx) => {
+                const isCur = (activeScreening?.id === s.id);
+                return (
+                  <button
+                    key={s.id || idx}
+                    type="button"
+                    onClick={() => setSelectedScreeningId(s.id)}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: 16,
+                      fontSize: 12,
+                      border: isCur ? '1.5px solid #ba1e53' : '1px solid #e2cdd5',
+                      background: isCur ? '#fdf2f8' : '#ffffff',
+                      color: isCur ? '#ba1e53' : '#442229',
+                      fontWeight: isCur ? 700 : 500,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Session {motherScreenings.length - idx}: {s.screeningDateTime || s.date || 'Completed'} ({s.risk || 'Screened'})
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {!activeScreening && (
             <div style={{ padding: '24px 16px', textAlign: 'center', color: '#66535c', background: '#fcf9fa', borderRadius: '10px', border: '1px dashed #e2cdd5', marginBottom: '16px' }}>
               Screening has not yet been completed by this patient.
@@ -309,7 +350,9 @@ export function DoctorAiScreeningTab({
           {/* Deterministic Crisis Alert Banner */}
           {Boolean(
             activeScreening?.q10SafetyAlert?.triggered ||
-            activeScreening?.q10_safety_alert?.triggered
+            activeScreening?.q10_safety_alert?.triggered ||
+            activeScreening?.q10SafetyAlert === true ||
+            activeScreening?.q10_safety_alert === true
           ) && (
               <div
                 className="ai-crisis-alert-banner"
@@ -339,332 +382,343 @@ export function DoctorAiScreeningTab({
             )}
 
           {/* 4 Modality Panels */}
-          <div className="doc-modality-panels-grid">
-            {/* Panel 1: Audio Analysis */}
-            <div className="doc-modality-panel">
-              <div className="doc-panel-head">
-                <div className="doc-panel-icon" style={{ background: '#fcebf0', color: '#ba1e53' }}>
-                  <DashboardIcon name="wave" size={17} />
-                </div>
-                <div>
-                  <h3>Audio Analysis</h3>
-                  <small>Acoustic vocal markers &amp; prosody</small>
-                </div>
-              </div>
-              <div className="doc-panel-body">
-                {activeScreening?.modalities?.voice?.status === 'completed' &&
-                  typeof activeScreening?.modalities?.voice?.score === 'number' ? (
-                  <div
-                    className="ai-status-pill is-completed"
-                    style={{ marginBottom: 10, background: '#ecfdf5', color: '#065f46' }}
-                  >
-                    <span className="ai-status-dot" style={{ background: '#10b981' }} />
-                    <span>Completed (Score: {activeScreening.modalities.voice.score.toFixed(2)})</span>
-                  </div>
-                ) : (
-                  <div className="ai-status-pill is-pending" style={{ marginBottom: 10 }}>
-                    <span className="ai-status-dot" />
-                    <span>{activeScreening ? 'Not captured in session' : 'Pending screening'}</span>
-                  </div>
-                )}
-                <div className="doc-feature-list">
-                  <div className="doc-feature-item">
-                    <span>Model Output:</span>
-                    <em>
-                      {activeScreening?.modalities?.voice?.status === 'completed' &&
-                        typeof activeScreening?.modalities?.voice?.score === 'number'
-                        ? `Acoustic Probability ${activeScreening.modalities.voice.score.toFixed(2)}`
-                        : activeScreening ? 'Not run (no audio captured)' : 'Pending screening'}
-                    </em>
-                  </div>
-                  <div className="doc-feature-item">
-                    <span>Model Architecture:</span>
-                    <em>7-Feature Acoustic Logistic Regression</em>
-                  </div>
-                  <div className="doc-feature-item">
-                    <span>Acoustic Features:</span>
-                    <em>
-                      {activeScreening?.modalities?.voice?.details?.features_processed
-                        ? `${activeScreening.modalities.voice.details.features_processed} DSP Biomarkers Extracted`
-                        : activeScreening?.modalities?.voice?.status === 'completed'
-                          ? '7 Physiological Features Extracted'
-                          : activeScreening?.modalities?.voice?.error || 'Not run'}
-                    </em>
-                  </div>
-                  <div className="doc-feature-item">
-                    <span>Assessment Timestamp:</span>
-                    <em>{activeScreening?.processedAt || activeScreening?.screeningDateTime || '—'}</em>
-                  </div>
-                </div>
-                {activeMother.voiceCueSummary && (
-                  <div className="doc-clinical-note-box">
-                    <strong>Clinician Observation:</strong> {activeMother.voiceCueSummary}
-                  </div>
-                )}
-              </div>
-            </div>
+          {(() => {
+            const voiceMod = activeScreening?.modalities?.voice || activeScreening?.modalities?.audio;
+            const videoMod = activeScreening?.modalities?.video;
+            const textMod = activeScreening?.modalities?.text;
+            const clinMod = activeScreening?.modalities?.clinical || activeScreening?.clinicalModelPrediction;
 
-            {/* Panel 2: Video Analysis */}
-            <div className="doc-modality-panel">
-              <div className="doc-panel-head">
-                <div className="doc-panel-icon" style={{ background: '#fcebf0', color: '#ba1e53' }}>
-                  <DashboardIcon name="video" size={17} />
+            return (
+              <div className="doc-modality-panels-grid">
+                {/* Panel 1: Audio Analysis */}
+                <div className="doc-modality-panel">
+                  <div className="doc-panel-head">
+                    <div className="doc-panel-icon" style={{ background: '#fcebf0', color: '#ba1e53' }}>
+                      <DashboardIcon name="wave" size={17} />
+                    </div>
+                    <div>
+                      <h3>Audio Analysis</h3>
+                      <small>Acoustic vocal markers &amp; prosody</small>
+                    </div>
+                  </div>
+                  <div className="doc-panel-body">
+                    {voiceMod?.status === 'completed' && typeof voiceMod?.score === 'number' ? (
+                      <div
+                        className="ai-status-pill is-completed"
+                        style={{ marginBottom: 10, background: '#ecfdf5', color: '#065f46' }}
+                      >
+                        <span className="ai-status-dot" style={{ background: '#10b981' }} />
+                        <span>Completed (Score: {voiceMod.score.toFixed(2)})</span>
+                      </div>
+                    ) : (
+                      <div className="ai-status-pill is-pending" style={{ marginBottom: 10 }}>
+                        <span className="ai-status-dot" />
+                        <span>
+                          {voiceMod?.status === 'unavailable'
+                            ? 'Audio received (DSP unavailable)'
+                            : activeScreening
+                              ? 'Not captured in session'
+                              : 'Pending screening'}
+                        </span>
+                      </div>
+                    )}
+                    <div className="doc-feature-list">
+                      <div className="doc-feature-item">
+                        <span>Model Output:</span>
+                        <em>
+                          {voiceMod?.status === 'completed' && typeof voiceMod?.score === 'number'
+                            ? `Acoustic Probability ${voiceMod.score.toFixed(2)}`
+                            : activeScreening ? 'Not run (no audio captured)' : 'Pending screening'}
+                        </em>
+                      </div>
+                      <div className="doc-feature-item">
+                        <span>Model Architecture:</span>
+                        <em>7-Feature Acoustic Logistic Regression</em>
+                      </div>
+                      <div className="doc-feature-item">
+                        <span>Acoustic Features:</span>
+                        <em>
+                          {voiceMod?.details?.features_processed
+                            ? `${voiceMod.details.features_processed} DSP Biomarkers Extracted`
+                            : voiceMod?.status === 'completed'
+                              ? '7 Physiological Features Extracted'
+                              : voiceMod?.error || 'Not run'}
+                        </em>
+                      </div>
+                      <div className="doc-feature-item">
+                        <span>Assessment Timestamp:</span>
+                        <em>{activeScreening?.processedAt || activeScreening?.screeningDateTime || '—'}</em>
+                      </div>
+                    </div>
+                    {activeMother.voiceCueSummary && (
+                      <div className="doc-clinical-note-box">
+                        <strong>Clinician Observation:</strong> {activeMother.voiceCueSummary}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <h3>Video Analysis</h3>
-                  <small>Facial Action Units &amp; visual engagement</small>
-                </div>
-              </div>
-              <div className="doc-panel-body">
-                {activeScreening?.modalities?.video?.status === 'completed' &&
-                  typeof activeScreening?.modalities?.video?.score === 'number' ? (
-                  <div
-                    className="ai-status-pill is-completed"
-                    style={{ marginBottom: 10, background: '#ecfdf5', color: '#065f46' }}
-                  >
-                    <span className="ai-status-dot" style={{ background: '#10b981' }} />
-                    <span>Completed (Score: {activeScreening.modalities.video.score.toFixed(2)})</span>
-                  </div>
-                ) : (
-                  <div className="ai-status-pill is-pending" style={{ marginBottom: 10 }}>
-                    <span className="ai-status-dot" />
-                    <span>
-                      {activeScreening?.modalities?.video?.status === 'recorded'
-                        ? 'Video recorded (no score)'
-                        : activeScreening
-                          ? 'Not captured in session'
-                          : 'Pending screening'}
-                    </span>
-                  </div>
-                )}
-                <div className="doc-feature-list">
-                  <div className="doc-feature-item">
-                    <span>Model Output:</span>
-                    <em>
-                      {activeScreening?.modalities?.video?.status === 'completed' &&
-                        typeof activeScreening?.modalities?.video?.score === 'number'
-                        ? `Visual Probability ${activeScreening.modalities.video.score.toFixed(2)}`
-                        : activeScreening ? 'Not run (no video captured)' : 'Pending screening'}
-                    </em>
-                  </div>
-                  <div className="doc-feature-item">
-                    <span>Model Architecture:</span>
-                    <em>220-Feature Summary Dynamics Classifier</em>
-                  </div>
-                  <div className="doc-feature-item">
-                    <span>Visual Dynamics Features:</span>
-                    <em>
-                      {activeScreening?.modalities?.video?.details?.features_processed
-                        ? `${activeScreening.modalities.video.details.features_processed} Facial & Gaze Features`
-                        : activeScreening?.modalities?.video?.status === 'completed'
-                          ? '220 Action Unit Statistics'
-                          : activeScreening?.modalities?.video?.error || 'Not run'}
-                    </em>
-                  </div>
-                  <div className="doc-feature-item">
-                    <span>Assessment Timestamp:</span>
-                    <em>{activeScreening?.processedAt || activeScreening?.screeningDateTime || '—'}</em>
-                  </div>
-                </div>
-                <div className="doc-clinical-note-box">
-                  <strong>Video Capture:</strong> Recorded under informed maternal consent for clinician review.
-                </div>
-              </div>
-            </div>
 
-            {/* Panel 3: Text Analysis */}
-            <div className="doc-modality-panel">
-              <div className="doc-panel-head">
-                <div className="doc-panel-icon" style={{ background: '#fcebf0', color: '#ba1e53' }}>
-                  <DashboardIcon name="sparkle" size={17} />
+                {/* Panel 2: Video Analysis */}
+                <div className="doc-modality-panel">
+                  <div className="doc-panel-head">
+                    <div className="doc-panel-icon" style={{ background: '#fcebf0', color: '#ba1e53' }}>
+                      <DashboardIcon name="video" size={17} />
+                    </div>
+                    <div>
+                      <h3>Video Analysis</h3>
+                      <small>Facial Action Units &amp; visual engagement</small>
+                    </div>
+                  </div>
+                  <div className="doc-panel-body">
+                    {videoMod?.status === 'completed' && typeof videoMod?.score === 'number' ? (
+                      <div
+                        className="ai-status-pill is-completed"
+                        style={{ marginBottom: 10, background: '#ecfdf5', color: '#065f46' }}
+                      >
+                        <span className="ai-status-dot" style={{ background: '#10b981' }} />
+                        <span>Completed (Score: {videoMod.score.toFixed(2)})</span>
+                      </div>
+                    ) : (
+                      <div className="ai-status-pill is-pending" style={{ marginBottom: 10 }}>
+                        <span className="ai-status-dot" />
+                        <span>
+                          {videoMod?.status === 'recorded'
+                            ? 'Video recorded under consent (clinician review)'
+                            : activeScreening
+                              ? 'Not captured in session'
+                              : 'Pending screening'}
+                        </span>
+                      </div>
+                    )}
+                    <div className="doc-feature-list">
+                      <div className="doc-feature-item">
+                        <span>Model Output:</span>
+                        <em>
+                          {videoMod?.status === 'completed' && typeof videoMod?.score === 'number'
+                            ? `Visual Probability ${videoMod.score.toFixed(2)}`
+                            : videoMod?.status === 'recorded'
+                              ? 'Video recorded (visual review ready)'
+                              : activeScreening ? 'Not run (no video captured)' : 'Pending screening'}
+                        </em>
+                      </div>
+                      <div className="doc-feature-item">
+                        <span>Model Architecture:</span>
+                        <em>220-Feature Summary Dynamics Classifier</em>
+                      </div>
+                      <div className="doc-feature-item">
+                        <span>Visual Dynamics Features:</span>
+                        <em>
+                          {videoMod?.details?.features_processed
+                            ? `${videoMod.details.features_processed} Facial & Gaze Features`
+                            : videoMod?.status === 'completed'
+                              ? '220 Action Unit Statistics'
+                              : videoMod?.error || 'Recorded for review'}
+                        </em>
+                      </div>
+                      <div className="doc-feature-item">
+                        <span>Assessment Timestamp:</span>
+                        <em>{activeScreening?.processedAt || activeScreening?.screeningDateTime || '—'}</em>
+                      </div>
+                    </div>
+                    <div className="doc-clinical-note-box">
+                      <strong>Video Capture:</strong> Recorded under informed maternal consent for clinician review.
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h3>Text Analysis</h3>
-                  <small>Acoustic-linguistic sentiment</small>
-                </div>
-              </div>
-              <div className="doc-panel-body">
-                {activeScreening?.modalities?.text?.status === 'completed' &&
-                  typeof activeScreening?.modalities?.text?.score === 'number' ? (
-                  <div
-                    className="ai-status-pill is-completed"
-                    style={{ marginBottom: 10, background: '#ecfdf5', color: '#065f46' }}
-                  >
-                    <span className="ai-status-dot" style={{ background: '#10b981' }} />
-                    <span>Completed (Score: {activeScreening.modalities.text.score.toFixed(2)})</span>
-                  </div>
-                ) : (
-                  <div className="ai-status-pill is-pending" style={{ marginBottom: 10 }}>
-                    <span className="ai-status-dot" />
-                    <span>{activeScreening ? 'Not captured in session' : 'Pending screening'}</span>
-                  </div>
-                )}
-                <div className="doc-feature-list">
-                  <div className="doc-feature-item">
-                    <span>Model Output:</span>
-                    <em>
-                      {activeScreening?.modalities?.text?.status === 'completed' &&
-                        typeof activeScreening?.modalities?.text?.score === 'number'
-                        ? `Text Risk Probability ${activeScreening.modalities.text.score.toFixed(2)}`
-                        : activeScreening ? 'Not run (no text captured)' : 'Pending screening'}
-                    </em>
-                  </div>
-                  <div className="doc-feature-item">
-                    <span>Model Architecture:</span>
-                    <em>TF-IDF + Calibrated Logistic Regression</em>
-                  </div>
-                  <div className="doc-feature-item">
-                    <span>Linguistic Features:</span>
-                    <em>
-                      {activeScreening?.modalities?.text?.details?.character_count
-                        ? `${activeScreening.modalities.text.details.character_count} characters analyzed`
-                        : activeScreening?.modalities?.text?.status === 'completed'
-                          ? 'TF-IDF Affective N-grams'
-                          : activeScreening?.modalities?.text?.error || 'Not run'}
-                    </em>
-                  </div>
-                  <div className="doc-feature-item">
-                    <span>Assessment Timestamp:</span>
-                    <em>{activeScreening?.processedAt || activeScreening?.screeningDateTime || '—'}</em>
-                  </div>
-                </div>
-                {activeMother.textCueSummary && (
-                  <div className="doc-clinical-note-box">
-                    <strong>Transcript Summary:</strong> {activeMother.textCueSummary}
-                  </div>
-                )}
-              </div>
-            </div>
 
-            {/* Panel 4: Clinical Analysis */}
-            <div className="doc-modality-panel">
-              <div className="doc-panel-head">
-                <div className="doc-panel-icon" style={{ background: '#fcebf0', color: '#ba1e53' }}>
-                  <DashboardIcon name="document" size={17} />
+                {/* Panel 3: Text Analysis */}
+                <div className="doc-modality-panel">
+                  <div className="doc-panel-head">
+                    <div className="doc-panel-icon" style={{ background: '#fcebf0', color: '#ba1e53' }}>
+                      <DashboardIcon name="sparkle" size={17} />
+                    </div>
+                    <div>
+                      <h3>Text Analysis</h3>
+                      <small>Acoustic-linguistic sentiment</small>
+                    </div>
+                  </div>
+                  <div className="doc-panel-body">
+                    {textMod?.status === 'completed' && typeof textMod?.score === 'number' ? (
+                      <div
+                        className="ai-status-pill is-completed"
+                        style={{ marginBottom: 10, background: '#ecfdf5', color: '#065f46' }}
+                      >
+                        <span className="ai-status-dot" style={{ background: '#10b981' }} />
+                        <span>Completed (Score: {textMod.score.toFixed(2)})</span>
+                      </div>
+                    ) : (
+                      <div className="ai-status-pill is-pending" style={{ marginBottom: 10 }}>
+                        <span className="ai-status-dot" />
+                        <span>{activeScreening ? 'Not captured in session' : 'Pending screening'}</span>
+                      </div>
+                    )}
+                    <div className="doc-feature-list">
+                      <div className="doc-feature-item">
+                        <span>Model Output:</span>
+                        <em>
+                          {textMod?.status === 'completed' && typeof textMod?.score === 'number'
+                            ? `Text Risk Probability ${textMod.score.toFixed(2)}`
+                            : activeScreening ? 'Not run (no text captured)' : 'Pending screening'}
+                        </em>
+                      </div>
+                      <div className="doc-feature-item">
+                        <span>Model Architecture:</span>
+                        <em>TF-IDF + Calibrated Logistic Regression</em>
+                      </div>
+                      <div className="doc-feature-item">
+                        <span>Linguistic Features:</span>
+                        <em>
+                          {textMod?.details?.character_count
+                            ? `${textMod.details.character_count} characters analyzed`
+                            : textMod?.status === 'completed'
+                              ? 'TF-IDF Affective N-grams'
+                              : textMod?.error || 'Not run'}
+                        </em>
+                      </div>
+                      <div className="doc-feature-item">
+                        <span>Assessment Timestamp:</span>
+                        <em>{activeScreening?.processedAt || activeScreening?.screeningDateTime || '—'}</em>
+                      </div>
+                    </div>
+                    {activeMother.textCueSummary && (
+                      <div className="doc-clinical-note-box">
+                        <strong>Transcript Summary:</strong> {activeMother.textCueSummary}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <h3>Clinical Analysis</h3>
-                  <small>46 obstetric &amp; psychosocial predictors</small>
-                </div>
-              </div>
-              <div className="doc-panel-body">
-                {activeScreening?.modalities?.clinical?.status === 'completed' &&
-                  typeof activeScreening?.modalities?.clinical?.score === 'number' ? (
-                  <div
-                    className="ai-status-pill is-completed"
-                    style={{ marginBottom: 10, background: '#ecfdf5', color: '#065f46' }}
-                  >
-                    <span className="ai-status-dot" style={{ background: '#10b981' }} />
-                    <span>Completed (Score: {activeScreening.modalities.clinical.score.toFixed(2)})</span>
-                  </div>
-                ) : (
-                  <div className="ai-status-pill is-pending" style={{ marginBottom: 10 }}>
-                    <span className="ai-status-dot" />
-                    <span>{activeScreening ? 'Not evaluated in session' : 'Pending screening'}</span>
-                  </div>
-                )}
-                <div className="doc-feature-list">
-                  <div className="doc-feature-item">
-                    <span>Model Output:</span>
-                    <em>
-                      {activeScreening?.modalities?.clinical?.status === 'completed' &&
-                        typeof activeScreening?.modalities?.clinical?.score === 'number'
-                        ? `Clinical Probability ${activeScreening.modalities.clinical.score.toFixed(2)}`
-                        : activeScreening ? 'Not run (survey not submitted)' : 'Pending screening'}
-                    </em>
-                  </div>
-                  <div className="doc-feature-item">
-                    <span>Model Architecture:</span>
-                    <em>Random Forest Classifier</em>
-                  </div>
-                  <div className="doc-feature-item">
-                    <span>Predictor Dimensionality:</span>
-                    <em>46 Survey Covariates (Zero Target Leakage)</em>
-                  </div>
-                  <div className="doc-feature-item">
-                    <span>Data Provenance:</span>
-                    <em>Validated Clinical Survey Dataset</em>
-                  </div>
-                </div>
-                <div className="doc-clinical-note-box">
-                  <strong>Clinical Profile (Separate from Multimodal Fusion):</strong> Evaluates 46 obstetric &amp; psychosocial survey covariates ({activeScreening?.modalities?.clinical?.label || 'Baseline Random Forest'}).
-                </div>
-              </div>
-            </div>
 
-            {/* Panel 5: Four-Modality Late Fusion Screening Assessment */}
-            <div className="doc-modality-panel is-multimodal">
-              <div className="doc-panel-head">
-                <div className="doc-panel-icon" style={{ background: '#ba1e53', color: '#ffffff' }}>
-                  <DashboardIcon name="activity" size={17} />
+                {/* Panel 4: Clinical Analysis */}
+                <div className="doc-modality-panel">
+                  <div className="doc-panel-head">
+                    <div className="doc-panel-icon" style={{ background: '#fcebf0', color: '#ba1e53' }}>
+                      <DashboardIcon name="document" size={17} />
+                    </div>
+                    <div>
+                      <h3>Clinical Analysis</h3>
+                      <small>46 obstetric &amp; psychosocial predictors</small>
+                    </div>
+                  </div>
+                  <div className="doc-panel-body">
+                    {clinMod?.status === 'completed' &&
+                    (typeof clinMod?.score === 'number' || typeof clinMod?.predicted_risk_probability === 'number') ? (
+                      <div
+                        className="ai-status-pill is-completed"
+                        style={{ marginBottom: 10, background: '#ecfdf5', color: '#065f46' }}
+                      >
+                        <span className="ai-status-dot" style={{ background: '#10b981' }} />
+                        <span>Completed (Score: {((typeof clinMod.score === 'number' ? clinMod.score : clinMod.predicted_risk_probability)).toFixed(2)})</span>
+                      </div>
+                    ) : (
+                      <div className="ai-status-pill is-pending" style={{ marginBottom: 10 }}>
+                        <span className="ai-status-dot" />
+                        <span>{activeScreening ? 'Not evaluated in session' : 'Pending screening'}</span>
+                      </div>
+                    )}
+                    <div className="doc-feature-list">
+                      <div className="doc-feature-item">
+                        <span>Model Output:</span>
+                        <em>
+                          {clinMod?.status === 'completed' &&
+                          (typeof clinMod?.score === 'number' || typeof clinMod?.predicted_risk_probability === 'number')
+                            ? `Clinical Probability ${(typeof clinMod.score === 'number' ? clinMod.score : clinMod.predicted_risk_probability).toFixed(2)}`
+                            : activeScreening ? 'Not run (survey not submitted)' : 'Pending screening'}
+                        </em>
+                      </div>
+                      <div className="doc-feature-item">
+                        <span>Model Architecture:</span>
+                        <em>Random Forest Classifier</em>
+                      </div>
+                      <div className="doc-feature-item">
+                        <span>Predictor Dimensionality:</span>
+                        <em>46 Survey Covariates (Zero Target Leakage)</em>
+                      </div>
+                      <div className="doc-feature-item">
+                        <span>Data Provenance:</span>
+                        <em>Validated Clinical Survey Dataset</em>
+                      </div>
+                    </div>
+                    <div className="doc-clinical-note-box">
+                      <strong>Clinical Profile:</strong> Evaluates 46 obstetric &amp; psychosocial survey covariates ({clinMod?.predicted_label || clinMod?.label || 'Random Forest'}).
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h3>Four-Modality Late Fusion</h3>
-                  <small>Clinical–acoustic–linguistic–visual stacking</small>
+
+                {/* Panel 5: Four-Modality Late Fusion Screening Assessment */}
+                <div className="doc-modality-panel is-multimodal">
+                  <div className="doc-panel-head">
+                    <div className="doc-panel-icon" style={{ background: '#ba1e53', color: '#ffffff' }}>
+                      <DashboardIcon name="activity" size={17} />
+                    </div>
+                    <div>
+                      <h3>Four-Modality Late Fusion</h3>
+                      <small>Clinical–acoustic–linguistic–visual stacking</small>
+                    </div>
+                  </div>
+                  <div className="doc-panel-body">
+                    {typeof activeScreening?.combinedScore === 'number' ? (
+                      <div
+                        className="ai-status-pill is-completed"
+                        style={{ marginBottom: 10, background: '#fdf2f8', color: '#831843' }}
+                      >
+                        <span className="ai-status-dot" style={{ background: '#db2777' }} />
+                        <span>Combined Score: {activeScreening.combinedScore.toFixed(2)}</span>
+                      </div>
+                    ) : (
+                      <div className="ai-status-pill is-pending" style={{ marginBottom: 10 }}>
+                        <span className="ai-status-dot" />
+                        <span>{activeScreening ? 'Partial modalities only' : 'Pending screening'}</span>
+                      </div>
+                    )}
+                    <p style={{ fontSize: 13, color: '#66535c', lineHeight: 1.5, margin: '0 0 12px 0' }}>
+                      Late fusion meta-classifier synthesizes predictions across all four pipelines (Clinical Numerical, Audio Prosody, Video Dynamics, Narrative Text) via learned logistic stacking.
+                    </p>
+                    <div className="doc-feature-list">
+                      <div className="doc-feature-item">
+                        <span>Fusion Method:</span>
+                        <em>{activeScreening?.fusionMethod || 'Learned Stacking Meta-Classifier'}</em>
+                      </div>
+                      <div className="doc-feature-item">
+                        <span>Overall Risk Tier:</span>
+                        <em>
+                          {typeof activeScreening?.combinedScore === 'number'
+                            ? `${activeScreening.risk || 'Calculated'} (${(activeScreening.combinedScore * 100).toFixed(1)}%)`
+                            : 'Awaiting multimodal inference'}
+                        </em>
+                      </div>
+                      <div className="doc-feature-item">
+                        <span>Modalities Included:</span>
+                        <em>
+                          {[
+                            textMod?.status === 'completed' ? 'Text' : null,
+                            voiceMod?.status === 'completed' ? 'Audio' : null,
+                            (videoMod?.status === 'completed' || videoMod?.status === 'recorded') ? 'Video' : null,
+                            clinMod?.status === 'completed' ? 'Clinical' : null,
+                          ]
+                            .filter(Boolean)
+                            .join(', ') || 'None yet'}
+                        </em>
+                      </div>
+                      <div className="doc-feature-item">
+                        <span>Cross-Modal Concordance:</span>
+                        <em>
+                          {typeof activeScreening?.discordanceScore === 'number'
+                            ? activeScreening.discordanceDetected
+                              ? `Divergence Detected (Δ = ${activeScreening.discordanceScore.toFixed(2)})`
+                              : `Aligned (Δ = ${activeScreening.discordanceScore.toFixed(2)})`
+                            : 'Awaiting multimodal inference'}
+                        </em>
+                      </div>
+                      <div className="doc-feature-item">
+                        <span>Assessment Timestamp:</span>
+                        <em>{activeScreening?.processedAt || activeScreening?.screeningDateTime || '—'}</em>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="doc-panel-body">
-                {typeof activeScreening?.combinedScore === 'number' ? (
-                  <div
-                    className="ai-status-pill is-completed"
-                    style={{ marginBottom: 10, background: '#fdf2f8', color: '#831843' }}
-                  >
-                    <span className="ai-status-dot" style={{ background: '#db2777' }} />
-                    <span>Combined Score: {activeScreening.combinedScore.toFixed(2)}</span>
-                  </div>
-                ) : (
-                  <div className="ai-status-pill is-pending" style={{ marginBottom: 10 }}>
-                    <span className="ai-status-dot" />
-                    <span>{activeScreening ? 'Partial modalities only' : 'Pending screening'}</span>
-                  </div>
-                )}
-                <p style={{ fontSize: 13, color: '#66535c', lineHeight: 1.5, margin: '0 0 12px 0' }}>
-                  Late fusion meta-classifier synthesizes predictions across all four pipelines (Clinical Numerical, Audio Prosody, Video Dynamics, Narrative Text) via learned logistic stacking.
-                </p>
-                <div className="doc-feature-list">
-                  <div className="doc-feature-item">
-                    <span>Fusion Method:</span>
-                    <em>{activeScreening?.fusionMethod || 'Learned Stacking Meta-Classifier'}</em>
-                  </div>
-                  <div className="doc-feature-item">
-                    <span>Overall Risk Tier:</span>
-                    <em>
-                      {typeof activeScreening?.combinedScore === 'number'
-                        ? `${activeScreening.risk || 'Calculated'} (${(activeScreening.combinedScore * 100).toFixed(1)}%)`
-                        : 'Awaiting multimodal inference'}
-                    </em>
-                  </div>
-                  <div className="doc-feature-item">
-                    <span>Modalities Included:</span>
-                    <em>
-                      {[
-                        activeScreening?.modalities?.text?.status === 'completed' ? 'Text' : null,
-                        activeScreening?.modalities?.voice?.status === 'completed' ? 'Audio' : null,
-                        activeScreening?.modalities?.video?.status === 'completed' ? 'Video' : null,
-                        activeScreening?.modalities?.clinical?.status === 'completed' ? 'Clinical' : null,
-                      ]
-                        .filter(Boolean)
-                        .join(', ') || 'None yet'}
-                    </em>
-                  </div>
-                  <div className="doc-feature-item">
-                    <span>Cross-Modal Concordance:</span>
-                    <em>
-                      {typeof activeScreening?.discordanceScore === 'number'
-                        ? activeScreening.discordanceDetected
-                          ? `Divergence Detected (Δ = ${activeScreening.discordanceScore.toFixed(2)})`
-                          : `Aligned (Δ = ${activeScreening.discordanceScore.toFixed(2)})`
-                        : 'Awaiting multimodal inference'}
-                    </em>
-                  </div>
-                  <div className="doc-feature-item">
-                    <span>Assessment Timestamp:</span>
-                    <em>{activeScreening?.processedAt || activeScreening?.screeningDateTime || '—'}</em>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+            );
+          })()}
         </section>
       )}
     </div>

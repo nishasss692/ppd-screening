@@ -198,22 +198,19 @@ export function deduplicateScreenings(screeningsList, mothersList = []) {
 }
 
 /**
- * Deduplicate clinician appointments by ID and (patient, hospital, date, time, status).
+ * Deduplicate clinician appointments by unique ID.
  */
 export function deduplicateAppointments(list) {
   if (!Array.isArray(list)) return [];
   const seenIds = new Set();
-  const seenKeys = new Set();
   const result = [];
   for (const a of list) {
     if (!a) continue;
-    const idKey = a.id ? String(a.id).toLowerCase().trim() : null;
-    if (idKey && seenIds.has(idKey)) continue;
-    const patientKey = String(a.patientName || a.motherId || a.patientId || '').toLowerCase().trim();
-    const compositeKey = `${patientKey}|${String(a.hospitalName || '').toLowerCase().trim()}|${String(a.date || '').toLowerCase().trim()}|${String(a.time || '').toLowerCase().trim()}|${String(a.status || '').toLowerCase().trim()}`;
-    if (patientKey && seenKeys.has(compositeKey)) continue;
-    if (idKey) seenIds.add(idKey);
-    if (patientKey) seenKeys.add(compositeKey);
+    const idKey = a.id ? String(a.id).toLowerCase().trim() : (a.appointment_id ? String(a.appointment_id).toLowerCase().trim() : null);
+    if (idKey) {
+      if (seenIds.has(idKey)) continue;
+      seenIds.add(idKey);
+    }
     result.push(a);
   }
   return result;
@@ -501,7 +498,7 @@ export function ClinicalProvider({ children }) {
 
           const textStatus = textScore !== null ? 'completed' : (mmMods.text?.status || cap.text || 'pending');
           const voiceStatus = audioScore !== null ? 'completed' : (mmMods.audio?.status || cap.audio || cap.voice || 'pending');
-          const videoStatus = videoScore !== null ? 'completed' : (mmMods.video?.status || cap.video || 'pending');
+          const videoStatus = videoScore !== null ? 'completed' : (mmMods.video?.status || cap.video || (bs.model_metadata?.video_recording ? 'recorded' : 'pending'));
           const clinicalStatus = clinicalScore !== null || cmPred?.status === 'completed' ? 'completed' : (cap.clinical || 'pending');
 
           return {
@@ -546,6 +543,13 @@ export function ClinicalProvider({ children }) {
                 error: mmMods.text?.error || null,
               },
               voice: {
+                status: voiceStatus,
+                score: audioScore,
+                modelVersion: mmMods.audio?.model_version || 'audio_logistic_regression_v1',
+                details: mmMods.audio?.details || {},
+                error: mmMods.audio?.error || null,
+              },
+              audio: {
                 status: voiceStatus,
                 score: audioScore,
                 modelVersion: mmMods.audio?.model_version || 'audio_logistic_regression_v1',

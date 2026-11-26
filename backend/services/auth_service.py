@@ -232,6 +232,38 @@ HOSPITAL_USER_MAPPING = {
 }
 
 
+DOCTOR_USER_MAPPING: Dict[str, Dict[str, Any]] = {
+    "doctor@miora.health": {
+        "doctor_id": "DR-001",
+        "doctor_name": "Dr. Priya Mehta",
+        "hospital_id": "HOSP-001",
+        "hospital_name": "Apollo Women's Hospital",
+        "specialization": "Perinatal Psychiatry",
+    },
+    "house@mioraclinical.org": {
+        "doctor_id": "DR-002",
+        "doctor_name": "Dr. Gregory House",
+        "hospital_id": "HOSP-001",
+        "hospital_name": "Apollo Women's Hospital",
+        "specialization": "Diagnostic Medicine",
+    },
+}
+
+
+def resolve_doctor_id(user: User) -> str:
+    """Resolve stable clinician identifier (e.g. 'DR-001') for authenticated doctor User."""
+    email = (user.email or "").strip().lower()
+    if email in DOCTOR_USER_MAPPING:
+        return DOCTOR_USER_MAPPING[email]["doctor_id"]
+    name = (user.full_name or "").strip().lower()
+    if "priya" in name or "mehta" in name:
+        return "DR-001"
+    if "house" in name or "gregory" in name:
+        return "DR-002"
+    # Fallback using user UUID prefix
+    return f"DR-{str(user.id)[:6].upper()}"
+
+
 def get_user_hospital_profile(user: User) -> Dict[str, str]:
     """Resolve hospital profile details for authenticated hospital staff user."""
     profile = HOSPITAL_USER_MAPPING.get(user.email.lower().strip())

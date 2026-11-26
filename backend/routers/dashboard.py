@@ -17,8 +17,9 @@ from sqlalchemy.orm import Session
 from backend.database.connection import get_db
 from backend.models.care_plan import CarePlan
 from backend.models.mother import Mother
+from backend.models.screening import Screening
 from backend.models.user import User
-from backend.services.auth_service import require_doctor
+from backend.services.auth_service import require_doctor, resolve_doctor_id
 from backend.schemas.dashboard import (
     DashboardAlertsResponse,
     DashboardMetricsResponse,
@@ -30,6 +31,7 @@ from backend.services.dashboard_service import DashboardService, dashboard_servi
 logger = logging.getLogger("ppd.routers.dashboard")
 
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
+doctor_router = APIRouter(prefix="/api/doctor", tags=["Doctor"])
 
 
 @router.get(
@@ -110,6 +112,11 @@ def get_dashboard_alerts(
     status_code=status.HTTP_200_OK,
     summary="Retrieve clinician-assigned appointments and consultation requests",
 )
+@doctor_router.get(
+    "/appointments",
+    status_code=status.HTTP_200_OK,
+    summary="Retrieve clinician-assigned appointments and consultation requests (doctor namespace alias)",
+)
 def get_clinician_assigned_appointments(
     user: User = Depends(require_doctor),
     db: Session = Depends(get_db),
@@ -119,6 +126,7 @@ def get_clinician_assigned_appointments(
         select(CarePlan).order_by(desc(CarePlan.created_at))
     ).all()
 
+    doctor_id = resolve_doctor_id(user)
     doctor_name_clean = (user.full_name or "").strip().lower()
     results = []
     seen_appts = set()
@@ -131,42 +139,53 @@ def get_clinician_assigned_appointments(
                 meta = {}
 
         # Assigned doctor match check:
-        # Either assigned_doctor_name, doctor_name, doctor_id, or cp.assigned_clinician_id
         assigned_name = (meta.get("assigned_doctor_name") or meta.get("doctor_name") or cp.assigned_clinician_id or "").strip()
-        assigned_id = (meta.get("assigned_doctor_id") or meta.get("doctor_id") or "").strip().lower()
+        assigned_id = (meta.get("doctor_id") or meta.get("assigned_doctor_id") or cp.assigned_clinician_id or "").strip()
 
         is_assigned_to_me = False
-        if assigned_name and assigned_name.lower() == doctor_name_clean:
+        if user.role == "admin":
             is_assigned_to_me = True
-        elif assigned_id in ("dr-001", "doc-priya-mehta") and ("priya" in doctor_name_clean or "mehta" in doctor_name_clean):
+        elif assigned_id and assigned_id.upper() == doctor_id.upper():
             is_assigned_to_me = True
-        elif not assigned_name and not assigned_id:
-            # If unassigned legacy/general, allow viewing in admin or fallback
-            if user.role == "admin":
+        elif doctor_id == "DR-001":
+            if assigned_id.lower() in ("dr-001", "doc-priya-mehta"):
                 is_assigned_to_me = True
+            elif assigned_name and ("priya" in assigned_name.lower() or "mehta" in assigned_name.lower()):
+                is_assigned_to_me = True
+        elif assigned_name and user.full_name and assigned_name.lower() == user.full_name.strip().lower():
+            is_assigned_to_me = True
 
-        if not is_assigned_to_me and user.role != "admin":
+        if not is_assigned_to_me:
             continue
 
         mother = db.get(Mother, cp.mother_id)
         patient_name = meta.get("patient_name") or (mother.name if mother else "Patient")
         
-        # Check latest screening risk classification for authorized clinical context
+        # Check latest screening record for authorized clinical context
         screening_risk = "Not Screened"
         screening_id = None
         screening_date = None
         epds_score = None
         multimodal_result = None
         clinical_prediction = None
+        q10_safety_alert = False
+        discordance_assessment = None
         
-        if mother and mother.screenings:
-            latest_screening = mother.screenings[0]
+        latest_screening = db.scalars(
+            select(Screening)
+            .where(Screening.mother_id == cp.mother_id)
+            .order_by(desc(Screening.created_at))
+            .limit(1)
+        ).first()
+
+        if latest_screening:
             screening_id = str(latest_screening.id)
             screening_risk = latest_screening.risk_classification or "Preliminary"
             screening_date = latest_screening.screening_date.strftime("%d %b %Y") if latest_screening.screening_date else None
             epds_score = latest_screening.total_score
             multimodal_result = latest_screening.multimodal_scores
             clinical_prediction = latest_screening.clinical_model_prediction
+            q10_safety_alert = bool(latest_screening.q10_safety_alert)
 
         epds_interp = None
         if epds_score is not None:
@@ -175,22 +194,83 @@ def get_clinician_assigned_appointments(
             elif epds_score >= 10:
                 epds_interp = "Elevated distress range (10-12). Clinical monitoring and emotional support recommended."
             else:
-                epds_interp = "Within low-distress range (<10). Routine postpartum wellness follow-up."
+                epds_interp = "Within low-distress range (0-9). Routine postpartum wellness follow-up."
+
+        # 4-Scenario Clinical Discordance Assessment
+        if epds_score is not None:
+            mm_res = multimodal_result or {}
+            f_score = mm_res.get("fusion_score")
+            clin_score = (clinical_prediction or {}).get("predicted_risk_probability")
+            ai_score = f_score if f_score is not None else clin_score
+            if ai_score is None:
+                avail = [
+                    mm_res.get("text_score"),
+                    mm_res.get("audio_score"),
+                    mm_res.get("video_score"),
+                ]
+                valid = [v for v in avail if isinstance(v, (int, float))]
+                if valid:
+                    ai_score = sum(valid) / len(valid)
+            
+            if isinstance(ai_score, (int, float)):
+                ai_pct = ai_score * 100.0 if ai_score <= 1.0 else float(ai_score)
+                epds_elevated = epds_score >= 10
+                ai_elevated = ai_pct >= 33.0
+
+                if epds_elevated and ai_elevated:
+                    scenario_id = "concordant_elevated"
+                    scenario_title = "Concordant Elevated Risk"
+                    scenario_desc = (
+                        "Both maternal self-report (EPDS >= 10) and AI behavioral analysis demonstrate elevated "
+                        "postpartum distress. High clinical confidence for depressive symptomatology; prioritize specialist care."
+                    )
+                elif epds_elevated and not ai_elevated:
+                    scenario_id = "discordant_self_report_elevated"
+                    scenario_title = "Discordant: Self-Report Elevated / Behavioral Lower"
+                    scenario_desc = (
+                        "Mother reports significant subjective distress on EPDS, yet AI acoustic/facial/narrative "
+                        "markers remain in the lower range. Indicates internal distress, early-stage coping, situational fatigue, or masking."
+                    )
+                elif not epds_elevated and ai_elevated:
+                    scenario_id = "discordant_behavioral_elevated"
+                    scenario_title = "Discordant: Behavioral Elevated / Self-Report Low"
+                    scenario_desc = (
+                        "AI multimodal biomarkers (vocal acoustic prosody, facial dynamics, or clinical risk) detect elevated "
+                        "depressive features despite a low self-reported EPDS score. Clinician should assess for maternal minimization, stigma, or alexithymia."
+                    )
+                else:
+                    scenario_id = "concordant_low"
+                    scenario_title = "Concordant Low Risk"
+                    scenario_desc = (
+                        "Both maternal self-report and AI multimodal behavioral indicators confirm low distress range. "
+                        "Reassuring clinical concordance; maintain routine postpartum follow-up."
+                    )
+
+                discordance_assessment = {
+                    "scenario": scenario_id,
+                    "title": scenario_title,
+                    "description": scenario_desc,
+                    "epds_score": epds_score,
+                    "ai_score_percent": round(ai_pct, 1),
+                    "disagreement_flag": bool(epds_elevated != ai_elevated),
+                }
+            else:
+                discordance_assessment = {
+                    "scenario": "insufficient_data",
+                    "title": "Insufficient Multimodal Data",
+                    "description": "Multimodal AI behavioral biomarkers were not captured in this session; evaluation relies on validated EPDS self-report.",
+                    "epds_score": epds_score,
+                    "ai_score_percent": None,
+                    "disagreement_flag": False,
+                }
 
         appt_date_val = meta.get("confirmed_date") or meta.get("requested_date") or (cp.scheduled_followup_date.strftime("%d %b %Y") if cp.scheduled_followup_date else "Flexible")
         appt_time_val = meta.get("confirmed_time") or meta.get("requested_time") or "11:00 AM"
         hosp_name_val = meta.get("hospital_name") or cp.referral_destination or "Apollo Women's Hospital"
         appt_status_val = (meta.get("status") or cp.status or "scheduled").title()
-        dedup_key = (
-            str(cp.mother_id),
-            str(appt_date_val).strip().lower(),
-            str(appt_time_val).strip().lower(),
-            str(hosp_name_val).strip().lower(),
-            str(appt_status_val).strip().lower(),
-        )
-        if dedup_key in seen_appts:
+        if str(cp.id) in seen_appts:
             continue
-        seen_appts.add(dedup_key)
+        seen_appts.add(str(cp.id))
 
         results.append({
             "id": str(cp.id),
@@ -214,6 +294,8 @@ def get_clinician_assigned_appointments(
             "screeningDate": screening_date,
             "epdsScore": epds_score,
             "epdsInterpretation": epds_interp,
+            "q10SafetyAlert": q10_safety_alert,
+            "discordanceAssessment": discordance_assessment,
             "multimodalResult": multimodal_result,
             "clinicalPrediction": clinical_prediction,
             "hospitalNotes": meta.get("hospital_notes"),

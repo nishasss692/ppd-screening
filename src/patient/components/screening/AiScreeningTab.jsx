@@ -115,7 +115,11 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
   const videoChunksRef = useRef([]);
   const recognitionRef = useRef(null);
   const sessionTimerRef = useRef(null);
-  const silenceTimerRef = useRef(null);
+  const isVoiceRecordingRef = useRef(false);
+  const accumulatedFinalTranscriptRef = useRef('');
+  const recordingTimerRef = useRef(null);
+  const restartTimeoutRef = useRef(null);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
   const chatBottomRef = useRef(null);
   const usedVoiceForQuestionRef = useRef(false);
   const featureCaptureRef = useRef(null);
@@ -136,7 +140,9 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
 
   const stopAllMedia = () => {
     if (sessionTimerRef.current) clearInterval(sessionTimerRef.current);
-    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
+    isVoiceRecordingRef.current = false;
     if (recognitionRef.current) {
       try {
         recognitionRef.current.abort();
@@ -331,23 +337,36 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
   }, [sessionPhase, liveStream, currentQuestionIdx]);
 
   // ---------------------------------------------------------------------------
-  // 2. Primary Voice Dictation / Speech-to-Text
+  // 2. Primary Voice Dictation / Speech-to-Text with Unlimited Duration
   // ---------------------------------------------------------------------------
-  const handleToggleVoice = () => {
-    if (typeof window === 'undefined') return;
-
-    if (isListening) {
-      handleStopVoice();
-      return;
+  const safeStartRecognition = (recognitionInstance) => {
+    if (!recognitionInstance) return;
+    try {
+      recognitionInstance.start();
+    } catch (err) {
+      if (err.name !== 'InvalidStateError') {
+        console.warn('Recognition start notice:', err);
+      }
     }
+  };
+
+  const handleStartVoice = () => {
+    if (typeof window === 'undefined') return;
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      setSpeechError('Speech recognition is not supported in this browser. You can type your response in the message bar.');
+      setSpeechError('Speech recognition is not supported in this browser. You can type your response in the text box.');
       return;
     }
 
     setSpeechError(null);
+
+    // If there is an existing recognition instance, clean it up before re-instantiating
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.abort();
+      } catch (e) { }
+    }
 
     try {
       const recognition = new SpeechRecognition();
@@ -362,64 +381,95 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
       };
 
       recognition.onresult = (event) => {
-        let finalTranscript = '';
-        let interimTranscript = '';
-        for (let i = 0; i < event.results.length; ++i) {
+        let sessionFinal = '';
+        let sessionInterim = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
           const res = event.results[i];
           if (res.isFinal) {
-            finalTranscript += res[0].transcript + ' ';
+            sessionFinal += res[0].transcript + ' ';
           } else {
-            interimTranscript += res[0].transcript;
+            sessionInterim += res[0].transcript;
           }
         }
-        const combined = (finalTranscript + interimTranscript).trim();
+
+        if (sessionFinal) {
+          accumulatedFinalTranscriptRef.current = (
+            (accumulatedFinalTranscriptRef.current ? accumulatedFinalTranscriptRef.current + ' ' : '') + sessionFinal
+          ).trim();
+        }
+
+        const combined = [accumulatedFinalTranscriptRef.current, sessionInterim]
+          .filter(Boolean)
+          .join(' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+
         if (combined) {
           usedVoiceForQuestionRef.current = true;
           latestTranscriptRef.current = combined;
           setInputText(combined);
         }
-
-        // Auto-pause and advance after 2.5 seconds of silence if text captured
-        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-        if (combined.length > 0) {
-          silenceTimerRef.current = setTimeout(() => {
-            handleStopVoice();
-            // Automatically submit and advance if patient finished speaking
-            if (latestTranscriptRef.current && !isSubmittingAnswerRef.current) {
-              handleSendMessage(latestTranscriptRef.current);
-            }
-          }, 2500);
-        }
       };
 
       recognition.onerror = (event) => {
+        if (event.error === 'no-speech') {
+          // Mother is pausing between sentences or thinking; do not stop recording.
+          return;
+        }
         if (event.error === 'not-allowed') {
           setSpeechError('Microphone permission not granted. You can type your answer directly.');
-        } else if (event.error === 'no-speech') {
-          setSpeechError('No speech detected. Tap the microphone and speak again, or type below.');
-        } else if (event.error !== 'aborted') {
-          setSpeechError(`Speech recognition notice (${event.error}). Feel free to type.`);
+          handleFinishVoice();
+          return;
         }
-        handleStopVoice();
+        if (event.error !== 'aborted') {
+          console.warn('Speech recognition notice:', event.error);
+        }
       };
 
       recognition.onend = () => {
-        setIsListening(false);
+        // If the user hasn't explicitly clicked "Finish Answer", reconnect automatically
+        // so that natural pauses or browser session timeouts do NOT terminate recording
+        if (isVoiceRecordingRef.current) {
+          if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
+          restartTimeoutRef.current = setTimeout(() => {
+            if (isVoiceRecordingRef.current && recognitionRef.current) {
+              safeStartRecognition(recognitionRef.current);
+            }
+          }, 150);
+        } else {
+          setIsListening(false);
+        }
       };
 
       recognitionRef.current = recognition;
-      recognition.start();
+      isVoiceRecordingRef.current = true;
+      setIsListening(true);
+      usedVoiceForQuestionRef.current = true;
+
+      // Start duration counter for this answer
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingSeconds((prev) => prev + 1);
+      }, 1000);
+
+      safeStartRecognition(recognition);
     } catch (err) {
       console.warn('SpeechRecognition start failed:', err);
       setSpeechError('Could not start speech recognition. Please type your answer.');
       setIsListening(false);
+      isVoiceRecordingRef.current = false;
     }
   };
 
-  const handleStopVoice = (autoSubmit = false) => {
-    if (silenceTimerRef.current) {
-      clearTimeout(silenceTimerRef.current);
-      silenceTimerRef.current = null;
+  const handleFinishVoice = () => {
+    isVoiceRecordingRef.current = false;
+    if (restartTimeoutRef.current) {
+      clearTimeout(restartTimeoutRef.current);
+      restartTimeoutRef.current = null;
+    }
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
     }
     if (recognitionRef.current) {
       try {
@@ -427,6 +477,47 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
       } catch (e) { }
     }
     setIsListening(false);
+
+    // Finalize transcript
+    const finalized = (accumulatedFinalTranscriptRef.current || inputText || latestTranscriptRef.current || '').trim();
+    if (finalized) {
+      latestTranscriptRef.current = finalized;
+      accumulatedFinalTranscriptRef.current = finalized;
+      setInputText(finalized);
+    }
+  };
+
+  const handleRerecord = () => {
+    // Discard current transcript and start recording fresh
+    isVoiceRecordingRef.current = false;
+    if (restartTimeoutRef.current) {
+      clearTimeout(restartTimeoutRef.current);
+      restartTimeoutRef.current = null;
+    }
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.abort();
+      } catch (e) { }
+    }
+    setIsListening(false);
+    accumulatedFinalTranscriptRef.current = '';
+    latestTranscriptRef.current = '';
+    setInputText('');
+    setRecordingSeconds(0);
+    setSpeechError(null);
+
+    // Promptly begin fresh recording
+    setTimeout(() => {
+      handleStartVoice();
+    }, 50);
+  };
+
+  const handleStopVoice = (autoSubmit = false) => {
+    handleFinishVoice();
     if (autoSubmit && latestTranscriptRef.current && !isSubmittingAnswerRef.current) {
       handleSendMessage(latestTranscriptRef.current);
     }
@@ -453,9 +544,16 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
   const handleSendMessage = (explicitText = null) => {
     if (isSubmittingAnswerRef.current) return;
 
-    const rawText = typeof explicitText === 'string' ? explicitText : inputText;
+    if (isVoiceRecordingRef.current) {
+      handleFinishVoice();
+    }
+
+    const rawText = typeof explicitText === 'string' ? explicitText : (accumulatedFinalTranscriptRef.current || inputText);
     const textToSend = rawText ? rawText.trim() : '';
-    if (!textToSend) return;
+    if (!textToSend) {
+      setSpeechError('Please speak or type your answer before proceeding.');
+      return;
+    }
 
     if (isLikelyGibberish(textToSend)) {
       setSpeechError('Please enter a meaningful response in words so your screening can be evaluated accurately.');
@@ -465,12 +563,14 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
     isSubmittingAnswerRef.current = true;
     setIsSubmittingAnswer(true);
     setSpeechError(null);
-    handleStopVoice();
+    handleFinishVoice();
 
     const currentQ = CONVERSATIONAL_SCREENING_QUESTIONS[currentQuestionIdx];
     const isVoice = usedVoiceForQuestionRef.current;
     usedVoiceForQuestionRef.current = false;
     latestTranscriptRef.current = '';
+    accumulatedFinalTranscriptRef.current = '';
+    setRecordingSeconds(0);
 
     // 1. Add Mother's message to chat
     const motherMsg = {
@@ -882,10 +982,10 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
                 <div className="ai-chat-bubble is-mother is-draft-bubble">
                   <div className="ai-chat-draft-indicator">
                     <span className="ai-pulse-dot" style={{ background: '#ffffff' }} />
-                    <span>Listening to your voice...</span>
+                    <span>Listening &amp; transcribing ({formatTimer(recordingSeconds)})...</span>
                   </div>
                   <p className="ai-chat-msg-text">
-                    {inputText || 'Speak naturally into your microphone...'}
+                    {inputText || 'Speak naturally. You can speak as much as you need and take your time...'}
                   </p>
                 </div>
               </div>
@@ -901,60 +1001,143 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
             </div>
           )}
 
-          {/* Bottom Response Bar (Voice + Text) */}
+          {/* Bottom Response Bar (Voice + Text + Controls) */}
           {sessionPhase !== 'completed' ? (
-            <div className="ai-chat-input-dock">
-              {/* Primary Attractive Voice Microphone Button */}
-              <button
-                type="button"
-                className={`ai-chat-mic-btn ${isListening ? 'is-active-recording' : ''}`}
-                onClick={handleToggleVoice}
-                disabled={isSubmittingAnswer}
-                title={isListening ? 'Finish speaking and submit answer' : 'Answer with your microphone'}
-                aria-label={isListening ? 'Stop listening and submit' : 'Start voice dictation'}
-              >
-                <span className="ai-chat-mic-icon" aria-hidden="true">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                    <line x1="12" y1="19" x2="12" y2="22" />
-                  </svg>
-                </span>
-                <span>{isSubmittingAnswer ? 'Processing...' : isListening ? 'Finish Speaking & Submit' : 'Speak Answer'}</span>
-              </button>
+            <div className="ai-chat-input-container">
+              {/* Guidance reassurance bar */}
+              <div className="ai-chat-guidance-bar">
+                {isListening ? (
+                  <div className="ai-guidance-item is-recording">
+                    <span className="ai-pulse-dot" style={{ background: '#dc2626' }} />
+                    <strong>Recording active ({formatTimer(recordingSeconds)}):</strong>
+                    <span>Take your time — speak as long as you need. Natural pauses are welcome. Click &ldquo;Finish Answer&rdquo; when done.</span>
+                  </div>
+                ) : inputText.trim().length > 0 ? (
+                  <div className="ai-guidance-item is-ready">
+                    <PatientIcon name="check" size={14} color="#16a34a" />
+                    <span>Response captured. You can review or edit above, re-record, or click <strong>{currentQuestionIdx < 4 ? 'Next Question' : 'Complete Screening'}</strong>.</span>
+                  </div>
+                ) : (
+                  <div className="ai-guidance-item is-prompt">
+                    <PatientIcon name="audio" size={14} color="#ba1e53" />
+                    <span>Click <strong>Start Speaking</strong> to record your response with unlimited time, or type in the box.</span>
+                  </div>
+                )}
+              </div>
 
-              {/* Text Input Field (Allows typing or editing transcript) */}
-              <div className="ai-chat-input-wrapper">
-                <input
-                  type="text"
-                  className="ai-chat-text-input"
-                  placeholder={
-                    isListening
-                      ? 'Transcribing your voice in real time...'
-                      : 'Review or edit transcript, or type your answer here...'
-                  }
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
+              <div className="ai-chat-input-dock">
+                {/* 1. Voice Controls: Start Speaking, Finish Answer, Re-record */}
+                {isListening ? (
+                  <>
+                    <button
+                      type="button"
+                      className="ai-chat-mic-btn is-active-recording"
+                      onClick={handleFinishVoice}
+                      disabled={isSubmittingAnswer}
+                      title="Finish speaking your answer"
+                      aria-label="Finish speaking"
+                    >
+                      <span className="ai-chat-mic-icon" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      </span>
+                      <span>Finish Answer</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="ai-chat-control-btn is-rerecord-btn"
+                      onClick={handleRerecord}
+                      disabled={isSubmittingAnswer}
+                      title="Discard current recording and start again"
+                      aria-label="Re-record answer"
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+                        <path d="M21 3v5h-5" />
+                        <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+                        <path d="M3 21v-5h5" />
+                      </svg>
+                      <span>Re-record</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="ai-chat-mic-btn"
+                      onClick={handleStartVoice}
+                      disabled={isSubmittingAnswer}
+                      title={inputText.trim() ? "Resume speaking more to your answer" : "Speak your answer with unlimited time"}
+                      aria-label={inputText.trim() ? "Speak more" : "Start speaking"}
+                    >
+                      <span className="ai-chat-mic-icon" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                          <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                          <line x1="12" y1="19" x2="12" y2="22" />
+                        </svg>
+                      </span>
+                      <span>{inputText.trim() ? "Speak More" : "Start Speaking"}</span>
+                    </button>
+
+                    {inputText.trim().length > 0 && (
+                      <button
+                        type="button"
+                        className="ai-chat-control-btn is-rerecord-btn"
+                        onClick={handleRerecord}
+                        disabled={isSubmittingAnswer}
+                        title="Clear response and record again"
+                        aria-label="Re-record answer"
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+                          <path d="M21 3v5h-5" />
+                          <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+                          <path d="M3 21v-5h5" />
+                        </svg>
+                        <span>Re-record</span>
+                      </button>
+                    )}
+                  </>
+                )}
+
+                {/* 2. Text Input Field (Allows typing or editing transcript) */}
+                <div className="ai-chat-input-wrapper">
+                  <input
+                    type="text"
+                    className="ai-chat-text-input"
+                    placeholder={
+                      isListening
+                        ? 'Transcribing in real time... Speak for as long as you need...'
+                        : 'Review or edit transcript, or type your answer here...'
                     }
-                  }}
-                  aria-label="Your response"
-                />
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                    aria-label="Your response"
+                  />
+                </div>
 
-                {inputText.trim().length > 0 && (
+                {/* 3. Explicit Next Question Action Button */}
+                {inputText.trim().length > 0 && !isListening && (
                   <button
                     type="button"
-                    className="ai-chat-send-btn"
-                    onClick={handleSendMessage}
-                    title="Send answer"
-                    aria-label="Send response"
+                    className="ai-chat-next-btn"
+                    onClick={() => handleSendMessage()}
+                    disabled={isSubmittingAnswer}
+                    title={currentQuestionIdx < 4 ? "Proceed to next question" : "Complete and save AI screening"}
+                    aria-label={currentQuestionIdx < 4 ? "Next question" : "Complete screening"}
                   >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="22" y1="2" x2="11" y2="13" />
-                      <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                    <span>{isSubmittingAnswer ? 'Saving...' : currentQuestionIdx < 4 ? 'Next Question' : 'Complete & Continue'}</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 18 15 12 9 6" />
                     </svg>
                   </button>
                 )}
