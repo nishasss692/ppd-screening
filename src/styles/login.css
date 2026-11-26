@@ -15,7 +15,7 @@
   align-items: center;
   justify-content: center;
   background: #fbf7f8;
-  background-image: 
+  background-image:
     radial-gradient(circle at 12% 15%, rgba(247, 222, 233, 0.45) 0%, transparent 45%),
     radial-gradient(circle at 88% 82%, rgba(243, 212, 225, 0.35) 0%, transparent 50%),
     linear-gradient(135deg, #fdfafb 0%, #f7eff3 100%);
@@ -377,9 +377,9 @@
 }
 
 .login-role-card-hospital.is-hospital-selected {
-  border: 1.5px solid #0f3d3e;
-  background: #f1f8f7;
-  box-shadow: 0 2px 10px rgba(15, 61, 62, 0.08);
+  border: 1.5px solid #ba1e53;
+  background: #fdf5f8;
+  box-shadow: 0 2px 10px rgba(186, 30, 83, 0.08);
 }
 
 .login-role-icon {
@@ -400,8 +400,12 @@
 }
 
 .login-role-card-hospital .login-role-icon {
-  background: #edf7f5;
-  color: #0f3d3e;
+  background: #fbf0f4;
+  color: #ba1e53;
+}
+
+.login-role-card-hospital.is-hospital-selected .login-role-icon {
+  background: #fce4ed;
 }
 
 .login-role-content {
@@ -455,8 +459,8 @@
 }
 
 .login-role-card-hospital.is-hospital-selected .login-role-indicator {
-  border-color: #0f3d3e;
-  background: #0f3d3e;
+  border-color: #ba1e53;
+  background: #ba1e53;
   color: #ffffff;
 }
 
@@ -522,9 +526,9 @@
 }
 
 .login-demo-chip.is-hospital-active {
-  background: #e6f4f1;
-  border-color: #0f3d3e;
-  color: #0f3d3e;
+  background: #fdeaf0;
+  border-color: #ba1e53;
+  color: #ba1e53;
   font-weight: 600;
 }
 
@@ -676,12 +680,12 @@
 }
 
 .login-submit-btn-hospital {
-  background: linear-gradient(135deg, #0f3d3e 0%, #092c2d 100%);
-  box-shadow: 0 4px 14px rgba(15, 61, 62, 0.22);
+  background: linear-gradient(135deg, #d83167 0%, #ba1e53 100%);
+  box-shadow: 0 4px 14px rgba(186, 30, 83, 0.22);
 }
 
 .login-submit-btn-hospital:hover:not(:disabled) {
-  box-shadow: 0 6px 18px rgba(15, 61, 62, 0.32);
+  box-shadow: 0 6px 18px rgba(186, 30, 83, 0.32);
 }
 
 .login-spinner {

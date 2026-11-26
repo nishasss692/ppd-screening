@@ -563,7 +563,7 @@ export function LoginScreen({ portalMode = null }) {
                     </span>
                     <span className="login-role-indicator">
                       {selectedRole === 'hospital' ? (
-                        <span className="login-indicator-checked" style={{ background: '#0f3d3e' }}>{Icons.check}</span>
+                        <span className="login-indicator-checked">{Icons.check}</span>
                       ) : (
                         <span className="login-indicator-empty" />
                       )}
