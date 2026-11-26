@@ -52,15 +52,6 @@ const HeroSection = () => (
         Medical <em>History</em>
       </h1>
     </div>
-    <div className="patient-hero-box-illu" aria-hidden="true">
-      <img
-        src="/assets/mother-baby-header-crop.png"
-        alt=""
-        onError={(e) => {
-          e.target.style.display = 'none';
-        }}
-      />
-    </div>
   </div>
 );
 

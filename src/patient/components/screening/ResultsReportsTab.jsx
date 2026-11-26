@@ -135,34 +135,19 @@ export function ResultsReportsTab({ onTakeAiScreening, onTakeEpds }) {
       {/* Simplified Patient Risk Summary Card */}
       <section className="patient-card" aria-label="Screening Risk Result" style={{ padding: '28px', marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
-            <img
-              src="/assets/my-reports-mother-baby.png"
-              alt=""
-              aria-hidden="true"
-              style={{
-                width: '72px',
-                height: '72px',
-                borderRadius: '16px',
-                objectFit: 'cover',
-                border: '1px solid #f2dce4',
-                flexShrink: 0,
-              }}
-            />
-            <div>
-              <div className="miora-dash-eyebrow" style={{ marginBottom: '6px' }}>
-                <span>SCREENING RESULT</span>
-                <span className="miora-dash-eyebrow-line" aria-hidden="true" />
-              </div>
-              <h2 className="patient-page-heading" style={{ fontSize: '24px', margin: 0 }}>
-                Your Wellbeing Risk Summary
-              </h2>
-              {hasAnyAssessment && (
-                <p style={{ margin: '6px 0 0', fontSize: '13px', color: '#8d737e' }}>
-                  Completed on {submittedDate}
-                </p>
-              )}
+          <div>
+            <div className="miora-dash-eyebrow" style={{ marginBottom: '6px' }}>
+              <span>SCREENING RESULT</span>
+              <span className="miora-dash-eyebrow-line" aria-hidden="true" />
             </div>
+            <h2 className="patient-page-heading" style={{ fontSize: '24px', margin: 0 }}>
+              Your Wellbeing Risk Summary
+            </h2>
+            {hasAnyAssessment && (
+              <p style={{ margin: '6px 0 0', fontSize: '13px', color: '#8d737e' }}>
+                Completed on {submittedDate}
+              </p>
+            )}
           </div>
 
           {hasAnyAssessment ? (

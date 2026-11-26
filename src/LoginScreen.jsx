@@ -294,35 +294,28 @@ export function LoginScreen({ portalMode = null }) {
             Left Section – Clinical Branding & Enterprise Highlights
             ================================================================ */}
         <section className="login-left-col" aria-label="AANCHAL brand presentation">
-          <div className="login-left-top">
-            {/* Upper-left branding */}
-            <div className="login-branding">
-              <Link to="/" className="login-logo-link" aria-label="AANCHAL Home">
-                <BrandWordmark height={40} />
-              </Link>
-
-              <div className="login-clinical-badge">
-                <span className="login-badge-dot" aria-hidden="true" />
-                <span className="login-tagline">
-                  Maternal Emotional<br />Intelligence
-                </span>
-              </div>
-
-              <div className="login-brand-divider" aria-hidden="true" />
-            </div>
-
-            {/* Main Heading — Playfair Display Serif */}
+          <div className="login-left-content">
+            {/* Main Heading & Subtitle */}
             <h1 className="login-heading">
-              Compassionate Support for Your Postpartum Journey
+              Welcome to AANCHAL
+              <span className="sr-only">Compassionate Support for Your Postpartum Journey</span>
             </h1>
 
-            <div className="login-illustration-wrap">
-              <img
-                src="/assets/login-illustration-smooth.png"
-                alt="Mother holding her newborn baby"
-                className="login-illustration-img"
-              />
-            </div>
+            <p className="login-subheading">
+              A space to feel heard, supported and cared for.
+            </p>
+          </div>
+
+          {/* Abstract geometric flowing shapes & pills near bottom */}
+          <div className="login-geometric-decor" aria-hidden="true">
+            <div className="decor-circle decor-circle-1" />
+            <div className="decor-circle decor-circle-2" />
+            <div className="decor-pill decor-pill-1" />
+            <div className="decor-pill decor-pill-2" />
+            <div className="decor-pill decor-pill-3" />
+            <div className="decor-pill decor-pill-4" />
+            <div className="decor-pill decor-pill-5" />
+            <div className="decor-pill decor-pill-6" />
           </div>
         </section>
 

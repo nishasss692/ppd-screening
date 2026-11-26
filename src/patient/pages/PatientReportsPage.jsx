@@ -190,7 +190,7 @@ export function PatientReportsPage() {
         <span className="medhist-breadcrumb-current">My Reports</span>
       </div>
 
-      {/* Hero Header Banner with Mother & Baby Illustration */}
+      {/* Hero Header Banner */}
       <div className="patient-card reports-hero-card">
         <div className="reports-hero-text">
           <div className="miora-dash-eyebrow">
@@ -200,17 +200,6 @@ export function PatientReportsPage() {
           <h1 className="miora-dash-title patient-page-heading reports-title">
             My Reports &amp; <em>Analytics</em>
           </h1>
-        </div>
-
-        <div className="reports-hero-illu-wrap" aria-hidden="true">
-          <img
-            src="/assets/mother-baby-header-crop.png"
-            alt=""
-            className="reports-hero-illustration"
-            onError={(e) => {
-              e.target.style.display = 'none';
-            }}
-          />
         </div>
       </div>
 

@@ -358,6 +358,61 @@ def seed_default_users(db: Session) -> None:
         db.add(family_user)
         logger.info("Seeded default patient's family account: %s (Linked Mother ID: %s)", family_email, existing_mother.id)
 
+    # 3b. Seed full authorized clinical patient cohort if missing
+    cohort_mothers = [
+        ("Nadia R.", "nadia@miora.health", 31, 6, "singleton", 14, "high", True),
+        ("Priya M.", "priya.m@miora.health", 26, 3, "singleton", 8, "low", False),
+        ("Divya M.", "divya.m@miora.health", 33, 8, "singleton", 11, "moderate", False),
+        ("Sana K.", "sana.k@miora.health", 29, 5, "singleton", 16, "high", True),
+        ("Meera N.", "meera.n@miora.health", 30, 7, "twins", 9, "low", False),
+        ("Kavya S.", "kavya.s@miora.health", 27, 2, "singleton", 12, "moderate", False),
+    ]
+    for c_name, c_email, c_age, c_week, c_preg, c_score, c_risk, c_q10 in cohort_mothers:
+        existing_c = db.scalar(select(Mother).where(Mother.name == c_name))
+        if not existing_c:
+            from datetime import date, timedelta
+            delivery_d = date.today() - timedelta(weeks=c_week)
+            new_mother = Mother(
+                name=c_name,
+                email=c_email,
+                phone=f"+91-98765-432{c_week:02d}",
+                age=c_age,
+                pregnancy_type=c_preg,
+                delivery_date=delivery_d,
+                profile_completed=True,
+                notes=f"Authorized maternal screening patient - Week {c_week} Postpartum.",
+            )
+            db.add(new_mother)
+            db.flush()
+
+            # Add baseline screening for the cohort mother
+            from backend.models.screening import Screening
+            new_scr = Screening(
+                mother_id=new_mother.id,
+                total_score=c_score,
+                risk_classification=c_risk,
+                q10_safety_alert=c_q10,
+                screening_status="completed",
+                fusion_status="completed",
+                modality_status={
+                    "text": "completed",
+                    "voice": "completed",
+                    "video": "completed" if c_week % 2 == 0 else "pending",
+                    "clinical": "completed",
+                },
+                multimodal_scores={
+                    "epds_score": c_score,
+                    "fusion_score": round(c_score / 30.0, 2),
+                    "text_score": round((c_score - 2) / 30.0, 2),
+                    "audio_score": round((c_score + 1) / 30.0, 2),
+                    "video_score": round(c_score / 30.0, 2) if c_week % 2 == 0 else None,
+                    "clinical_score": round(c_score / 30.0, 2),
+                },
+                model_metadata={"video_recording": c_week % 2 == 0},
+            )
+            db.add(new_scr)
+            logger.info("Seeded clinical cohort mother %s (%s)", c_name, new_mother.id)
+
     # 4. Seed demo hospital staff accounts
     demo_hospitals = [
         ("apollo@hospital.miora.health", "Apollo Women's Hospital Staff", "HOSP-001"),

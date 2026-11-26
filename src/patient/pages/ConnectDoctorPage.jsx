@@ -161,15 +161,6 @@ export function ConnectDoctorPage() {
             Confidential telehealth consultations, clinical evaluations, and ongoing postpartum emotional guidance coordinated with Dr. Priya Mehta.
           </p>
         </div>
-        <div className="patient-hero-box-illu" aria-hidden="true">
-          <img
-            src="/assets/mother-baby-header-crop.png"
-            alt=""
-            onError={(e) => {
-              e.target.style.display = 'none';
-            }}
-          />
-        </div>
       </div>
 
       {/* Telehealth Simulation Notice Banner */}
