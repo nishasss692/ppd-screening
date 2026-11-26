@@ -29,6 +29,10 @@ from backend.services.three_modality_service import (
     ThreeModalityInferenceService,
     three_modality_service,
 )
+from backend.services.media_feature_extractor import (
+    extract_audio_features_from_bytes,
+    extract_video_features_from_bytes,
+)
 
 router = APIRouter(
     prefix="/api/screenings",
@@ -305,6 +309,26 @@ async def analyze_multimodal_screening(
             detail="At least one screening modality (clinical, text, audio, or video) must be provided for analysis.",
         )
 
+    # Extract acoustic/visual features from uploaded raw recordings if JSON vectors were not supplied
+    if files_voice is not None and resolved_audio is None:
+        try:
+            voice_bytes = await files_voice.read()
+            resolved_audio = extract_audio_features_from_bytes(voice_bytes)
+        except Exception:
+            resolved_audio = None
+
+    if files_video is not None:
+        try:
+            video_bytes = await files_video.read()
+            if resolved_video is None:
+                resolved_video = extract_video_features_from_bytes(
+                    video_bytes, files_video.filename or "recording.webm"
+                )
+            if resolved_audio is None and files_voice is None:
+                resolved_audio = extract_audio_features_from_bytes(video_bytes)
+        except Exception:
+            pass
+
     # 4. Execute Service Inference
     inference_result = service.analyze(
         text=resolved_text,
@@ -314,17 +338,13 @@ async def analyze_multimodal_screening(
         mother_id=effective_mother_id,
     )
 
-    # If raw recordings were uploaded without pre-extracted feature vectors, annotate details
+    # Annotate if raw recordings were uploaded yet feature extraction failed
     if files_voice is not None and resolved_audio is None:
         mod_audio = inference_result["modalities"].get("audio", {})
         mod_audio["status"] = "unavailable"
         mod_audio["details"] = {
             "raw_recording_received": True,
             "filename": files_voice.filename,
-            "notice": (
-                "Raw audio waveform acoustic DSP feature extraction pipeline is offline in this "
-                "environment. Audio inference requires pre-extracted 7-feature physiological acoustic profile."
-            ),
         }
         inference_result["modality_status"]["audio"] = "unavailable"
 
@@ -334,10 +354,6 @@ async def analyze_multimodal_screening(
         mod_video["details"] = {
             "raw_recording_received": True,
             "filename": files_video.filename,
-            "notice": (
-                "Raw video landmark and action unit temporal feature extraction pipeline is offline in "
-                "this environment. Video inference requires pre-extracted 220-feature summary statistics."
-            ),
         }
         inference_result["modality_status"]["video"] = "unavailable"
 

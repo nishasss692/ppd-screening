@@ -97,7 +97,7 @@ export function DoctorResultsReportsTab({ defaultMotherId }) {
                       ) : (
                         <span className="ai-status-pill is-pending">
                           <span className="ai-status-dot" />
-                          <span>Awaiting model integration</span>
+                          <span>{mScreen ? 'Partial / Pending' : 'EPDS Only'}</span>
                         </span>
                       )}
                     </td>
@@ -173,7 +173,7 @@ export function DoctorResultsReportsTab({ defaultMotherId }) {
                         : 'Completed'}
                     </span>
                   ) : (
-                    <span className="ai-status-pill is-pending">Awaiting model integration</span>
+                    <span className="ai-status-pill is-pending">{activeScreening ? 'Not captured' : 'Not yet screened'}</span>
                   )}
                 </div>
                 <div className="doc-box-row">
@@ -185,7 +185,7 @@ export function DoctorResultsReportsTab({ defaultMotherId }) {
                         : 'Recorded'}
                     </span>
                   ) : (
-                    <span className="ai-status-pill is-pending">Awaiting model integration</span>
+                    <span className="ai-status-pill is-pending">{activeScreening ? 'Not captured' : 'Not yet screened'}</span>
                   )}
                 </div>
                 <div className="doc-box-row">
@@ -197,7 +197,7 @@ export function DoctorResultsReportsTab({ defaultMotherId }) {
                         : 'Completed'}
                     </span>
                   ) : (
-                    <span className="ai-status-pill is-pending">Awaiting model integration</span>
+                    <span className="ai-status-pill is-pending">{activeScreening ? 'Not captured' : 'Not yet screened'}</span>
                   )}
                 </div>
                 <div className="doc-box-row">
@@ -210,7 +210,7 @@ export function DoctorResultsReportsTab({ defaultMotherId }) {
                         : ''}
                     </span>
                   ) : (
-                    <span className="ai-status-pill is-pending">Awaiting model integration</span>
+                    <span className="ai-status-pill is-pending">{activeScreening ? 'Not evaluated' : 'Not yet screened'}</span>
                   )}
                 </div>
                 <div className="doc-box-row">
@@ -222,12 +222,12 @@ export function DoctorResultsReportsTab({ defaultMotherId }) {
                         : 'Completed'}
                     </span>
                   ) : (
-                    <span className="ai-status-pill is-pending">Awaiting model integration</span>
+                    <span className="ai-status-pill is-pending">{activeScreening ? 'Partial modalities' : 'Not yet screened'}</span>
                   )}
                 </div>
               </div>
               <p style={{ margin: '12px 0 0 0', fontSize: 12, color: '#8d737e' }}>
-                All clinical, audio, video, and text feature extractors will populate here upon backend endpoint deployment.
+                Clinical, audio, video, and text signals populate automatically once the patient completes an AI screening session.
               </p>
             </div>
 
