@@ -134,11 +134,14 @@ export function EpdsTab({ onCompleted, inClinicMotherUuid, onScreeningPersisted 
       if (rawMm) {
         const parsedMm = JSON.parse(rawMm);
         // Only include multimodal result if completed recently (within 30 minutes)
-        if (parsedMm?.completed_at || parsedMm?.screening_date) {
-          const mmTime = new Date(parsedMm.completed_at || parsedMm.screening_date).getTime();
-          if (Date.now() - mmTime < 30 * 60 * 1000) {
+        const tsRaw = parsedMm?.completed_at || parsedMm?.screening_date || parsedMm?.processed_at;
+        if (tsRaw) {
+          const mmTime = new Date(tsRaw).getTime();
+          if (!Number.isNaN(mmTime) && Date.now() - mmTime < 30 * 60 * 1000) {
             storedMultimodalResult = parsedMm;
           }
+        } else if (parsedMm?.fusion_score != null || parsedMm?.screening_id) {
+          storedMultimodalResult = parsedMm;
         }
       }
     } catch (e) { }
