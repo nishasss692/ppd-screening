@@ -9,6 +9,7 @@ import {
   fetchMultimodalStatus,
   submitMultimodalScreening,
 } from '../../services/patientApiService.js';
+import { createSessionFeatureCapture } from '../../utils/mediaFeatureCapture.js';
 
 /**
  * 5 Standard Open-ended Conversational Prompts for AANCHAL AI Screening
@@ -113,6 +114,7 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
   const silenceTimerRef = useRef(null);
   const chatBottomRef = useRef(null);
   const usedVoiceForQuestionRef = useRef(false);
+  const featureCaptureRef = useRef(null);
 
   // Auto-scroll chat to bottom
   useEffect(() => {
@@ -140,6 +142,12 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
       try {
         window.speechSynthesis.cancel();
       } catch (e) { }
+    }
+    if (featureCaptureRef.current) {
+      try {
+        featureCaptureRef.current.stopAndExtract(0, 0);
+      } catch (e) { }
+      featureCaptureRef.current = null;
     }
     if (continuousVideoRecorderRef.current && continuousVideoRecorderRef.current.state !== 'inactive') {
       try {
@@ -203,6 +211,9 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
 
       streamRef.current = stream;
       setLiveStream(stream);
+      try {
+        featureCaptureRef.current = createSessionFeatureCapture(stream, () => videoPreviewRef.current);
+      } catch (e) { }
 
       // Start Continuous Video Recording for the entire session
       videoChunksRef.current = [];
@@ -506,10 +517,43 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
     }
 
     // Stop continuous video recorder
-    if (continuousVideoRecorderRef.current && continuousVideoRecorderRef.current.state !== 'inactive') {
+    // Extract captured acoustic (7) & visual dynamics (220) features BEFORE stopping stream
+    const combinedNarrative = allResponses
+      .map((r, i) => `Q${i + 1}: ${r.responseText}`)
+      .join(' ');
+    const totalWordCount = combinedNarrative.trim().split(/\s+/).filter(Boolean).length;
+
+    let capturedAudioFeatures = null;
+    let capturedVideoFeatures = null;
+    if (featureCaptureRef.current) {
       try {
-        continuousVideoRecorderRef.current.stop();
+        const extracted = featureCaptureRef.current.stopAndExtract(sessionSeconds, totalWordCount);
+        capturedAudioFeatures = extracted.audioFeatures;
+        capturedVideoFeatures = extracted.videoFeatures;
       } catch (e) { }
+      featureCaptureRef.current = null;
+    }
+
+    // Stop continuous video recorder and wait briefly for final chunk flush
+    if (continuousVideoRecorderRef.current && continuousVideoRecorderRef.current.state !== 'inactive') {
+      await new Promise((resolve) => {
+        const rec = continuousVideoRecorderRef.current;
+        const timer = setTimeout(resolve, 1000);
+        const origOnStop = rec.onstop;
+        rec.onstop = (...args) => {
+          clearTimeout(timer);
+          if (typeof origOnStop === 'function') {
+            try { origOnStop(...args); } catch (e) { }
+          }
+          resolve();
+        };
+        try {
+          rec.stop();
+        } catch (e) {
+          clearTimeout(timer);
+          resolve();
+        }
+      });
     }
 
     // Stop live stream tracks
@@ -523,10 +567,18 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
     }
     setLiveStream(null);
 
-    // Aggregate narrative text from patient responses
-    const combinedNarrative = allResponses
-      .map((r, i) => `Q${i + 1}: ${r.responseText}`)
-      .join(' ');
+    // Prepare recorded continuous video file if chunks were captured
+    let videoFile = null;
+    try {
+      if (videoChunksRef.current && videoChunksRef.current.length > 0) {
+        const videoBlob = new Blob(videoChunksRef.current, { type: 'video/webm' });
+        if (videoBlob.size > 0) {
+          videoFile = new File([videoBlob], `aanchal_compulsory_video_${Date.now()}.webm`, {
+            type: 'video/webm',
+          });
+        }
+      }
+    } catch (e) { }
 
     const currentUser = typeof window !== 'undefined' ? JSON.parse(window.localStorage?.getItem('miora_auth_user_v1') || '{}') : {};
     const effectiveMotherId = inClinicMotherId || currentUser?.motherId || currentUser?.id || `demo_mother_${Date.now()}`;
@@ -538,6 +590,15 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
       formData.append('mother_id', effectiveMotherId);
       formData.append('consent_confirmed', 'true');
       formData.append('text_content', combinedNarrative);
+      if (capturedAudioFeatures) {
+        formData.append('audio_features', JSON.stringify(capturedAudioFeatures));
+      }
+      if (capturedVideoFeatures) {
+        formData.append('video_features', JSON.stringify(capturedVideoFeatures));
+      }
+      if (videoFile) {
+        formData.append('files_video', videoFile);
+      }
 
       // Merge real clinical profile (37 features) + psychosocial answers (9 features) if available
       const mergedClinical = {};
@@ -605,13 +666,11 @@ export function AiScreeningTab({ onContinueToEpds, inClinicMotherId }) {
     } catch (e) { }
 
     // Upload continuous video to existing backend video endpoint
-    try {
-      const videoBlob = new Blob(videoChunksRef.current, { type: 'video/webm' });
-      const videoFile = new File([videoBlob], `aanchal_compulsory_video_${Date.now()}.webm`, {
-        type: 'video/webm',
-      });
-      await uploadScreeningVideo(videoFile).catch(() => { });
-    } catch (e) { }
+    if (videoFile) {
+      try {
+        await uploadScreeningVideo(videoFile).catch(() => { });
+      } catch (e) { }
+    }
 
     // Assistant wraps up chat
     setMessages((prev) => [
