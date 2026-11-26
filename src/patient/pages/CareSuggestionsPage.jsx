@@ -130,7 +130,8 @@ export function CareSuggestionsPage() {
                 </div>
 
                 {/* Clinician Care Plan Guidance */}
-                {carePlan?.clinicianPlan?.notes && (
+                {carePlan?.clinicianPlan?.notes &&
+                  !String(carePlan.clinicianPlan.notes).includes('patient_appointment_request') && (
                   <div className="care-guidance-callout">
                     <div className="care-callout-head">
                       <PatientIcon name="sparkles" size={15} />

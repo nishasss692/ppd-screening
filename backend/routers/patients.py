@@ -1149,12 +1149,16 @@ def download_screening_report_pdf(
         .order_by(desc(ClinicalReview.reviewed_at), desc(ClinicalReview.created_at))
         .limit(1)
     )
-    latest_care_plan = db.scalar(
+    latest_care_plan = None
+    for cp in db.scalars(
         select(CarePlan)
         .where(CarePlan.mother_id == user.mother_id)
         .order_by(desc(CarePlan.updated_at), desc(CarePlan.created_at))
-        .limit(1)
-    )
+    ):
+        if cp.notes and "patient_appointment_request" in cp.notes:
+            continue
+        latest_care_plan = cp
+        break
 
     multimodal_summary = {
         "clinical_score": screening.clinical_score,
@@ -1754,11 +1758,16 @@ def get_patient_care_plan(
     from backend.models.care_plan import CarePlan
     from backend.models.clinical_review import ClinicalReview
 
-    latest_plan = db.scalars(
+    latest_plan = None
+    for cp in db.scalars(
         select(CarePlan)
         .where(CarePlan.mother_id == user.mother_id)
         .order_by(desc(CarePlan.updated_at), desc(CarePlan.created_at))
-    ).first()
+    ):
+        if cp.notes and "patient_appointment_request" in cp.notes:
+            continue
+        latest_plan = cp
+        break
 
     latest_review = db.scalars(
         select(ClinicalReview)

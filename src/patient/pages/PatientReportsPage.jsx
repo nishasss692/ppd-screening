@@ -12,7 +12,12 @@ export function PatientReportsPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const rawTab = searchParams.get('tab');
-  const initialTab = rawTab === 'consultations' ? 'consultations' : 'screening';
+  const initialTab =
+    rawTab === 'appointments'
+      ? 'appointments'
+      : rawTab === 'consultations'
+        ? 'consultations'
+        : 'screening';
 
   const {
     patient,
@@ -133,9 +138,38 @@ export function PatientReportsPage() {
 
   const areaD = `${pathD} L ${points[points.length - 1].x} ${plotBottom} L ${points[0].x} ${plotBottom} Z`;
 
+  const uniquePatientReports = useMemo(() => {
+    const seen = new Set();
+    return (patientReports || []).filter((r) => {
+      if (!r) return false;
+      const key = String(r.report_code || r.id || `${r.doctor_name}-${r.consultation_date}`).trim().toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [patientReports]);
+
+  const uniqueAppointments = useMemo(() => {
+    const seenIds = new Set();
+    const seenKeys = new Set();
+    return (consultations || []).filter((appt) => {
+      if (!appt) return false;
+      const idKey = appt.id ? String(appt.id) : '';
+      const doc = appt.assigned_doctor_name || appt.requested_doctor_name || appt.doctor_name || appt.doctorName || '';
+      const dt = appt.confirmed_date || appt.requested_date || appt.date || '';
+      const tm = appt.confirmed_time || appt.requested_time || appt.time || '';
+      const sigKey = `${doc}|${dt}|${tm}|${appt.type || appt.mode || ''}`.toLowerCase();
+      if ((idKey && seenIds.has(idKey)) || seenKeys.has(sigKey)) return false;
+      if (idKey) seenIds.add(idKey);
+      seenKeys.add(sigKey);
+      return true;
+    });
+  }, [consultations]);
+
   const tabs = [
     { id: 'screening', label: 'Screening Reports', icon: 'clipboard' },
     { id: 'consultations', label: 'Clinical Reports', icon: 'file-text' },
+    { id: 'appointments', label: 'My Appointments', icon: 'calendar' },
   ];
 
   return (
@@ -612,12 +646,12 @@ export function PatientReportsPage() {
 
             {/* List of Simplified Consultation Reports */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
-              {patientReports.length === 0 && !carePlan?.clinicianReview ? (
+              {uniquePatientReports.length === 0 && !carePlan?.clinicianReview ? (
                 <p style={{ color: '#7a6870', fontStyle: 'italic', padding: '16px 0' }}>
                   No clinical reports have been finalized by your doctor yet. Once your doctor finalizes your clinical review or consultation report, it will appear here.
                 </p>
               ) : (
-                patientReports.map((r) => (
+                uniquePatientReports.map((r) => (
                   <article
                     key={r.id}
                     style={{
@@ -811,6 +845,133 @@ export function PatientReportsPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Download Toast Notification */}
+      {activeTab === 'appointments' && (
+        <div className="reports-consultations-tab">
+          <section className="patient-card reports-card" aria-labelledby="my-appointments-tab-title">
+            <div className="reports-card-header" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+              <div>
+                <h2 id="my-appointments-tab-title" className="reports-card-title">
+                  My Appointments
+                </h2>
+                <p className="reports-card-sub">
+                  Your scheduled, pending, and completed consultations with clinicians and hospitals.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="patient-btn-primary"
+                onClick={() => navigate('/patient/connect-doctor')}
+              >
+                <PatientIcon name="calendar" size={15} />
+                <span>Book Consultation</span>
+              </button>
+            </div>
+
+            {uniqueAppointments.length === 0 ? (
+              <div className="reports-empty-content" style={{ padding: '32px 16px', textAlign: 'center' }}>
+                <p style={{ margin: '0 0 14px', color: 'var(--patient-subtle)' }}>
+                  You do not have any appointments scheduled yet.
+                </p>
+                <button
+                  type="button"
+                  className="patient-btn-secondary"
+                  onClick={() => navigate('/patient/connect-doctor')}
+                >
+                  Find a Doctor &amp; Book
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 12 }}>
+                {uniqueAppointments.map((appt) => {
+                  const statusRaw = String(appt.status || 'pending').toLowerCase();
+                  const statusLabel =
+                    statusRaw === 'rescheduled'
+                      ? 'Time Proposed'
+                      : statusRaw.charAt(0).toUpperCase() + statusRaw.slice(1);
+                  const doctorName =
+                    appt.assigned_doctor_name ||
+                    appt.requested_doctor_name ||
+                    appt.doctor_name ||
+                    appt.doctorName ||
+                    'Assigned Specialist';
+                  const hospitalName = appt.hospital_name || appt.hospitalName || appt.location || '';
+                  const dateLabel = appt.confirmed_date || appt.requested_date || appt.date || 'Date TBD';
+                  const timeLabel = appt.confirmed_time || appt.requested_time || appt.time || '';
+                  const modeLabel = appt.type || appt.mode || 'Consultation';
+                  const reasonText = appt.reason || appt.notes || '';
+
+                  return (
+                    <div
+                      key={appt.id}
+                      style={{
+                        border: '1px solid #f1d9df',
+                        borderRadius: 14,
+                        padding: '16px 20px',
+                        background: '#ffffff',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        gap: 16,
+                        flexWrap: 'wrap',
+                      }}
+                    >
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <span
+                            style={{
+                              fontSize: 11.5,
+                              fontWeight: 700,
+                              padding: '3px 10px',
+                              borderRadius: 999,
+                              background: statusRaw === 'confirmed' ? '#ecfdf5' : '#fdf0f4',
+                              color: statusRaw === 'confirmed' ? '#047857' : '#ba1e53',
+                              border: `1px solid ${statusRaw === 'confirmed' ? '#a7f3d0' : '#f3c6d5'}`,
+                            }}
+                          >
+                            {statusLabel}
+                          </span>
+                          <span style={{ fontSize: 12.5, color: 'var(--patient-subtle)', fontWeight: 500 }}>
+                            {modeLabel}
+                          </span>
+                        </div>
+                        <strong style={{ fontSize: 16, color: 'var(--patient-ink)' }}>{doctorName}</strong>
+                        {hospitalName && (
+                          <span style={{ fontSize: 13, color: 'var(--patient-subtle)' }}>{hospitalName}</span>
+                        )}
+                        <div style={{ fontSize: 13.5, color: 'var(--patient-ink)', marginTop: 2 }}>
+                          {dateLabel}{timeLabel ? ` · ${timeLabel}` : ''}
+                        </div>
+                        {reasonText && (
+                          <div style={{ fontSize: 12.5, color: 'var(--patient-subtle)' }}>
+                            Reason: {reasonText}
+                          </div>
+                        )}
+                        {statusRaw === 'rescheduled' && appt.proposed_date && (
+                          <div style={{ fontSize: 12.5, color: '#9d174d', fontWeight: 600 }}>
+                            Proposed Time: {appt.proposed_date}{appt.proposed_time ? ` · ${appt.proposed_time}` : ''}
+                          </div>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <button
+                          type="button"
+                          className="patient-btn-secondary"
+                          onClick={() => navigate('/patient/connect-doctor')}
+                        >
+                          Manage / Rebook
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
         </div>
       )}
 

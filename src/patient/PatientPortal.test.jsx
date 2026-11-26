@@ -213,17 +213,19 @@ describe('Miora Patient Portal Visual Refinement & Six Screens', () => {
     expect(screen.getByText(/Consultation successfully scheduled with Dr. Elena Rostova!/i)).toBeInTheDocument();
   });
 
-  it('Screen 5 — My Reports: shows only Screening Reports and Clinical Reports tabs gated until doctor finalization', async () => {
+  it('Screen 5 — My Reports: shows Screening Reports, Clinical Reports, and My Appointments tabs', async () => {
     renderPatientApp('/patient/reports');
 
     // Title
     expect(screen.getByRole('heading', { level: 1, name: /My Reports & Analytics/i })).toBeInTheDocument();
 
-    // Only Screening Reports & Clinical Reports tabs
+    // Screening Reports, Clinical Reports & My Appointments tabs
     const screeningTab = screen.getByRole('tab', { name: /Screening Reports/i });
     const clinicalTab = screen.getByRole('tab', { name: /Clinical Reports/i });
+    const appointmentsTab = screen.getByRole('tab', { name: /My Appointments/i });
     expect(screeningTab).toBeInTheDocument();
     expect(clinicalTab).toBeInTheDocument();
+    expect(appointmentsTab).toBeInTheDocument();
     expect(screen.queryByRole('tab', { name: /^Overview$/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('tab', { name: /Mood Tracking/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('tab', { name: /All Reports/i })).not.toBeInTheDocument();
@@ -234,6 +236,10 @@ describe('Miora Patient Portal Visual Refinement & Six Screens', () => {
     // Switching to Clinical Reports tab
     fireEvent.click(clinicalTab);
     expect(screen.getByRole('heading', { name: 'Clinical Reports' })).toBeInTheDocument();
+
+    // Switching to My Appointments tab
+    fireEvent.click(appointmentsTab);
+    expect(screen.getByRole('heading', { name: 'My Appointments' })).toBeInTheDocument();
   });
 
   it('Screen 6 — Care Suggestions: gates personalized care plan until doctor finalizes', () => {
