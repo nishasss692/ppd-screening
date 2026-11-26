@@ -44,7 +44,7 @@ export function HospitalDashboardPage() {
   }, []);
 
   return (
-    <div>
+    <div className="hosp-command-frame">
       {/* Breadcrumb Bar */}
       <div className="hosp-breadcrumb-bar">
         <span className="hosp-breadcrumb-link">
@@ -58,7 +58,7 @@ export function HospitalDashboardPage() {
         <span className="hosp-breadcrumb-current">Hospital Care Portal</span>
       </div>
 
-      {/* Hero Header Card matching Patient Portal */}
+      {/* Hero Header Card */}
       <div className="hosp-hero-card">
         <div>
           <div className="hosp-eyebrow">
@@ -68,6 +68,13 @@ export function HospitalDashboardPage() {
           <h2 className="hosp-hero-title">
             Hospital Care <em>Portal</em>
           </h2>
+        </div>
+        <div className="hosp-hero-photo-wrap" aria-hidden="true">
+          <img
+            src="/assets/mother-baby-header-crop.png"
+            alt="Mother and baby"
+            className="hosp-hero-photo"
+          />
         </div>
       </div>
 

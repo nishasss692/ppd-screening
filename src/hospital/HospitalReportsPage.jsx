@@ -122,7 +122,7 @@ export function HospitalReportsPage() {
   };
 
   return (
-    <div className="hosp-reports-page">
+    <div className="hosp-reports-page hosp-command-frame">
       {/* Breadcrumb Bar */}
       <div className="hosp-breadcrumb-bar">
         <span className="hosp-breadcrumb-link">
@@ -146,6 +146,13 @@ export function HospitalReportsPage() {
           <h1 className="hosp-hero-title">
             Doctor Consultation <em>Reports</em>
           </h1>
+        </div>
+        <div className="hosp-hero-photo-wrap" aria-hidden="true">
+          <img
+            src="/assets/mother-baby-header-crop.png"
+            alt="Mother and baby"
+            className="hosp-hero-photo"
+          />
         </div>
       </div>
 

@@ -152,13 +152,14 @@ export function DoctorAppointmentsPage() {
           <div className="miora-dash-header-copy">
             <div className="miora-dash-eyebrow">
               <span>{String(doctorName || 'CLINICIAN').toUpperCase()} &middot; CLINICAL WORKSPACE</span>
-              <span className="miora-live-indicator" title="Connected to PostgreSQL backend" style={{ marginLeft: 10 }}>
+              <span className="miora-dash-eyebrow-line" aria-hidden="true" />
+              <span className="miora-live-indicator" title="Connected to PostgreSQL backend" style={{ marginLeft: 4 }}>
                 <span className="miora-live-dot" />
                 Live Sync
               </span>
             </div>
             <h1 id="appointments-heading" className="miora-dash-title">
-              Assigned Consultations &amp; Appointments
+              Assigned Consultations &amp; <em>Appointments</em>
             </h1>
           </div>
           <div className="miora-dash-header-actions" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>

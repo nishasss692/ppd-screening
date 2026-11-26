@@ -76,6 +76,13 @@ export function CommandCenterPage() {
           </div>
 
           <div className="miora-dash-header-actions" ref={ctaRef} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div className="miora-dash-hero-photo-wrap" aria-hidden="true">
+              <img
+                src="/assets/mother-baby-header-crop.png"
+                alt=""
+                className="miora-dash-hero-photo"
+              />
+            </div>
             <button
               type="button"
               className="miora-cta-primary"
